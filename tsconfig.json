@@ -1,0 +1,14 @@
+{
+  "include": ["src"],
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "strict": true,
+    "target": "es6",
+    "module": "Node16",
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "moduleResolution": "Node16",
+    "allowJs": true
+  }
+}
