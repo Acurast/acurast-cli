@@ -1,5 +1,5 @@
 {
-  "name": "acurast-cli",
+  "name": "@acurast/cli",
   "version": "0.0.1",
   "description": "A cli to interact with the Acurast Network.",
   "main": "dist/index.js",
@@ -7,6 +7,9 @@
     "acurast": "./dist/index.js"
   },
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "start": "npm run build && node dist/index.js",
     "build": "npx tsc",

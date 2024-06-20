@@ -1,18 +1,6 @@
-name: Build and Publish
+name: Build and Test
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-    inputs:
-      target:
-        description: "Publish target"
-        required: true
-        default: "beta"
-        type: choice
-        options:
-          - beta
+on: [push, workflow_dispatch]
 
 env:
   node_version: 20.x
@@ -42,55 +30,5 @@ jobs:
       - name: 📦 Upload build artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: build-artifacts
-          path: ./dist # Adjust the path to your build artifacts if necessary
-
-  publish:
-    name: 🚀 Publish to npm
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: ⚙️ Set up Node.js ${{ env.node_version }}
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ env.node_version }}
-
-      - name: 🔧 Install dependencies
-        run: npm install
-
-      - name: 🔐 Authenticate to npm
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
-
-      - name: 🚀 Publish to npm
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  publish_beta:
-    name: 🚀 Publish Beta to npm
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event.inputs.target == 'beta' && github.ref == 'refs/heads/develop'
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: ⚙️ Set up Node.js ${{ env.node_version }}
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ env.node_version }}
-
-      - name: 🔧 Install dependencies
-        run: npm install
-
-      - name: 🔐 Authenticate to npm
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
-
-      - name: 🚀 Publish beta to npm
-        run: npm publish --tag beta
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          name: cli-files-dist
+          path: ./dist
