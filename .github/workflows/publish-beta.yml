@@ -21,7 +21,6 @@ jobs:
       - name: ⚙️ Set up Node.js ${{ env.node_version }}
         uses: actions/setup-node@v2
         with:
-        with:
           node-version: ${{ env.node_version }}
 
       - name: 🔧 Install dependencies
