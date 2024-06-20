@@ -35,7 +35,7 @@ import { parse } from '../util/parse-duration.js'
 export const addCommandInit = (program: Command) => {
   program
     .command('init')
-    .description('Create an acurast.json file and .env file')
+    .description('Create an acurast.json and .env file')
     .action(async () => {
       console.log('Initializing Acurast CLI')
 
