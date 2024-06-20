@@ -1,3 +1,3 @@
-import { hex } from "ansis";
+import { hex } from 'ansis'
 
-export const acurastColor = hex("#c0e700");
+export const acurastColor = hex('#c0e700')

@@ -1,25 +1,25 @@
-import { existsSync, mkdirSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import {
   AcurastDeployment,
   AcurastProjectConfig,
   JobRegistration,
-} from "../types.js";
-import path from "path";
+} from '../types.js'
+import path from 'path'
 
 function ensureDirectoryExistence(filePath: string) {
-  var dirname = path.dirname(filePath);
+  var dirname = path.dirname(filePath)
   if (existsSync(dirname)) {
-    return true;
+    return true
   }
-  ensureDirectoryExistence(dirname);
-  mkdirSync(dirname);
+  ensureDirectoryExistence(dirname)
+  mkdirSync(dirname)
 }
 
 export const storeDeployment = async (
   config: AcurastProjectConfig,
   job: JobRegistration
 ) => {
-  const now = Date.now();
+  const now = Date.now()
 
   const deployment: AcurastDeployment = {
     // transactionId: "",
@@ -35,13 +35,13 @@ export const storeDeployment = async (
       // }
     ],
 
-    status: "init",
+    status: 'init',
     config: config,
     registration: job,
-  };
+  }
 
-  const fileName = `./.acurast/deploy/${config.projectName}-${now}.json`;
-  ensureDirectoryExistence(fileName);
+  const fileName = `./.acurast/deploy/${config.projectName}-${now}.json`
+  ensureDirectoryExistence(fileName)
 
-  writeFileSync(fileName, JSON.stringify(deployment, null, 2));
-};
+  writeFileSync(fileName, JSON.stringify(deployment, null, 2))
+}
