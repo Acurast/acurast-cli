@@ -1,27 +1,27 @@
-import { Command, Option } from "commander";
-import { loadConfig } from "../acurast/loadConfig.js";
-import { getEnv } from "../config.js";
-import { delay, Listr } from "listr2";
-import { DeploymentStatus, createJob } from "../acurast/createJob.js";
-import { storeDeployment } from "../acurast/storeDeployment.js";
-import { acurastColor } from "../util.js";
+import { Command, Option } from 'commander'
+import { loadConfig } from '../acurast/loadConfig.js'
+import { getEnv } from '../config.js'
+import { delay, Listr } from 'listr2'
+import { DeploymentStatus, createJob } from '../acurast/createJob.js'
+import { storeDeployment } from '../acurast/storeDeployment.js'
+import { acurastColor } from '../util.js'
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export const addCommandDeploy = (program: Command) => {
   program
-    .command("deploy [project]")
-    .description("Deploy the current project to the Acurast platform.")
+    .command('deploy [project]')
+    .description('Deploy the current project to the Acurast platform.')
     .addOption(
       new Option(
-        "-d, --dry-run",
-        "Run the deploy step without actually deploying the project."
+        '-d, --dry-run',
+        'Run the deploy step without actually deploying the project.'
       )
     )
     .addOption(
       new Option(
-        "-l, --live, --live-code",
-        "Run the deploy step and run it on in a live coding environment on a processor."
+        '-l, --live, --live-code',
+        'Run the deploy step and run it on in a live coding environment on a processor.'
       )
     )
     .action(
@@ -29,37 +29,37 @@ export const addCommandDeploy = (program: Command) => {
         project: string,
         options: { dryRun?: boolean; live?: boolean }
       ) => {
-        const DEBUG = getEnv("DEBUG");
+        const DEBUG = getEnv('DEBUG')
         if (DEBUG && options) {
           // console.log("Options", options);
         }
 
-        let config;
+        let config
         try {
-          config = loadConfig(project);
+          config = loadConfig(project)
         } catch (e: any) {
-          console.log(e.message);
-          return;
+          console.log(e.message)
+          return
         }
         // console.log(config);
 
         if (!config) {
-          throw new Error("No project found");
+          throw new Error('No project found')
         }
 
-        console.log();
-        console.log(`Deploying project "${config.projectName}"`);
-        console.log();
+        console.log()
+        console.log(`Deploying project "${config.projectName}"`)
+        console.log()
 
         console.log(
-          `The job will be scheduled to start in ${acurastColor("5 minutes")}.`
-        );
-        console.log();
+          `The job will be scheduled to start in ${acurastColor('5 minutes')}.`
+        )
+        console.log()
 
         const numberOfExecutions =
-          config.execution.type === "onetime"
+          config.execution.type === 'onetime'
             ? 1
-            : config.execution.numberOfExecutions;
+            : config.execution.numberOfExecutions
         console.log(
           `There will be ${acurastColor(
             numberOfExecutions.toString()
@@ -71,8 +71,8 @@ export const addCommandDeploy = (program: Command) => {
               1_000_000_000_000
             ).toString()
           )} cACU each.`
-        );
-        console.log();
+        )
+        console.log()
 
         // const spinner = ora.default("Deploying project");
         // spinner.start();
@@ -81,7 +81,7 @@ export const addCommandDeploy = (program: Command) => {
 
         // }, 2000);
 
-        const originalConfig = structuredClone(config);
+        const originalConfig = structuredClone(config)
 
         const jobRegistration = createJob(
           config,
@@ -91,7 +91,7 @@ export const addCommandDeploy = (program: Command) => {
               // console.log(status, data);
             } else if (status === DeploymentStatus.Prepared) {
               // console.log(status, data);
-              storeDeployment(originalConfig, data.job);
+              storeDeployment(originalConfig, data.job)
             } else if (status === DeploymentStatus.Submit) {
               // txHash
               // console.log(status, data);
@@ -110,21 +110,21 @@ export const addCommandDeploy = (program: Command) => {
             } else if (status === DeploymentStatus.Finalized) {
               // console.log(status, data);
             } else {
-              throw new Error("Unknown status");
+              throw new Error('Unknown status')
             }
 
             if (statusPromises[status]) {
-              statusPromises[status].resolve(data);
+              statusPromises[status].resolve(data)
             }
           }
-        );
+        )
 
         type StatusPromises = {
           [key in DeploymentStatus]: {
-            promise: Promise<any>;
-            resolve: (data: any) => void;
-          };
-        };
+            promise: Promise<any>
+            resolve: (data: any) => void
+          }
+        }
 
         const statusPromises: StatusPromises = {
           [DeploymentStatus.Uploaded]: createStatusPromise(),
@@ -137,18 +137,18 @@ export const addCommandDeploy = (program: Command) => {
           [DeploymentStatus.Started]: createStatusPromise(),
           [DeploymentStatus.ExecutionDone]: createStatusPromise(),
           [DeploymentStatus.Finalized]: createStatusPromise(),
-        };
+        }
 
         function createStatusPromise() {
-          let resolveFunction;
+          let resolveFunction
           const promise = new Promise<any>((resolve) => {
-            resolveFunction = resolve;
-          });
-          return { promise, resolve: resolveFunction! };
+            resolveFunction = resolve
+          })
+          return { promise, resolve: resolveFunction! }
         }
 
         async function awaitStatus(status: DeploymentStatus) {
-          return statusPromises[status].promise;
+          return statusPromises[status].promise
         }
 
         jobRegistration
@@ -156,122 +156,122 @@ export const addCommandDeploy = (program: Command) => {
             // console.log(job);
           })
           .catch((err) => {
-            console.error(err);
-          });
+            console.error(err)
+          })
 
-        let count = 1_000_000; // TODO: replace with duration until start time
-        let deployingTimer: NodeJS.Timeout;
+        let count = 1_000_000 // TODO: replace with duration until start time
+        let deployingTimer: NodeJS.Timeout
         const cancelUpdateTitle = (
           task: { title?: string | undefined },
           success: boolean
         ) => {
-          deployingTimer && clearTimeout(deployingTimer);
-          task.title = "Waiting for executions";
+          deployingTimer && clearTimeout(deployingTimer)
+          task.title = 'Waiting for executions'
           if (!success) {
             tasks.tasks.forEach((task) => {
-              task.complete();
-            });
+              task.complete()
+            })
           }
-        };
+        }
         const updateTitle = (task: { title?: string | undefined }) => {
           deployingTimer = setTimeout(() => {
             task.title =
-              "Waiting for executions (first execution scheduled in " +
+              'Waiting for executions (first execution scheduled in ' +
               count +
-              "s)";
+              's)'
             if (count > 0) {
-              count--;
-              updateTitle(task);
+              count--
+              updateTitle(task)
             } else {
-              cancelUpdateTitle(task, false);
+              cancelUpdateTitle(task, false)
             }
-          }, 1000);
-        };
+          }, 1000)
+        }
 
         const tasks = new Listr(
           [
             {
-              title: "Deploying project",
+              title: 'Deploying project',
               task: (ctx, deployTask): Listr =>
                 deployTask.newListr([
                   {
-                    title: "Submit to Acurast",
+                    title: 'Submit to Acurast',
                     task: async (ctx, task): Promise<void> => {
                       const { job } = await awaitStatus(
                         DeploymentStatus.Prepared
-                      );
+                      )
 
                       count = Math.floor(
                         (job.schedule.startTime - Date.now()) / 1000
-                      );
+                      )
 
-                      updateTitle(tasks.tasks[1]);
+                      updateTitle(tasks.tasks[1])
 
-                      task.title = `Submitted to Acurast (${job.script})`;
+                      task.title = `Submitted to Acurast (${job.script})`
                     },
                   },
                   {
-                    title: "Waiting for deployment to be registered",
+                    title: 'Waiting for deployment to be registered',
                     task: async (ctx, task): Promise<void> => {
-                      await awaitStatus(DeploymentStatus.Submit);
+                      await awaitStatus(DeploymentStatus.Submit)
 
                       const { jobIds } = await awaitStatus(
                         DeploymentStatus.WaitingForMatch
-                      );
+                      )
 
                       task.title =
-                        "Deployment registered" +
+                        'Deployment registered' +
                         ` (JobID: ${jobIds
                           .map((jobId: any) => jobId[1])
-                          .join(" | ")})`;
+                          .join(' | ')})`
                     },
                   },
                   {
                     title:
-                      "Waiting for deployment to be matched with processors",
+                      'Waiting for deployment to be matched with processors',
                     task: async (ctx, task): Promise<void> => {
-                      await awaitStatus(DeploymentStatus.Matched);
-                      task.title = "Matched";
+                      await awaitStatus(DeploymentStatus.Matched)
+                      task.title = 'Matched'
                     },
                   },
                   {
-                    title: "Waiting for processor acknowledgements",
+                    title: 'Waiting for processor acknowledgements',
                     task: (ctx, task): Listr =>
                       task.newListr(
                         [
                           {
                             title: `Acknowledged by 0/${config.numberOfReplicas}`,
                             task: async (ctx, task): Promise<void> => {
-                              let allAcknowledged = false;
+                              let allAcknowledged = false
                               // while (!allAcknowledged) {
                               // TODO: Make reactive
                               const { acknowledged } = await awaitStatus(
                                 DeploymentStatus.Acknowledged
-                              );
+                              )
 
-                              task.title = `Acknowledged by ${acknowledged}/${config.numberOfReplicas}`;
+                              task.title = `Acknowledged by ${acknowledged}/${config.numberOfReplicas}`
                               // }
                             },
                           },
                           {
-                            title: "DEMO: 5Ffda...fdkga",
+                            title: 'DEMO: 5Ffda...fdkga',
                             task: async (ctx, task): Promise<void> => {
-                              await delay(3000);
+                              await delay(3000)
                             },
                           },
                           {
-                            title: "DEMO: 5Dcar...gdahs",
+                            title: 'DEMO: 5Dcar...gdahs',
                             task: async (ctx, task): Promise<void> => {
-                              await delay(2000);
+                              await delay(2000)
                               throw new Error(
-                                task.title + " Processor did not acknowledge"
-                              );
+                                task.title + ' Processor did not acknowledge'
+                              )
                             },
                           },
                           {
-                            title: "DEMO: 5Dacs...lwpfd",
+                            title: 'DEMO: 5Dacs...lwpfd',
                             task: async (ctx, task): Promise<void> => {
-                              await delay(1000);
+                              await delay(1000)
                             },
                           },
                         ],
@@ -279,35 +279,35 @@ export const addCommandDeploy = (program: Command) => {
                       ),
                   },
                   {
-                    title: "Setting environment variables",
+                    title: 'Setting environment variables',
                     task: async (ctx, task): Promise<void> => {
-                      delay(3000);
+                      delay(3000)
                       // const { envVars } = await awaitStatus(
                       //   DeploymentStatus.EnvironmentVariablesSet
                       // );
-                      task.title = "DEMO: Environment variables set";
+                      task.title = 'DEMO: Environment variables set'
                     },
                   },
                 ]),
             },
             {
               title:
-                "Waiting for executions (this may take a while, feel free to cancel this task and check back later)",
+                'Waiting for executions (this may take a while, feel free to cancel this task and check back later)',
               task: (ctx, task): Listr =>
                 task.newListr(
                   [
                     {
-                      title: "Waiting for Execution",
+                      title: 'Waiting for Execution',
                       task: async (ctx, task): Promise<void> => {
-                        await delay(3000);
-                        task.title = "DEMO: Execution succeeded";
+                        await delay(3000)
+                        task.title = 'DEMO: Execution succeeded'
                       },
                     },
                     {
-                      title: "Waiting for Execution",
+                      title: 'Waiting for Execution',
                       task: async (ctx, task): Promise<void> => {
-                        await delay(3000);
-                        throw new Error("DEMO: Execution failed");
+                        await delay(3000)
+                        throw new Error('DEMO: Execution failed')
                       },
                     },
                   ],
@@ -315,21 +315,21 @@ export const addCommandDeploy = (program: Command) => {
                 ),
             },
             {
-              title: "Waiting for job to Finalize",
+              title: 'Waiting for job to Finalize',
               task: async (ctx, task): Promise<void> => {
-                await delay(3000);
-                task.title = "Finalized";
+                await delay(3000)
+                task.title = 'Finalized'
               },
             },
           ],
           { concurrent: false, rendererOptions: { collapseSubtasks: false } }
-        );
+        )
 
         try {
-          await tasks.run();
+          await tasks.run()
         } catch (e) {
-          console.log("Error", e);
+          console.log('Error', e)
         }
       }
-    );
-};
+    )
+}

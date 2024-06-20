@@ -1,23 +1,23 @@
 import {
   DEFAULT_REWARD,
   convertConfigToJob,
-} from "../src/acurast/convertConfigToJob.js";
+} from '../src/acurast/convertConfigToJob.js'
 import {
   AcurastProjectConfig,
   AssignmentStrategyVariant,
   JobRegistration,
-} from "../src/types.js";
+} from '../src/types.js'
 
-describe("convertConfigToJob", () => {
-  test("should convert config to job registration with one-time execution", () => {
+describe('convertConfigToJob', () => {
+  test('should convert config to job registration with one-time execution', () => {
     const config: AcurastProjectConfig = {
-      projectName: "test",
-      fileUrl: "./examples/ip.js",
-      network: "canary",
+      projectName: 'test',
+      fileUrl: './examples/ip.js',
+      network: 'canary',
       onlyAttestedDevices: true,
       assignmentStrategy: { type: AssignmentStrategyVariant.Single },
       execution: {
-        type: "onetime",
+        type: 'onetime',
         maxExecutionTimeInMs: 5000,
       },
       usageLimit: {
@@ -29,10 +29,10 @@ describe("convertConfigToJob", () => {
       numberOfReplicas: 1,
       minProcessorReputation: 0,
       maxCostPerExecution: DEFAULT_REWARD,
-    };
+    }
 
     const expectedJobRegistration: JobRegistration = {
-      script: "./examples/ip.js",
+      script: './examples/ip.js',
       allowedSources: undefined,
       allowOnlyVerifiedSources: true,
       schedule: {
@@ -57,26 +57,26 @@ describe("convertConfigToJob", () => {
           minReputation: 0,
         },
       },
-    };
+    }
 
-    const jobRegistration = convertConfigToJob(config);
+    const jobRegistration = convertConfigToJob(config)
 
-    expect(jobRegistration).toEqual(expectedJobRegistration);
-  });
+    expect(jobRegistration).toEqual(expectedJobRegistration)
+  })
 
-  test("should throw an error for invalid execution type", () => {
+  test('should throw an error for invalid execution type', () => {
     const config: AcurastProjectConfig = {
-      fileUrl: "./script.js",
+      fileUrl: './script.js',
       execution: {
-        type: "invalid",
+        type: 'invalid',
       } as any,
       usageLimit: {
         maxMemory: 0,
         maxNetworkRequests: 0,
         maxStorage: 0,
       },
-    } as any;
+    } as any
 
-    expect(() => convertConfigToJob(config)).toThrow("Invalid execution type");
-  });
-});
+    expect(() => convertConfigToJob(config)).toThrow('Invalid execution type')
+  })
+})

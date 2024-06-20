@@ -5,7 +5,7 @@ on:
     branches:
       - develop
   workflow_run:
-    workflows: ["Build"]
+    workflows: ['Build']
     types:
       - completed
 
@@ -20,7 +20,6 @@ jobs:
 
       - name: ⚙️ Set up Node.js ${{ env.node_version }}
         uses: actions/setup-node@v2
-        with:
         with:
           node-version: ${{ env.node_version }}
 
