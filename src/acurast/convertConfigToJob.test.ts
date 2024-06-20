@@ -1,7 +1,7 @@
 import {
   DEFAULT_REWARD,
   convertConfigToJob,
-} from "../acurast/convertConfigToJob.js";
+} from "../acurast/convertConfigToJob";
 import {
   AcurastProjectConfig,
   AssignmentStrategyVariant,
@@ -32,25 +32,28 @@ describe("convertConfigToJob", () => {
     };
 
     const expectedJobRegistration: JobRegistration = {
-      script: "https://example.com/script.js",
+      script: "./examples/ip.js",
       allowedSources: undefined,
-      allowOnlyVerifiedSources: false,
+      allowOnlyVerifiedSources: true,
       schedule: {
         duration: 5000,
         startTime: expect.any(Number),
         endTime: expect.any(Number),
         interval: expect.any(Number),
-        maxStartDelay: 10000,
+        maxStartDelay: 0,
       },
-      memory: 512,
-      networkRequests: 10,
-      storage: 100,
-      requiredModules: ["module1", "module2"],
+      memory: 0,
+      networkRequests: 0,
+      storage: 0,
+      requiredModules: undefined,
       extra: {
         requirements: {
-          assignmentStrategy: { variant: AssignmentStrategyVariant.Single },
+          assignmentStrategy: {
+            variant: AssignmentStrategyVariant.Single,
+            instantMatch: undefined,
+          },
           slots: 1,
-          reward: 1000000000,
+          reward: DEFAULT_REWARD,
           minReputation: 0,
         },
       },
