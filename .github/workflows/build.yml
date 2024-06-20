@@ -42,8 +42,8 @@ jobs:
       - name: 📦 Upload build artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: build-artifacts
-          path: ./dist # Adjust the path to your build artifacts if necessary
+          name: cli-files-dist
+          path: ./dist
 
   publish:
     name: 🚀 Publish to npm
