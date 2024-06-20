@@ -15,7 +15,7 @@ const faucet = 'https://faucet.acurast.com/'
 export const addCommandOpen = (program: Command) => {
   program
     .command('open')
-    .description('Open the Acurast resources in your browser')
+    .description('Open Acurast websites in your browser')
     .action(async () => {
       const answer = await select({
         message: 'Which website do you want to open?',
