@@ -21,7 +21,10 @@ jobs:
           node-version: ${{ env.node_version }}
 
       - name: 🔧 Install dependencies
-        run: npm install
+        run: npm ci
+
+      - name: 🏗️ Build
+        run: npm run build
 
       - name: 🔐 Authenticate to npm
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
@@ -45,7 +48,10 @@ jobs:
           node-version: ${{ env.node_version }}
 
       - name: 🔧 Install dependencies
-        run: npm install
+        run: npm ci
+
+      - name: 🏗️ Build
+        run: npm run build
 
       - name: 🔐 Authenticate to npm
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
