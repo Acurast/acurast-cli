@@ -1,7 +1,7 @@
 export default {
     preset: 'ts-jest',
     testEnvironment: 'node',
-    roots: ['./src'],
+    roots: ['./src', './test'],
     setupFiles: ["<rootDir>/test/setup.ts"],
     globals: {
         'ts-jest': {

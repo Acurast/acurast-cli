@@ -1,12 +1,12 @@
 import {
   DEFAULT_REWARD,
   convertConfigToJob,
-} from "../acurast/convertConfigToJob";
+} from "../src/acurast/convertConfigToJob.js";
 import {
   AcurastProjectConfig,
   AssignmentStrategyVariant,
   JobRegistration,
-} from "../types.js";
+} from "../src/types.js";
 
 describe("convertConfigToJob", () => {
   test("should convert config to job registration with one-time execution", () => {
