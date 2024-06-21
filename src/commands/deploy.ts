@@ -34,6 +34,11 @@ export const addCommandDeploy = (program: Command) => {
           // console.log("Options", options);
         }
 
+        if (options.live) {
+          console.log('Live coding not implemented yet')
+          return
+        }
+
         let config
         try {
           config = loadConfig(project)
@@ -52,7 +57,7 @@ export const addCommandDeploy = (program: Command) => {
         console.log()
 
         console.log(
-          `The job will be scheduled to start in ${acurastColor('5 minutes')}.`
+          `The deployment will be scheduled to start in ${acurastColor('5 minutes')}.`
         )
         console.log()
 
@@ -73,6 +78,11 @@ export const addCommandDeploy = (program: Command) => {
           )} cACU each.`
         )
         console.log()
+
+        if (options.dryRun) {
+          console.log('🧪 Dry run, not deploying.')
+          return
+        }
 
         // const spinner = ora.default("Deploying project");
         // spinner.start();
@@ -253,74 +263,73 @@ export const addCommandDeploy = (program: Command) => {
                               // }
                             },
                           },
-                          {
-                            title: 'DEMO: 5Ffda...fdkga',
-                            task: async (ctx, task): Promise<void> => {
-                              await delay(3000)
-                            },
-                          },
-                          {
-                            title: 'DEMO: 5Dcar...gdahs',
-                            task: async (ctx, task): Promise<void> => {
-                              await delay(2000)
-                              throw new Error(
-                                task.title + ' Processor did not acknowledge'
-                              )
-                            },
-                          },
-                          {
-                            title: 'DEMO: 5Dacs...lwpfd',
-                            task: async (ctx, task): Promise<void> => {
-                              await delay(1000)
-                            },
-                          },
+                          // {
+                          //   title: 'DEMO: 5Ffda...fdkga',
+                          //   task: async (ctx, task): Promise<void> => {
+                          //     await delay(3000)
+                          //   },
+                          // },
+                          // {
+                          //   title: 'DEMO: 5Dcar...gdahs',
+                          //   task: async (ctx, task): Promise<void> => {
+                          //     await delay(2000)
+                          //     throw new Error(
+                          //       task.title + ' Processor did not acknowledge'
+                          //     )
+                          //   },
+                          // },
+                          // {
+                          //   title: 'DEMO: 5Dacs...lwpfd',
+                          //   task: async (ctx, task): Promise<void> => {
+                          //     await delay(1000)
+                          //   },
+                          // },
                         ],
                         { concurrent: true, exitOnError: false }
                       ),
                   },
                   {
-                    title: 'Setting environment variables',
+                    title: 'Setting environment variables (NOT IMPLEMENTED)',
                     task: async (ctx, task): Promise<void> => {
-                      delay(3000)
+                      delay(1000)
                       // const { envVars } = await awaitStatus(
                       //   DeploymentStatus.EnvironmentVariablesSet
                       // );
-                      task.title = 'DEMO: Environment variables set'
                     },
                   },
                 ]),
             },
-            {
-              title:
-                'Waiting for executions (this may take a while, feel free to cancel this task and check back later)',
-              task: (ctx, task): Listr =>
-                task.newListr(
-                  [
-                    {
-                      title: 'Waiting for Execution',
-                      task: async (ctx, task): Promise<void> => {
-                        await delay(3000)
-                        task.title = 'DEMO: Execution succeeded'
-                      },
-                    },
-                    {
-                      title: 'Waiting for Execution',
-                      task: async (ctx, task): Promise<void> => {
-                        await delay(3000)
-                        throw new Error('DEMO: Execution failed')
-                      },
-                    },
-                  ],
-                  { exitOnError: false }
-                ),
-            },
-            {
-              title: 'Waiting for job to Finalize',
-              task: async (ctx, task): Promise<void> => {
-                await delay(3000)
-                task.title = 'Finalized'
-              },
-            },
+            // {
+            //   title:
+            //     'Waiting for executions (this may take a while, feel free to cancel this task and check back later)',
+            //   task: (ctx, task): Listr =>
+            //     task.newListr(
+            //       [
+            //         {
+            //           title: 'Waiting for Execution',
+            //           task: async (ctx, task): Promise<void> => {
+            //             await delay(3000)
+            //             task.title = 'DEMO: Execution succeeded'
+            //           },
+            //         },
+            //         {
+            //           title: 'Waiting for Execution',
+            //           task: async (ctx, task): Promise<void> => {
+            //             await delay(3000)
+            //             throw new Error('DEMO: Execution failed')
+            //           },
+            //         },
+            //       ],
+            //       { exitOnError: false }
+            //     ),
+            // },
+            // {
+            //   title: 'Waiting for job to Finalize',
+            //   task: async (ctx, task): Promise<void> => {
+            //     await delay(3000)
+            //     task.title = 'Finalized'
+            //   },
+            // },
           ],
           { concurrent: false, rendererOptions: { collapseSubtasks: false } }
         )
