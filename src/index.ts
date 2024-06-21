@@ -31,14 +31,14 @@ program
 
 addCommandDeploy(program)
 addCommandInit(program)
-addCommandJobs(program)
-addCommandLive(program)
-addCommandLogin(program)
-addCommandLogout(program)
+// addCommandJobs(program)
+// addCommandLive(program)
+// addCommandLogin(program)
+// addCommandLogout(program)
 addCommandOpen(program)
-addCommandRun(program)
-addCommandTest(program)
-addCommandWatch(program)
+// addCommandRun(program)
+// addCommandTest(program)
+// addCommandWatch(program)
 
 if (!process.argv.slice(2).length) {
   console.log(acurastColor(textSync('Acurast CLI')))

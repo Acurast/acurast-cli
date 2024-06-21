@@ -8,6 +8,15 @@ on:
     workflows: ['Build']
     types:
       - completed
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Publish beta'
+        required: true
+        default: 'beta'
+        type: choice
+        options:
+          - beta
 
 jobs:
   publish_beta:
