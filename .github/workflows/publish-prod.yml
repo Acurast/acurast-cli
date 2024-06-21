@@ -8,6 +8,7 @@ on:
     workflows: ['Build']
     types:
       - completed
+  workflow_dispatch:
     inputs:
       target:
         description: 'Publish prod'
