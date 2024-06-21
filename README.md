@@ -156,12 +156,3 @@ After this command, `acurast` will be available globally on your computer.
 ## Contributing
 
 Contributions are welcome! Please fork the repository and submit a pull request.
-
-## Glossary
-
-- app: A project that compiles to a single executable
-- config: Config in an app that is used to create a deployment
-- deployment: A version of the app that was deployed
-- replica: An instance of the app running on a specific processor
-- execution: A single execution of an interval based app on a replica
-- revision: ?
