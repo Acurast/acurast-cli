@@ -8,6 +8,14 @@ on:
     workflows: ['Build']
     types:
       - completed
+    inputs:
+      target:
+        description: 'Publish prod'
+        required: true
+        default: 'prod'
+        type: choice
+        options:
+          - prod
 
 jobs:
   publish:
