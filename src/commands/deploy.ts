@@ -1,6 +1,6 @@
 import { Command, Option } from 'commander'
 import { loadConfig } from '../acurast/loadConfig.js'
-import { getEnv } from '../config.js'
+import { getEnv, validateDeployEnvVars } from '../config.js'
 import { delay, Listr } from 'listr2'
 import { DeploymentStatus, createJob } from '../acurast/createJob.js'
 import { storeDeployment } from '../acurast/storeDeployment.js'
@@ -30,7 +30,7 @@ export const addCommandDeploy = (program: Command) => {
         options: { dryRun?: boolean; live?: boolean }
       ) => {
         const DEBUG = getEnv('DEBUG')
-        if (DEBUG && options) {
+        if (DEBUG === 'true' && options) {
           // console.log("Options", options);
         }
 
@@ -38,6 +38,8 @@ export const addCommandDeploy = (program: Command) => {
           console.log('Live coding not implemented yet')
           return
         }
+
+        validateDeployEnvVars() // TODO: Also check the environment variables that need to be added to the deployment
 
         let config
         try {
@@ -68,7 +70,7 @@ export const addCommandDeploy = (program: Command) => {
         console.log(
           `There will be ${acurastColor(
             numberOfExecutions.toString()
-          )} executions with a reward of ${acurastColor(
+          )} executions with a cost of ${acurastColor(
             (
               (config.maxCostPerExecution *
                 config.numberOfReplicas *
@@ -176,7 +178,8 @@ export const addCommandDeploy = (program: Command) => {
           success: boolean
         ) => {
           deployingTimer && clearTimeout(deployingTimer)
-          task.title = 'Waiting for executions'
+          task.title = 'Deploying project'
+
           if (!success) {
             tasks.tasks.forEach((task) => {
               task.complete()
@@ -186,9 +189,11 @@ export const addCommandDeploy = (program: Command) => {
         const updateTitle = (task: { title?: string | undefined }) => {
           deployingTimer = setTimeout(() => {
             task.title =
-              'Waiting for executions (first execution scheduled in ' +
-              count +
-              's)'
+              'Deploying project (first execution scheduled in ' + count + 's)'
+            // task.title =
+            //   'Waiting for executions (first execution scheduled in ' +
+            //   count +
+            //   's)'
             if (count > 0) {
               count--
               updateTitle(task)
@@ -215,7 +220,7 @@ export const addCommandDeploy = (program: Command) => {
                         (job.schedule.startTime - Date.now()) / 1000
                       )
 
-                      updateTitle(tasks.tasks[1])
+                      updateTitle(tasks.tasks[0])
 
                       task.title = `Submitted to Acurast (${job.script})`
                     },
