@@ -15,23 +15,6 @@ import {
 } from '../types.js'
 import { parse } from '../util/parse-duration.js'
 
-// const assignmentStrategy: "single" | "competing" = await select({
-//   message: "What assignment strategy should be used?",
-//   choices: [
-//     {
-//       name: "Single Matches",
-//       value: "single",
-//       description:
-//         "Find or specify 1 or more processors for this job at the beginning and use them for all job executions.",
-//     },
-//     {
-//       name: "Competing Matches",
-//       value: "competing",
-//       description:
-//         "Find 1 or more processors just before each job execution.",
-//     },
-//   ],
-// });
 export const addCommandInit = (program: Command) => {
   program
     .command('init')
@@ -132,11 +115,9 @@ export const addCommandInit = (program: Command) => {
       if (deploymentType === 'onetime') {
         const durationInSeconds = await input({
           message: 'Enter the duration (eg. 1s, 5min or 2h):',
-          transformer: (input) => {
-            return (parse(input) ?? 0)?.toString()
-          },
           validate: (input) => {
-            const value = Number(input)
+            const parsed = (parse(input) ?? 0).toString()
+            const value = Number(parsed)
             if (isNaN(value) || value <= 0) {
               return 'Please enter a valid number greater than 0'
             }

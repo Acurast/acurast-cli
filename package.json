@@ -1,6 +1,6 @@
 {
   "name": "@acurast/cli",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A cli to interact with the Acurast Network.",
   "main": "dist/index.js",
   "bin": {
@@ -24,6 +24,11 @@
   ],
   "author": "Andreas Gassmann <andreas@andreasgassmann.ch>",
   "license": "UNLICENSED",
+  "homepage": "https://www.acurast.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/acurast/acurast-cli"
+  },
   "dependencies": {
     "@inquirer/prompts": "^5.0.5",
     "@polkadot/api": "^11.2.1",
