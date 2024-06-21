@@ -55,7 +55,7 @@ export const convertConfigToJob = (
           variant: AssignmentStrategyVariant.Single,
           instantMatch: config.assignmentStrategy.instantMatch?.map((item) => ({
             source: item.processor,
-            startDelay: item.startDelay,
+            startDelay: item.maxAllowedStartDelayInMs,
           })),
         }
       : { variant: AssignmentStrategyVariant.Competing }
