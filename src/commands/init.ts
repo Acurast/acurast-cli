@@ -62,6 +62,10 @@ export const addCommandInit = (program: Command) => {
               './.env',
               `# ACURAST_MNEMONIC=\n# ACURAST_IPFS_URL=\n# ACURAST_IPFS_API_KEY=\n`
             )
+
+            console.log(
+              `.env file created. Visit ${ENV_HELP_LINK} to learn more.`
+            )
           }
         }
       }
