@@ -117,7 +117,7 @@ export const addCommandInit = (program: Command) => {
           }
 
       if (deploymentType === 'onetime') {
-        const durationInSeconds = await input({
+        const unparsedDuration = await input({
           message: 'Enter the duration (eg. 1s, 5min or 2h):',
           validate: (input) => {
             const parsed = (parse(input) ?? 0).toString()
@@ -129,9 +129,12 @@ export const addCommandInit = (program: Command) => {
           },
         })
 
+        const parsedDuration = (parse(unparsedDuration) ?? 0).toString()
+        const durationInMilliseconds = Number(parsedDuration)
+
         execution = {
           type: 'onetime',
-          maxExecutionTimeInMs: Number(durationInSeconds) * 1000,
+          maxExecutionTimeInMs: durationInMilliseconds,
         }
       } else if (deploymentType === 'interval') {
         const numberOfExecutions = await input({
@@ -144,10 +147,11 @@ export const addCommandInit = (program: Command) => {
             return true
           },
         })
-        const interval = await input({
-          message: 'What is the interval (in seconds)?',
+        const unparsedInterval = await input({
+          message: 'What is the interval duration (eg. 1s, 5min or 2h)?',
           validate: (input) => {
-            const value = Number(input)
+            const parsed = (parse(input) ?? 0).toString()
+            const value = Number(parsed)
             if (isNaN(value) || value <= 0) {
               return 'Please enter a valid number greater than 0'
             }
@@ -155,9 +159,12 @@ export const addCommandInit = (program: Command) => {
           },
         })
 
+        const parsedDuration = (parse(unparsedInterval) ?? 0).toString()
+        const durationInMilliseconds = Number(parsedDuration)
+
         execution = {
           type: 'interval',
-          intervalInMs: Number(interval) * 1000,
+          intervalInMs: Number(durationInMilliseconds),
           numberOfExecutions: Number(numberOfExecutions),
         }
       } else {
@@ -212,7 +219,10 @@ export const addCommandInit = (program: Command) => {
         )
       }
 
+      console.log()
       console.log('🎉 Successfully created "acurast.json" and ".env" files')
+      console.log()
       console.log("You can deploy your app using 'acurast deploy'")
+      console.log()
     })
 }
