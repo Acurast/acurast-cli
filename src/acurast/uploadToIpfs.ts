@@ -4,11 +4,6 @@ import fs from 'fs'
 import path from 'path'
 import { getEnv } from '../config.js'
 
-const environment = {
-  ipfsUrl: getEnv('ACURAST_IPFS_URL'),
-  ipfsApiKey: getEnv('ACURAST_IPFS_API_KEY'),
-}
-
 export const uploadScript = async (
   config: { file: string } | { script: string }
 ) => {
@@ -27,6 +22,11 @@ export const uploadScript = async (
   form.append('file', fs.createReadStream(tempFile), 'script.js')
   form.append('pinataOptions', '{"cidVersion": 0}')
   form.append('pinataMetadata', '{"name": "script.js"}')
+
+  const environment = {
+    ipfsUrl: getEnv('ACURAST_IPFS_URL'),
+    ipfsApiKey: getEnv('ACURAST_IPFS_API_KEY'),
+  }
 
   try {
     const res = await axios.post<{ IpfsHash: string }>(
