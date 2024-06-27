@@ -11,6 +11,17 @@ export interface AcurastProjectConfig {
   // A boolean to specify if only attested devices are allowed to run the app.
   onlyAttestedDevices: boolean
 
+  // The start time of the deployment.
+  startAt?:
+    | {
+        // The deployment will start the specified number of milliseconds from now.
+        msFromNow: number
+      }
+    | {
+        // The deployment will start at the specified timestamp.
+        timestamp: number | string
+      }
+
   // Defines the assignment strategy.
   assignmentStrategy:
     | {

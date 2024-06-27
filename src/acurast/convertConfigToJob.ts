@@ -15,7 +15,19 @@ export const DEFAULT_REWARD = 1_000_000_000
 export const DEFAULT_MAX_ALLOWED_START_DELAY_MS = 10_000
 export const DEFAULT_PROCESSOR_REPUTATION = 0
 
-const START_DELAY = 5 * minute
+const DEFAULT_START_DELAY = 5 * minute
+
+function isStartAtMsFromNow(
+  startAt: { msFromNow: number } | { timestamp: string | number }
+): startAt is { msFromNow: number } {
+  return (startAt as { msFromNow: number }).msFromNow !== undefined
+}
+
+function isStartAtTimestamp(
+  startAt: { msFromNow: number } | { timestamp: string | number }
+): startAt is { timestamp: string | number } {
+  return (startAt as { timestamp: string | number }).timestamp !== undefined
+}
 
 export const convertConfigToJob = (
   config: AcurastProjectConfig
@@ -28,7 +40,16 @@ export const convertConfigToJob = (
     config.minProcessorReputation ?? DEFAULT_PROCESSOR_REPUTATION
 
   const now = Date.now()
-  const startTime = now + START_DELAY // TODO: Make configurable
+
+  let startTime = now + DEFAULT_START_DELAY
+  if (config.startAt) {
+    if (isStartAtMsFromNow(config.startAt)) {
+      startTime = now + config.startAt.msFromNow
+    }
+    if (isStartAtTimestamp(config.startAt)) {
+      startTime = new Date(config.startAt.timestamp).getTime()
+    }
+  }
 
   let duration: number | undefined
   let endTime: number | undefined
