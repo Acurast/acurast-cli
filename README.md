@@ -104,7 +104,11 @@ ACURAST_IPFS_API_KEY=eyJhb...
 - `projectName`: The name of the project.
 - `fileUrl`: The path to the bundled file, including all dependencies (e.g., `dist/bundle.js`).
 - `network`: The network on which the project will be deployed. (e.g. `canary`)
-- `onlyAttestedDevices`: A boolean to specify if only attested devices are allowed to run the app.- `assignmentStrategy`: Defines the assignment strategy, which can be:
+- `onlyAttestedDevices`: A boolean to specify if only attested devices are allowed to run the app.
+- `startAt`: The start time of the deployment.
+  - `msFromNow`: The deployment will start the specified number of milliseconds from now.
+  - `timestamp`: The deployment will start at the specified timestamp.
+- `assignmentStrategy`: Defines the assignment strategy, which can be:
   - `type`: `AssignmentStrategyVariant.Single`: Assigns one set of processors for a deployment. If instantMatch is provided, specifies processors and maximum allowed start delay:
     - `processor`: Processor address.
     - `maxAllowedStartDelayInMs`: Maximum allowed start delay in milliseconds.
