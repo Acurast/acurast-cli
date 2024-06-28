@@ -15,15 +15,15 @@ export const DEFAULT_REWARD = 1_000_000_000
 export const DEFAULT_MAX_ALLOWED_START_DELAY_MS = 10_000
 export const DEFAULT_PROCESSOR_REPUTATION = 0
 
-const DEFAULT_START_DELAY = 5 * minute
+export const DEFAULT_START_DELAY = 5 * minute
 
-function isStartAtMsFromNow(
+export function isStartAtMsFromNow(
   startAt: { msFromNow: number } | { timestamp: string | number }
 ): startAt is { msFromNow: number } {
   return (startAt as { msFromNow: number }).msFromNow !== undefined
 }
 
-function isStartAtTimestamp(
+export function isStartAtTimestamp(
   startAt: { msFromNow: number } | { timestamp: string | number }
 ): startAt is { timestamp: string | number } {
   return (startAt as { timestamp: string | number }).timestamp !== undefined

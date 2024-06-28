@@ -5,6 +5,12 @@ import { delay, Listr } from 'listr2'
 import { DeploymentStatus, createJob } from '../acurast/createJob.js'
 import { storeDeployment } from '../acurast/storeDeployment.js'
 import { acurastColor } from '../util.js'
+import { humanTime } from '../util/humanTime.js'
+import {
+  DEFAULT_START_DELAY,
+  isStartAtMsFromNow,
+  isStartAtTimestamp,
+} from '../acurast/convertConfigToJob.js'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -58,8 +64,28 @@ export const addCommandDeploy = (program: Command) => {
         console.log(`Deploying project "${config.projectName}"`)
         console.log()
 
+        if (config.startAt) {
+        }
+
+        // TODO: Deduplicate this code
+        const now = Date.now()
+        let startTime = now + DEFAULT_START_DELAY
+        if (config.startAt) {
+          if (isStartAtMsFromNow(config.startAt)) {
+            startTime = now + config.startAt.msFromNow
+          }
+          if (isStartAtTimestamp(config.startAt)) {
+            startTime = new Date(config.startAt.timestamp).getTime()
+          }
+        }
+
+        if (startTime < now) {
+          console.log(`Start time cannot be in the past`)
+          return
+        }
+
         console.log(
-          `The deployment will be scheduled to start in ${acurastColor('5 minutes')}.`
+          `The deployment will be scheduled to start in ${acurastColor(`${humanTime(now - startTime, true)}`)}.`
         )
         console.log()
 
