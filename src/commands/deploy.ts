@@ -11,6 +11,7 @@ import {
   isStartAtMsFromNow,
   isStartAtTimestamp,
 } from '../acurast/convertConfigToJob.js'
+import { validateConfig } from '../util/validateConfig.js'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -60,11 +61,26 @@ export const addCommandDeploy = (program: Command) => {
           throw new Error('No project found')
         }
 
+        const configResult = validateConfig(config)
+
+        if (!configResult.success) {
+          console.log()
+          console.log('⚠️ Project config is invalid:')
+          console.log()
+          console.log(configResult.error)
+          return
+        }
+
         console.log()
         console.log(`Deploying project "${config.projectName}"`)
         console.log()
 
-        if (config.startAt) {
+        if (configResult.notes) {
+          console.log('⚠️ Project config is valid, but here are some notes:')
+          configResult.notes.forEach((issue) => {
+            console.log('- ', issue.message)
+          })
+          console.log()
         }
 
         // TODO: Deduplicate this code
