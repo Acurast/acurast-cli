@@ -165,6 +165,15 @@ export const addCommandLive = (program: Command) => {
       )
       spinner.start()
 
+      let terminations = 0
+      const registerTermination = () => {
+        terminations++
+        if (terminations >= liveCodeProcessors.length) {
+          spinner.stop()
+          process.exit(0)
+        }
+      }
+
       liveCodeProcessors.forEach((processor) => {
         sendCode(
           processor.publicKey,
@@ -177,23 +186,23 @@ export const addCommandLive = (program: Command) => {
               console.log(
                 `${shortenString(processor.publicKey)} ${green('Success')}`
               )
-              // process.exit(0)
+              registerTermination()
             } else if (event.type === 'error') {
               console.log(
                 `${shortenString(processor.publicKey)} ${red('Error')}: ${event.data}`
               )
-              // process.exit(1)
+              registerTermination()
             } else {
               if (Array.isArray(event.data)) {
                 console.log(
                   shortenString(processor.publicKey),
-                  acurastColor(`Log: `),
+                  acurastColor(`Log:`),
                   ...event.data
                 )
               } else {
                 console.log(
                   shortenString(processor.publicKey),
-                  acurastColor(`Log: `),
+                  acurastColor(`Log:`),
                   event.data
                 )
               }
