@@ -46,7 +46,8 @@
     "needle": "^3.3.1",
     "open": "^8.4.2",
     "parse-duration": "^1.1.0",
-    "stdin-discarder": "^0.2.2"
+    "stdin-discarder": "^0.2.2",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/figlet": "^1.5.8",
