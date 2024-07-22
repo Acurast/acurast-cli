@@ -2,7 +2,7 @@ import { Command, Option } from 'commander'
 import { loadConfig } from '../acurast/loadConfig.js'
 import { getEnv, validateDeployEnvVars } from '../config.js'
 import { delay, Listr } from 'listr2'
-import { DeploymentStatus, createJob } from '../acurast/createJob.js'
+import { createJob } from '../acurast/createJob.js'
 import { storeDeployment } from '../acurast/storeDeployment.js'
 import { acurastColor } from '../util.js'
 import { humanTime } from '../util/humanTime.js'
@@ -12,8 +12,10 @@ import {
   isStartAtTimestamp,
 } from '../acurast/convertConfigToJob.js'
 import { validateConfig } from '../util/validateConfig.js'
+import { DeploymentStatus } from '../acurast/types.js'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+export const RPC = 'wss://canarynet-ws-1.acurast-h-server-2.papers.tech'
 
 export const addCommandDeploy = (program: Command) => {
   program
@@ -31,10 +33,34 @@ export const addCommandDeploy = (program: Command) => {
         'Run the deploy step and run it on in a live coding environment on a processor.'
       )
     )
+    // .addOption(
+    //   new Option(
+    //     '-j, --json',
+    //     'Output a json on each of the steps of the deployment process. This is useful if the CLI is started from a script or another program.'
+    //   )
+    // )
+    // .addOption(
+    //   new Option(
+    //     '-nw, --no-wait',
+    //     'Do not wait for the deployment to finish. The CLI will exit as soon as it has submitted the deployment to the Acurast platform. Note: If environment variables are set, the CLI will have to wait longer.'
+    //   )
+    // )
+    // .addOption(
+    //   new Option(
+    //     '-n, --non-interactive',
+    //     'Do not ask for any input. Use this when triggering the CLI in a CD/CI pipeline.'
+    //   )
+    // )
     .action(
       async (
         project: string,
-        options: { dryRun?: boolean; live?: boolean }
+        options: {
+          dryRun?: boolean
+          live?: boolean
+          // json?: boolean
+          // noWait?: boolean
+          // nonInteractive?: boolean
+        }
       ) => {
         const DEBUG = getEnv('DEBUG')
         if (DEBUG === 'true' && options) {
@@ -45,6 +71,24 @@ export const addCommandDeploy = (program: Command) => {
           console.log('Live coding not implemented yet')
           return
         }
+
+        // TODO: Add
+        // if (options.json) {
+        //   console.log('JSON output not implemented yet')
+        //   return
+        // }
+
+        // TODO: Add
+        // if (options.noWait) {
+        //   console.log('No-wait mode not implemented yet')
+        //   return
+        // }
+
+        // TODO: Add
+        // if (options.nonInteractive) {
+        //   console.log('Non-interactive mode not implemented yet')
+        //   return
+        // }
 
         validateDeployEnvVars() // TODO: Also check the environment variables that need to be added to the deployment
 
@@ -139,6 +183,7 @@ export const addCommandDeploy = (program: Command) => {
 
         const jobRegistration = createJob(
           config,
+          RPC,
           (status: DeploymentStatus, data) => {
             if (status === DeploymentStatus.Uploaded) {
               // ipfsHash

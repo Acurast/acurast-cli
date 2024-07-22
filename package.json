@@ -12,9 +12,10 @@
   ],
   "scripts": {
     "start": "npm run build && node dist/index.js",
-    "build": "npx tsc",
+    "build": "npx tsc && cp ./src/util/live-code-processor.js ./dist/util/live-code-processor.js",
     "setup": "npm run build && npm i -g .",
     "test": "jest",
+    "x": "npm run build && node ./dist/index.js live",
     "prettier": "npx prettier . --write"
   },
   "keywords": [
@@ -30,9 +31,11 @@
     "url": "https://github.com/acurast/acurast-cli"
   },
   "dependencies": {
+    "@acurast/dapp": "^1.0.1-beta.6",
     "@inquirer/prompts": "^5.0.5",
     "@polkadot/api": "^11.2.1",
     "@polkadot/keyring": "^12.6.2",
+    "@taquito/michel-codec": "^20.0.1",
     "@types/cli-progress": "^3.11.5",
     "ansis": "^3.2.0",
     "axios": "^1.7.2",
@@ -42,7 +45,9 @@
     "figlet": "^1.7.0",
     "form-data": "^4.0.0",
     "inquirer": "^9.2.23",
+    "is-interactive": "^2.0.0",
     "listr2": "^8.2.1",
+    "log-symbols": "^6.0.0",
     "needle": "^3.3.1",
     "open": "^8.4.2",
     "parse-duration": "^1.1.0",

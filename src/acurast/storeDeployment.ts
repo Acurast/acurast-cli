@@ -6,12 +6,12 @@ import {
 } from '../types.js'
 import path from 'path'
 
-function ensureDirectoryExistence(filePath: string) {
+export const ensureDirectoryExistence = (filePath: string) => {
   var dirname = path.dirname(filePath)
   if (existsSync(dirname)) {
     return true
   }
-  ensureDirectoryExistence(dirname)
+
   mkdirSync(dirname)
 }
 
