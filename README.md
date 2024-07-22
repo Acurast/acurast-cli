@@ -45,6 +45,7 @@ To use the Acurast CLI, type `acurast` followed by any of the available options 
 ### Commands
 
 - `deploy [options] [project]` - Deploy the current project to the Acurast platform.
+- `live [options] [project]` - Setup a "live-code-processor" and run your project on the processor in real time.
 - `init` - Create an acurast.json file and .env file.
 - `open` - Open the Acurast resources in your browser.
 - `help [command]` - Display help for command.
@@ -136,6 +137,28 @@ ACURAST_IPFS_API_KEY=eyJhb...
 `ACURAST_MNEMONIC`: The mnemonic used to deploy the app. Make sure the account has some cACU! You can claim some on the [faucet](https://faucet.acurast.com).
 `ACURAST_IPFS_URL`: The URL of the IPFS gateway, eg. `https://api.pinata.cloud`.
 `ACURAST_IPFS_API_KEY`: The API key to access the IPFS gateway. You can [register here](https://pinata.cloud/) to get an API key.
+
+## Live Code Feature
+
+For easier development of acurast deployments, we added a feature that we call "Live Code". To use this feature, you can dedicate one or multiple processors to run a piece of code for an extended period of time, which can then on-demand execute your code and return the result. This makes development and debugging a lot faster because you can see console.logs and errors.
+
+To get started, you first have to set up a processor to run the live-code deployment. You can do this by running
+
+```
+acurast live --setup
+```
+
+During setup, you can choose the duration of the deployment.
+
+Follow the instructions in the CLI. There is currently a step where a public key has to be manually copy/pasted from the web-console. This step will soon be fully automated.
+
+After the deployment has started (after 5 minutes), you can then run
+
+```
+acurast live
+```
+
+This will run your project in the live-processor. It will use the same configuration that was set up during the `acurast init` step.
 
 ## Development
 

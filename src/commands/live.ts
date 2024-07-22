@@ -84,7 +84,7 @@ export const addCommandLive = (program: Command) => {
                 maxNetworkRequests: 0,
                 maxStorage: 0,
               },
-              numberOfReplicas: 5,
+              numberOfReplicas: 1,
               requiredModules: [],
               minProcessorReputation: 0,
               maxCostPerExecution: 10000000000,
