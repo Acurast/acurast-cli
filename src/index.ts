@@ -32,7 +32,7 @@ program
 addCommandDeploy(program)
 addCommandInit(program)
 // addCommandJobs(program)
-// addCommandLive(program)
+addCommandLive(program)
 // addCommandLogin(program)
 // addCommandLogout(program)
 addCommandOpen(program)

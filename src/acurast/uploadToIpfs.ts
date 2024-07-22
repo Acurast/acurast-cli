@@ -21,7 +21,7 @@ export const uploadScript = async (
   const form = new FormDataModule()
   form.append('file', fs.createReadStream(tempFile), 'script.js')
   form.append('pinataOptions', '{"cidVersion": 0}')
-  form.append('pinataMetadata', '{"name": "script.js"}')
+  form.append('pinataMetadata', '{"name": "script.js"}') // TODO: name of project?
 
   const environment = {
     ipfsUrl: getEnv('ACURAST_IPFS_URL'),
