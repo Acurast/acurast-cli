@@ -5,8 +5,6 @@ const require = Module.createRequire(import.meta.url)
 import type { AcurastClient } from '@acurast/dapp'
 const Acurast = require('@acurast/dapp')
 
-import { packDataBytes, unpackDataBytes } from '@taquito/michel-codec'
-
 const client: AcurastClient = new Acurast.AcurastClient([
   'wss://websocket-proxy-1.prod.gke.acurast.com/',
   'wss://websocket-proxy-2.prod.gke.acurast.com/',
@@ -41,26 +39,18 @@ export const sendCode = async (
   })
 
   client.onMessage((message: any) => {
-    const payload = unpackDataBytes({
-      bytes: Buffer.from(message.payload).toString('hex'),
-    })
+    const payload = Buffer.from(message.payload, 'hex').toString('utf8')
     // console.log({
     //   sender: Buffer.from(message.sender).toString('hex'),
     //   recipient: Buffer.from(message.recipient).toString('hex'),
     //   payload,
     // })
     try {
-      callback(JSON.parse((payload as any).string))
+      callback(JSON.parse(payload as any))
     } catch (e) {
-      callback((payload as any).string)
+      callback(payload as any)
     }
   })
 
-  const wrapper = `(() => { ${code} })()`
-
-  const packed = packDataBytes({
-    string: wrapper,
-  })
-
-  client.send(recipientPublicKey, packed.bytes)
+  client.send(recipientPublicKey, code)
 }

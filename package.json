@@ -35,7 +35,6 @@
     "@inquirer/prompts": "^5.0.5",
     "@polkadot/api": "^11.2.1",
     "@polkadot/keyring": "^12.6.2",
-    "@taquito/michel-codec": "^20.0.1",
     "@types/cli-progress": "^3.11.5",
     "ansis": "^3.2.0",
     "axios": "^1.7.2",

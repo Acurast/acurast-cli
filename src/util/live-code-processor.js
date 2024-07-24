@@ -3,8 +3,8 @@ _STD_.ws.open(
     () => {
         print("open: success")
         _STD_.ws.registerPayloadHandler((payload) => {
-            const pack = (type, data) => {
-                return _STD_.chains.tezos.encoding.pack(JSON.stringify({ type, data }))
+            const toHex = (type, data) => {
+                return Buffer.from(JSON.stringify({ type, data }), 'utf8').toString('hex')
             }
 
             const respond = (recipient, data) => {
@@ -12,26 +12,26 @@ _STD_.ws.open(
             }
 
             try {
-                const unpacked = _STD_.chains.tezos.encoding.unpack(payload.payload)
-
-                print(unpacked);
+                const code = Buffer.from(payload.payload, 'hex').toString('utf8')
 
                 console.log = (...args) => {
                     print(args)
-                    respond(payload.sender, pack("log", args))
+                    respond(payload.sender, toHex("log", args))
                 }
 
-                const evalResult = eval(unpacked);
+                const wrapped = `(() => { ${code} })()`
+
+                const evalResult = eval(wrapped);
 
                 Promise.resolve(evalResult).then(res => {
                     print("Sending back response");
                     print(res);
-                    respond(payload.sender, pack("success", res))
+                    respond(payload.sender, toHex("success", res))
                 })
             } catch (err) {
                 print("Sending back error");
                 print(err)
-                respond(payload.sender, pack("error", err.message))
+                respond(payload.sender, toHex("error", err.message))
             }
         })
     },
