@@ -48,6 +48,22 @@ export const addCommandLive = (program: Command) => {
         const parsedDuration = (parse(unparsedDuration) ?? 0).toString()
         const durationInMilliseconds = Number(parsedDuration)
 
+        const numberOfProcessors = Number(
+          await input({
+            message: 'On how many processors?:',
+            validate: (input) => {
+              const value = Number(input)
+              if (isNaN(value) || value <= 0) {
+                return 'Please enter a valid number greater than 0'
+              }
+              if (isNaN(value) || value > 10) {
+                return 'Please enter a number lower than 10'
+              }
+              return true
+            },
+          })
+        )
+
         const spinner = ora.default('Setting up live code environment')
         spinner.start()
 
@@ -84,7 +100,7 @@ export const addCommandLive = (program: Command) => {
                 maxNetworkRequests: 0,
                 maxStorage: 0,
               },
-              numberOfReplicas: 1,
+              numberOfReplicas: numberOfProcessors,
               requiredModules: [],
               minProcessorReputation: 0,
               maxCostPerExecution: 10000000000,
@@ -131,6 +147,12 @@ export const addCommandLive = (program: Command) => {
           publicKey: processorPublicKey,
         })
 
+        if (numberOfProcessors > 1) {
+          console.log(
+            'To add more processors to the list, open ".acurast/live-code-processors.json" and add them manually.'
+          )
+        }
+
         console.log(
           'Live code environment set up! Run `acurast live` to run your code on that processor.'
         )
@@ -165,6 +187,15 @@ export const addCommandLive = (program: Command) => {
       )
       spinner.start()
 
+      let terminations = 0
+      const registerTermination = () => {
+        terminations++
+        if (terminations >= liveCodeProcessors.length) {
+          spinner.stop()
+          process.exit(0)
+        }
+      }
+
       liveCodeProcessors.forEach((processor) => {
         sendCode(
           processor.publicKey,
@@ -177,23 +208,23 @@ export const addCommandLive = (program: Command) => {
               console.log(
                 `${shortenString(processor.publicKey)} ${green('Success')}`
               )
-              // process.exit(0)
+              registerTermination()
             } else if (event.type === 'error') {
               console.log(
                 `${shortenString(processor.publicKey)} ${red('Error')}: ${event.data}`
               )
-              // process.exit(1)
+              registerTermination()
             } else {
               if (Array.isArray(event.data)) {
                 console.log(
                   shortenString(processor.publicKey),
-                  acurastColor(`Log: `),
+                  acurastColor(`Log:`),
                   ...event.data
                 )
               } else {
                 console.log(
                   shortenString(processor.publicKey),
-                  acurastColor(`Log: `),
+                  acurastColor(`Log:`),
                   event.data
                 )
               }
