@@ -17,9 +17,14 @@ import { addCommandTest } from './commands/test.js'
 import { addCommandLive } from './commands/live.js'
 import { addCommandWatch } from './commands/watch.js'
 import { acurastColor } from './util.js'
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 // Read package.json
-const packagePath = path.resolve('package.json')
+const packagePath = join(__dirname, '..', 'package.json')
 const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf-8'))
 
 const program = new Command()
