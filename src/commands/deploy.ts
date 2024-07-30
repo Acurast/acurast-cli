@@ -14,6 +14,7 @@ import {
 import { validateConfig } from '../util/validateConfig.js'
 import { DeploymentStatus } from '../acurast/types.js'
 import { consoleOutput } from '../util/console-output.js'
+import { getWallet } from '../util/getWallet.js'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -110,6 +111,11 @@ export const addCommandDeploy = (program: Command) => {
           })
           log('')
         }
+
+        const wallet = await getWallet()
+
+        log('The CLI will use the following address: ' + wallet.address)
+        log('')
 
         // TODO: Deduplicate this code
         const now = Date.now()
