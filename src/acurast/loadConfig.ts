@@ -2,7 +2,7 @@ import fs from 'fs'
 import { AcurastCliConfig, AcurastProjectConfig } from '../types.js'
 
 export const loadConfig = (
-  project: string
+  project?: string
 ): AcurastProjectConfig | undefined => {
   const filePath = './acurast.json'
   const fileExists = fs.existsSync(filePath)
