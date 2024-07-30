@@ -1,9 +1,9 @@
-import fs from 'fs'
+import fs, { appendFileSync } from 'fs'
 import path from 'path'
 import { Command } from 'commander'
 import { existsSync, writeFileSync } from 'fs'
 import { confirm, input, select } from '@inquirer/prompts'
-import { ENV_HELP_LINK } from '../constants.js'
+import { ENV_HELP_LINK, getFaucetLinkForAddress } from '../constants.js'
 import {
   DEFAULT_MAX_ALLOWED_START_DELAY_MS,
   DEFAULT_REWARD,
@@ -14,6 +14,8 @@ import {
   AssignmentStrategyVariant,
 } from '../types.js'
 import { parse } from '../util/parse-duration.js'
+import { generateMnemonic } from 'bip39'
+import { getWallet } from '../util/getWallet.js'
 
 export const addCommandInit = (program: Command) => {
   program
@@ -46,36 +48,74 @@ export const addCommandInit = (program: Command) => {
         }
       })()
 
+      const requiredEnvVariables = [
+        'ACURAST_MNEMONIC',
+        'ACURAST_IPFS_URL',
+        'ACURAST_IPFS_API_KEY',
+      ]
+
+      const mnemonic = generateMnemonic()
+
+      const envVarsText = requiredEnvVariables
+        .slice(1)
+        .map((el) => `\n# ${el}=`)
+        .join('')
+
       const hasEnvFile = existsSync('./.env')
       if (hasEnvFile) {
         console.log(
-          `You already have a .env file. Visit ${ENV_HELP_LINK} to learn more.`
+          `You already have a .env file. The following variables will be added to it:`
         )
+        requiredEnvVariables.forEach((envVar) => {
+          console.log(`- ${envVar}`)
+        })
 
-        if (!hasEnvFile) {
-          const createEnv = await confirm({
-            message: "You don't have a .env file. Do you want to create one?",
-          })
+        appendFileSync('./.env', `\n\nACURAST_MNEMONIC=${mnemonic}`)
 
-          if (createEnv) {
-            writeFileSync(
-              './.env',
-              `# ACURAST_MNEMONIC=\n# ACURAST_IPFS_URL=\n# ACURAST_IPFS_API_KEY=\n`
-            )
+        appendFileSync('./.env', envVarsText)
+      }
 
-            console.log(
-              `.env file created. Visit ${ENV_HELP_LINK} to learn more.`
-            )
-          }
+      if (!hasEnvFile) {
+        const createEnv = await confirm({
+          message: "You don't have a .env file. Do you want to create one?",
+        })
+
+        if (createEnv) {
+          writeFileSync('./.env', `ACURAST_MNEMONIC=${mnemonic}${envVarsText}`)
+
+          console.log(
+            `.env file created. Visit ${ENV_HELP_LINK} to learn more.`
+          )
         }
       }
 
+      const wallet = await getWallet()
+      console.log('')
+      console.log('The CLI will use the following address: ' + wallet.address)
+      console.log('')
+      console.log(
+        `Visit the faucet to get some tokens: ${getFaucetLinkForAddress(wallet.address)}`
+      )
+      console.log('')
+
       const packagePath = path.resolve('package.json')
-      const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf-8'))
+      if (!existsSync(packagePath)) {
+        console.log(
+          'No package.json file found. This is unusual. Are you sure you are in the right directory?'
+        )
+      }
+
+      let projectNameFromPackageJson = undefined
+
+      try {
+        const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf-8'))
+
+        projectNameFromPackageJson = packageJson.name
+      } catch {}
 
       const projectName = await input({
         message: 'Enter the name of the project:',
-        default: packageJson.name,
+        default: projectNameFromPackageJson,
         validate: (input) => {
           if (!input) {
             return 'Please enter a valid name'
@@ -173,7 +213,7 @@ export const addCommandInit = (program: Command) => {
 
       const fileUrl = await input({
         message: 'What is the bundled javascript file to run?',
-        default: packageJson.main,
+        default: projectNameFromPackageJson,
         validate: (input) => {
           if (!input) {
             return 'Please enter a valid name'

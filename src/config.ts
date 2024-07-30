@@ -18,7 +18,7 @@ export const getEnv = (key: EnvKeys): string => {
   if (!value) {
     const defaultValue = defaultValues[key]
     if (defaultValue === undefined) {
-      throw new Error(`${key} is not defined.`)
+      throw new Error(`${key} is not defined in the environment.`)
     }
     return defaultValue
   }
