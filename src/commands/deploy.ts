@@ -290,14 +290,6 @@ export const addCommandDeploy = (program: Command) => {
             return statusPromises[status].promise
           }
 
-          jobRegistration
-            .then((job) => {
-              // console.log(job);
-            })
-            .catch((err) => {
-              console.error(err)
-            })
-
           let count = 1_000_000 // TODO: replace with duration until start time
           let deployingTimer: NodeJS.Timeout
           const cancelUpdateTitle = (
@@ -425,7 +417,7 @@ export const addCommandDeploy = (program: Command) => {
                             //   },
                             // },
                           ],
-                          { concurrent: true, exitOnError: false }
+                          { concurrent: true, exitOnError: true }
                         ),
                     },
                     {
@@ -475,12 +467,24 @@ export const addCommandDeploy = (program: Command) => {
             { concurrent: false, rendererOptions: { collapseSubtasks: false } }
           )
 
+          jobRegistration
+            .then((job) => {
+              // console.log(job);
+            })
+            .catch((err) => {
+              // console.error(err)
+              // if (err.message) {
+              //   throw new Error(err.message)
+              // }
+              throw err
+            })
           try {
             await tasks.run()
 
             process.exit(0)
           } catch (e) {
             console.log('Error', e)
+            process.exit(1)
           }
         }
       }
