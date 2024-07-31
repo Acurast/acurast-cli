@@ -374,7 +374,8 @@ export const addCommandDeploy = (program: Command) => {
                       title:
                         'Waiting for deployment to be matched with processors',
                       enabled: () =>
-                        !options.exitEarly && hasEnvironmentVariables,
+                        !options.exitEarly ||
+                        (options.exitEarly && hasEnvironmentVariables),
                       task: async (ctx, task): Promise<void> => {
                         await awaitStatus(DeploymentStatus.Matched)
                         task.title = 'Matched'
@@ -383,7 +384,8 @@ export const addCommandDeploy = (program: Command) => {
                     {
                       title: 'Waiting for processor acknowledgements',
                       enabled: () =>
-                        !options.exitEarly && hasEnvironmentVariables,
+                        !options.exitEarly ||
+                        (options.exitEarly && hasEnvironmentVariables),
                       task: (ctx, task): Listr =>
                         task.newListr(
                           [
