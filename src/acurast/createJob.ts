@@ -1,16 +1,11 @@
 import '@polkadot/api-augment'
-import { ApiPromise, WsProvider, Keyring } from '@polkadot/api'
-import { KeyringPair } from '@polkadot/keyring/types'
+import { ApiPromise, WsProvider } from '@polkadot/api'
 import { uploadScript } from './uploadToIpfs.js'
-import { getEnv } from '../config.js'
-import {
-  AcurastProjectConfig,
-  AssignmentStrategyVariant,
-  JobRegistration,
-} from '../types.js'
+import { AcurastProjectConfig, JobRegistration } from '../types.js'
 import { convertConfigToJob } from './convertConfigToJob.js'
 import { DeploymentStatus } from './types.js'
 import { registerJob } from './registerJob.js'
+import { getWallet } from '../util/getWallet.js'
 
 export const createJob = async (
   config: AcurastProjectConfig,
@@ -26,10 +21,7 @@ export const createJob = async (
     noInitWarn: true,
   })
 
-  const keyring = new Keyring({ type: 'sr25519' })
-  const wallet = keyring.addFromMnemonic(getEnv('ACURAST_MNEMONIC'), {
-    name: 'AcurastCli',
-  })
+  const wallet = await getWallet()
 
   const ipfsHash = await uploadScript({ file: config.fileUrl })
 

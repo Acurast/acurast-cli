@@ -14,6 +14,11 @@ import {
 import { validateConfig } from '../util/validateConfig.js'
 import { DeploymentStatus } from '../acurast/types.js'
 import { consoleOutput } from '../util/console-output.js'
+import { getWallet } from '../util/getWallet.js'
+import { getBalance } from '../util/getBalance.js'
+import { ApiPromise, WsProvider } from '@polkadot/api'
+import { getFaucetLinkForAddress } from '../constants.js'
+import * as ora from '../util/ora.js'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -60,7 +65,6 @@ export const addCommandDeploy = (program: Command) => {
           nonInteractive?: boolean
         }
       ) => {
-        console.log(options)
         const log = consoleOutput(options.output)
         const toAcurastColor = (text: string) => {
           if (options.output === 'json') {
@@ -72,8 +76,6 @@ export const addCommandDeploy = (program: Command) => {
         if (DEBUG === 'true' && options) {
           // console.log("Options", options);
         }
-
-        validateDeployEnvVars() // TODO: Also check the environment variables that need to be added to the deployment
 
         let config
         try {
@@ -99,6 +101,13 @@ export const addCommandDeploy = (program: Command) => {
           return
         }
 
+        try {
+          validateDeployEnvVars() // TODO: Also check the environment variables that need to be added to the deployment
+        } catch (e: any) {
+          log(e.message)
+          return
+        }
+
         log('')
         log(`Deploying project "${config.projectName}"`)
         log('')
@@ -110,6 +119,36 @@ export const addCommandDeploy = (program: Command) => {
           })
           log('')
         }
+
+        const spinner = ora.default('Fetching account balance...')
+        spinner.start()
+
+        const wallet = await getWallet()
+
+        const wsProvider = new WsProvider(RPC)
+        const api = await ApiPromise.create({
+          provider: wsProvider,
+          noInitWarn: true,
+        })
+
+        const balance = await getBalance(wallet.address, api)
+
+        await api.disconnect()
+
+        spinner.stop()
+
+        if (balance === BigInt(0)) {
+          log(
+            `Your balance is 0. Visit ${toAcurastColor(
+              getFaucetLinkForAddress(wallet.address)
+            )} to get some tokens.`
+          )
+          log('')
+          return
+        }
+
+        log('The CLI will use the following address: ' + wallet.address)
+        log('')
 
         // TODO: Deduplicate this code
         const now = Date.now()
@@ -251,14 +290,6 @@ export const addCommandDeploy = (program: Command) => {
             return statusPromises[status].promise
           }
 
-          jobRegistration
-            .then((job) => {
-              // console.log(job);
-            })
-            .catch((err) => {
-              console.error(err)
-            })
-
           let count = 1_000_000 // TODO: replace with duration until start time
           let deployingTimer: NodeJS.Timeout
           const cancelUpdateTitle = (
@@ -335,7 +366,8 @@ export const addCommandDeploy = (program: Command) => {
                       title:
                         'Waiting for deployment to be matched with processors',
                       enabled: () =>
-                        !options.exitEarly && hasEnvironmentVariables,
+                        !options.exitEarly ||
+                        (options.exitEarly && hasEnvironmentVariables),
                       task: async (ctx, task): Promise<void> => {
                         await awaitStatus(DeploymentStatus.Matched)
                         task.title = 'Matched'
@@ -344,7 +376,8 @@ export const addCommandDeploy = (program: Command) => {
                     {
                       title: 'Waiting for processor acknowledgements',
                       enabled: () =>
-                        !options.exitEarly && hasEnvironmentVariables,
+                        !options.exitEarly ||
+                        (options.exitEarly && hasEnvironmentVariables),
                       task: (ctx, task): Listr =>
                         task.newListr(
                           [
@@ -384,7 +417,7 @@ export const addCommandDeploy = (program: Command) => {
                             //   },
                             // },
                           ],
-                          { concurrent: true, exitOnError: false }
+                          { concurrent: true, exitOnError: true }
                         ),
                     },
                     {
@@ -434,12 +467,24 @@ export const addCommandDeploy = (program: Command) => {
             { concurrent: false, rendererOptions: { collapseSubtasks: false } }
           )
 
+          jobRegistration
+            .then((job) => {
+              // console.log(job);
+            })
+            .catch((err) => {
+              // console.error(err)
+              // if (err.message) {
+              //   throw new Error(err.message)
+              // }
+              throw err
+            })
           try {
             await tasks.run()
 
             process.exit(0)
           } catch (e) {
             console.log('Error', e)
+            process.exit(1)
           }
         }
       }
