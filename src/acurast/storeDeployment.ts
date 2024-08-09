@@ -12,7 +12,7 @@ export const ensureDirectoryExistence = (filePath: string) => {
     return true
   }
 
-  mkdirSync(dirname)
+  mkdirSync(dirname, { recursive: true })
 }
 
 export const storeDeployment = async (
