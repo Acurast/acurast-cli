@@ -122,11 +122,13 @@ export const addCommandInit = (program: Command) => {
       }
 
       let projectNameFromPackageJson = undefined
+      let mainFileLocationFromPackageJson = undefined
 
       try {
         const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf-8'))
 
         projectNameFromPackageJson = packageJson.name
+        mainFileLocationFromPackageJson = packageJson.main
       } catch {}
 
       const projectName = await input({
@@ -229,7 +231,7 @@ export const addCommandInit = (program: Command) => {
 
       const fileUrl = await input({
         message: 'What is the bundled javascript file to run?',
-        default: projectNameFromPackageJson,
+        default: mainFileLocationFromPackageJson,
         validate: (input) => {
           if (!input) {
             return 'Please enter a valid name'
