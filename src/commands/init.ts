@@ -56,37 +56,53 @@ export const addCommandInit = (program: Command) => {
 
       const mnemonic = generateMnemonic()
 
-      const envVarsText = requiredEnvVariables
-        .slice(1)
-        .map((el) => `\n# ${el}=`)
-        .join('')
-
       const hasEnvFile = existsSync('./.env')
       if (hasEnvFile) {
         console.log(
           `You already have a .env file. The following variables will be added to it:`
         )
-        requiredEnvVariables.forEach((envVar) => {
-          console.log(`- ${envVar}`)
+
+        // Check if we already have the env variables in the .env file
+        const envFileContent = fs.readFileSync('./.env', {
+          encoding: 'utf-8',
         })
 
-        appendFileSync('./.env', `\n\nACURAST_MNEMONIC=${mnemonic}`)
+        const missingEnvVariables = requiredEnvVariables.filter(
+          (envVar) => !envFileContent.includes(envVar)
+        )
 
-        appendFileSync('./.env', envVarsText)
+        if (missingEnvVariables.length === 0) {
+          console.log('All required environment variables are already set')
+        } else {
+          requiredEnvVariables.forEach((envVar) => {
+            console.log(`- ${envVar}`)
+          })
+
+          appendFileSync('./.env', `\n\n# Acurast CLI`)
+
+          if (missingEnvVariables.includes('ACURAST_MNEMONIC')) {
+            process.env['ACURAST_MNEMONIC'] = mnemonic
+            appendFileSync('./.env', `\nACURAST_MNEMONIC=${mnemonic}`)
+          }
+
+          missingEnvVariables.forEach((envVar) => {
+            appendFileSync('./.env', `\n# ${envVar}=`)
+          })
+        }
       }
 
       if (!hasEnvFile) {
-        const createEnv = await confirm({
-          message: "You don't have a .env file. Do you want to create one?",
-        })
+        console.log('There is no .env file, creating one now...')
 
-        if (createEnv) {
-          writeFileSync('./.env', `ACURAST_MNEMONIC=${mnemonic}${envVarsText}`)
+        const envVarsText = requiredEnvVariables
+          .slice(1)
+          .map((el) => `\n# ${el}=`)
+          .join('')
 
-          console.log(
-            `.env file created. Visit ${ENV_HELP_LINK} to learn more.`
-          )
-        }
+        process.env['ACURAST_MNEMONIC'] = mnemonic
+        writeFileSync('./.env', `ACURAST_MNEMONIC=${mnemonic}${envVarsText}`)
+
+        console.log(`.env file created. Visit ${ENV_HELP_LINK} to learn more.`)
       }
 
       const wallet = await getWallet()
