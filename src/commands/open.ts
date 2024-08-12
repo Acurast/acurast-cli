@@ -33,7 +33,7 @@ export const addCommandOpen = (program: Command) => {
           },
           {
             name: 'Explorer',
-            description: 'Acurast Network Explorer',
+            description: 'Acurast Explorer',
             value: explorer,
           },
           {
