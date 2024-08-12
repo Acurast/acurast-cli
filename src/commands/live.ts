@@ -108,6 +108,7 @@ export const addCommandLive = (program: Command) => {
               processorWhitelist: [],
             },
             RPC,
+            [],
             (status, data) => {
               if (status === DeploymentStatus.WaitingForMatch) {
                 const jobId = data.jobIds[0]

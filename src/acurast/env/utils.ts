@@ -3,6 +3,7 @@ import type {
   PubKey,
   EncKeyCurve,
   ProcessorEncryptionKey,
+  JobId,
 } from './types.js'
 
 function findProcessorEncrypionKey(
@@ -36,3 +37,8 @@ export function getProcessorEncrypionKey(
     ? { ...key, publicKey: key.publicKey.replace('0x', '') }
     : undefined
 }
+
+export const sameJobIds = (first: JobId, second: JobId): boolean =>
+  !(
+    first[0].Acurast !== second[0].Acurast || first[0].Tezos !== second[0].Tezos
+  ) && first[1] === second[1]

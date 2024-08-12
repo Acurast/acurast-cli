@@ -1,6 +1,6 @@
 import { Command, Option } from 'commander'
 import { loadConfig } from '../acurast/loadConfig.js'
-import { getEnv, validateDeployEnvVars } from '../config.js'
+import { getEnv, validateDeployEnvVars, getProjectEnvVars } from '../config.js'
 import { delay, Listr } from 'listr2'
 import { createJob } from '../acurast/createJob.js'
 import { storeDeployment } from '../acurast/storeDeployment.js'
@@ -19,6 +19,7 @@ import { getBalance } from '../util/getBalance.js'
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { getFaucetLinkForAddress } from '../constants.js'
 import * as ora from '../util/ora.js'
+import type { EnvVar } from '../acurast/env/types.js'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -102,7 +103,16 @@ export const addCommandDeploy = (program: Command) => {
         }
 
         try {
-          validateDeployEnvVars() // TODO: Also check the environment variables that need to be added to the deployment
+          validateDeployEnvVars()
+        } catch (e: any) {
+          log(e.message)
+          return
+        }
+
+        let envVars: EnvVar[] = []
+
+        try {
+          envVars = getProjectEnvVars(config)
         } catch (e: any) {
           log(e.message)
           return
@@ -203,7 +213,9 @@ export const addCommandDeploy = (program: Command) => {
         const jobRegistration = createJob(
           config,
           RPC,
+          envVars,
           async (status: DeploymentStatus, data) => {
+            // console.log(status, data)
             if (options.output === 'json') {
               log('', JSON.stringify({ status, data }))
             }

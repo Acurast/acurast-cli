@@ -68,6 +68,60 @@ export type JobAssignment = {
   execution: ExecutionSpecifier
 }
 
+export type JobSchedule = {
+  duration: number
+  startTime: Date
+  endTime: Date
+  interval: BigNumber
+  maxStartDelay: number
+}
+
+export type JobModule = 'DataEncryption'
+
+export type JobRegistrationExtra = {
+  requirements: JobRequirements
+  expectedFulfillmentFee?: BigNumber
+}
+
+export type JobRequirements = {
+  assignmentStrategy: AssignmentStrategy
+  slots: number
+  reward: BigNumber
+  minReputation?: BigNumber
+}
+
+export type AssignmentStrategy = {
+  variant: AssignmentStrategyVariant
+  instantMatch?: PlannedExecution[]
+}
+
+export enum AssignmentStrategyVariant {
+  Single = 'Single',
+  Competing = 'Competing',
+}
+
+export type PlannedExecution = {
+  source: string
+  startDelay: BigNumber
+}
+
+// export type JobRegistration = {
+//   script: string
+//   allowedSources?: string[]
+//   allowOnlyVerifiedSources: boolean
+//   schedule: JobSchedule
+//   memory: number
+//   networkRequests: number
+//   storage: number
+//   requiredModules?: JobModule[]
+//   extra: JobRegistrationExtra
+// }
+
+export type Job = {
+  id: JobId
+  registration: JobRegistration
+}
+
 export type JobId = [MultiOrigin, number]
 
 export type JobAssignmentInfo = {
@@ -84,6 +138,7 @@ export type ProcessorEncryptionKey = {
 }
 
 import { RegistryTypes } from '@polkadot/types-codec/types'
+import type { JobRegistration } from '../../types.js'
 
 export const CUSTOM_TYPES: RegistryTypes = {
   PalletAcurastMarketplacePartialJobRegistration: {

@@ -24,8 +24,6 @@ import { firstValueFrom, ReplaySubject } from 'rxjs'
 import { RPC } from '../../commands/deploy.js'
 import { BigNumber } from 'bignumber.js'
 
-const { v4: uuidv4 } = require('uuid')
-
 export const ACURAST_DECIMALS: number = 12
 
 export type AccountInfo = {
@@ -660,7 +658,7 @@ export class AcurastService {
   // }
 
   public async subscribeToEvent<T>(eventSub: EventSub<T>): Promise<UnsubEvent> {
-    const subId: string = uuidv4()
+    const subId: string = Math.random().toString()
     this.eventSubs.set(subId, eventSub)
     if (this.unsubEvents === undefined) {
       const api = await this.connect()

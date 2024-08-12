@@ -6,10 +6,14 @@ import { convertConfigToJob } from './convertConfigToJob.js'
 import { DeploymentStatus } from './types.js'
 import { registerJob } from './registerJob.js'
 import { getWallet } from '../util/getWallet.js'
+import type { EnvVar, JobId } from './env/types.js'
+import { JobEnvironmentService } from './env/jobEnvironmentService.js'
+import { JobEnvHelper } from './env/environmentVars.js'
 
 export const createJob = async (
   config: AcurastProjectConfig,
   rpc: string,
+  envVars: EnvVar[],
   statusCallback: (
     status: DeploymentStatus,
     data?: JobRegistration | any
@@ -32,7 +36,24 @@ export const createJob = async (
 
   statusCallback(DeploymentStatus.Prepared, { job })
 
-  const result = await registerJob(api, wallet, job, statusCallback)
+  // We want to wrap the status callback to set the environment variables
+  const statusCallbackWrapper = (
+    status: DeploymentStatus,
+    data?: JobRegistration | any
+  ) => {
+    if (status === DeploymentStatus.WaitingForMatch) {
+      console.log('WRAPPER', status, data)
+      const envVarsService = new JobEnvHelper()
+
+      data.jobIds.forEach((jobId: JobId) => {
+        envVarsService.setEnvVars({ id: jobId, registration: job }, envVars)
+      })
+    }
+
+    statusCallback(status, data)
+  }
+
+  const result = await registerJob(api, wallet, job, statusCallbackWrapper)
 
   statusCallback(DeploymentStatus.Submit, { txHash: result })
 }
