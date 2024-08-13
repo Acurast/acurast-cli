@@ -275,6 +275,21 @@ export const addCommandInit = (program: Command) => {
         )
       }
 
+      const hasGitignore = existsSync('./.gitignore')
+      if (hasGitignore) {
+        const gitignoreContent = fs.readFileSync('./.gitignore', {
+          encoding: 'utf-8',
+        })
+
+        const hasAcurastFolderInGitignore = gitignoreContent
+          .split('\n')
+          .some((line) => line.startsWith('.acurast'))
+
+        if (!hasAcurastFolderInGitignore) {
+          appendFileSync('./.gitignore', '\n\n# Acurast CLI\n.acurast')
+        }
+      }
+
       console.log()
       console.log('🎉 Successfully created "acurast.json" and ".env" files')
       console.log()
