@@ -285,8 +285,22 @@ export const addCommandInit = (program: Command) => {
           .split('\n')
           .some((line) => line.startsWith('.acurast'))
 
+        const hasEnvFileInGitignore = gitignoreContent
+          .split('\n')
+          .some((line) => line.startsWith('.env'))
+
+        let toAdd = ''
+
         if (!hasAcurastFolderInGitignore) {
-          appendFileSync('./.gitignore', '\n\n# Acurast CLI\n.acurast')
+          toAdd += '\n.acurast'
+        }
+
+        if (!hasEnvFileInGitignore) {
+          toAdd += '\n.env'
+        }
+
+        if (toAdd.length > 0) {
+          appendFileSync('./.gitignore', `\n\n# Acurast CLI${toAdd}`)
         }
       }
 
