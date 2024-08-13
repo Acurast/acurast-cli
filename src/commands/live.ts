@@ -2,7 +2,7 @@ import { Command, Option } from 'commander'
 import { acurastColor } from '../util.js'
 import * as ora from '../util/ora.js'
 import { sendCode } from '../live-code.js'
-import { readFileSync } from 'fs'
+import { readFileSync, statSync } from 'fs'
 import {
   addLiveCodeProcessor,
   readLiveCodeProcessors,
@@ -171,6 +171,20 @@ export const addCommandLive = (program: Command) => {
 
       if (!config) {
         throw new Error('No project found')
+      }
+
+      // Get the file size in bytes
+      const stats = statSync(config.fileUrl)
+
+      // Check if file size is greater than 500KB
+      const fileSizeInBytes = stats.size
+      const fileSizeInKB = fileSizeInBytes / 1024
+
+      if (fileSizeInKB > 500) {
+        console.log(
+          'File is larger than 500kb. This is too big for the live-code environment.'
+        )
+        return
       }
 
       const code = readFileSync(config.fileUrl, 'utf-8')
