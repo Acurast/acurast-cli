@@ -17,7 +17,7 @@ import { AssignmentStrategyVariant } from '../types.js'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { shortenString } from '../util/shortenString.js'
-import { red, green } from 'ansis'
+import { red, green, yellowBright } from 'ansis'
 
 export const addCommandLive = (program: Command) => {
   program
@@ -197,24 +197,34 @@ export const addCommandLive = (program: Command) => {
       }
 
       liveCodeProcessors.forEach((processor) => {
+        const timeout = setTimeout(() => {
+          spinner.stop()
+          console.log(
+            `${shortenString(processor.publicKey)} ${red('Error, no response from processor')}`
+          )
+          registerTermination()
+          spinner.start()
+        }, 5_000)
+
         sendCode(
           processor.publicKey,
           code,
-          (event: { type: 'log' | 'success' | 'error'; data: any }) => {
-            // TODO: Count success and error and abort process if we have all successes and errors.
+          (event: {
+            type: 'start' | 'log' | 'success' | 'error'
+            data: any
+          }) => {
+            if (timeout) {
+              clearTimeout(timeout)
+            }
             spinner.stop()
             // Sometimes messages arrive out of order, so we wait a little bit before exiting
-            if (event.type === 'success') {
+            if (event.type === 'start') {
               console.log(
-                `${shortenString(processor.publicKey)} ${green('Success')}`
+                `${shortenString(processor.publicKey)} ${yellowBright('Acknowledged, running code...')}`
               )
-              registerTermination()
-            } else if (event.type === 'error') {
-              console.log(
-                `${shortenString(processor.publicKey)} ${red('Error')}: ${event.data}`
-              )
-              registerTermination()
-            } else {
+            }
+
+            if (event.type === 'log') {
               if (Array.isArray(event.data)) {
                 console.log(
                   shortenString(processor.publicKey),
@@ -229,6 +239,21 @@ export const addCommandLive = (program: Command) => {
                 )
               }
             }
+
+            if (event.type === 'success') {
+              console.log(
+                `${shortenString(processor.publicKey)} ${green('Success')}`
+              )
+              registerTermination()
+            }
+
+            if (event.type === 'error') {
+              console.log(
+                `${shortenString(processor.publicKey)} ${red('Error')}: ${event.data}`
+              )
+              registerTermination()
+            }
+
             spinner.start()
           }
         )
