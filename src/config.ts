@@ -1,6 +1,6 @@
 import 'dotenv/config'
 
-export const RPC_CANARY = 'wss://canarynet-ws-1.acurast-h-server-2.papers.tech'
+const RPC_CANARY = 'wss://canarynet-ws-1.acurast-h-server-2.papers.tech'
 
 export type EnvKeys =
   | 'ACURAST_MNEMONIC'
