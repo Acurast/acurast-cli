@@ -2,7 +2,7 @@ import { Command, Option } from 'commander'
 import { acurastColor } from '../util.js'
 import * as ora from '../util/ora.js'
 import { sendCode } from '../live-code.js'
-import { readFileSync } from 'fs'
+import { readFileSync, statSync } from 'fs'
 import {
   addLiveCodeProcessor,
   readLiveCodeProcessors,
@@ -11,13 +11,13 @@ import { loadConfig } from '../acurast/loadConfig.js'
 import { parse } from '../util/parse-duration.js'
 import { input } from '@inquirer/prompts'
 import { createJob } from '../acurast/createJob.js'
-import { RPC } from './deploy.js'
 import { DeploymentStatus } from '../acurast/types.js'
 import { AssignmentStrategyVariant } from '../types.js'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { shortenString } from '../util/shortenString.js'
-import { red, green } from 'ansis'
+import { red, green, yellowBright } from 'ansis'
+import { RPC } from '../config.js'
 
 export const addCommandLive = (program: Command) => {
   program
@@ -174,6 +174,20 @@ export const addCommandLive = (program: Command) => {
         throw new Error('No project found')
       }
 
+      // Get the file size in bytes
+      const stats = statSync(config.fileUrl)
+
+      // Check if file size is greater than 500KB
+      const fileSizeInBytes = stats.size
+      const fileSizeInKB = fileSizeInBytes / 1024
+
+      if (fileSizeInKB > 500) {
+        console.log(
+          'File is larger than 500kb. This is too big for the live-code environment.'
+        )
+        return
+      }
+
       const code = readFileSync(config.fileUrl, 'utf-8')
 
       // TODO: Handle expired
@@ -198,24 +212,34 @@ export const addCommandLive = (program: Command) => {
       }
 
       liveCodeProcessors.forEach((processor) => {
+        const timeout = setTimeout(() => {
+          spinner.stop()
+          console.log(
+            `${shortenString(processor.publicKey)} ${red('Error, no response from processor')}`
+          )
+          registerTermination()
+          spinner.start()
+        }, 5_000)
+
         sendCode(
           processor.publicKey,
           code,
-          (event: { type: 'log' | 'success' | 'error'; data: any }) => {
-            // TODO: Count success and error and abort process if we have all successes and errors.
+          (event: {
+            type: 'start' | 'log' | 'success' | 'error'
+            data: any
+          }) => {
+            if (timeout) {
+              clearTimeout(timeout)
+            }
             spinner.stop()
             // Sometimes messages arrive out of order, so we wait a little bit before exiting
-            if (event.type === 'success') {
+            if (event.type === 'start') {
               console.log(
-                `${shortenString(processor.publicKey)} ${green('Success')}`
+                `${shortenString(processor.publicKey)} ${yellowBright('Acknowledged, running code...')}`
               )
-              registerTermination()
-            } else if (event.type === 'error') {
-              console.log(
-                `${shortenString(processor.publicKey)} ${red('Error')}: ${event.data}`
-              )
-              registerTermination()
-            } else {
+            }
+
+            if (event.type === 'log') {
               if (Array.isArray(event.data)) {
                 console.log(
                   shortenString(processor.publicKey),
@@ -230,6 +254,21 @@ export const addCommandLive = (program: Command) => {
                 )
               }
             }
+
+            if (event.type === 'success') {
+              console.log(
+                `${shortenString(processor.publicKey)} ${green('Success')}`
+              )
+              registerTermination()
+            }
+
+            if (event.type === 'error') {
+              console.log(
+                `${shortenString(processor.publicKey)} ${red('Error')}: ${event.data}`
+              )
+              registerTermination()
+            }
+
             spinner.start()
           }
         )

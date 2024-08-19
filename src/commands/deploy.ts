@@ -1,6 +1,11 @@
 import { Command, Option } from 'commander'
 import { loadConfig } from '../acurast/loadConfig.js'
-import { getEnv, validateDeployEnvVars, getProjectEnvVars } from '../config.js'
+import {
+  getEnv,
+  validateDeployEnvVars,
+  RPC,
+  getProjectEnvVars,
+} from '../config.js'
 import { delay, Listr } from 'listr2'
 import { createJob } from '../acurast/createJob.js'
 import { storeDeployment } from '../acurast/storeDeployment.js'
@@ -22,8 +27,6 @@ import * as ora from '../util/ora.js'
 import type { EnvVar } from '../acurast/env/types.js'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-export const RPC = 'wss://canarynet-ws-1.acurast-h-server-2.papers.tech'
 
 export const addCommandDeploy = (program: Command) => {
   program

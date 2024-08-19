@@ -2,16 +2,20 @@ import 'dotenv/config'
 import type { AcurastProjectConfig } from './types.js'
 import type { EnvVar } from './acurast/env/types.js'
 
+const RPC_CANARY = 'wss://canarynet-ws-1.acurast-h-server-2.papers.tech'
+
 export type EnvKeys =
   | 'ACURAST_MNEMONIC'
   | 'ACURAST_IPFS_URL'
   | 'ACURAST_IPFS_API_KEY'
+  | 'ACURAST_RPC'
   | 'DEBUG'
 
 const defaultValues: Record<EnvKeys, string | undefined> = {
   ACURAST_MNEMONIC: undefined,
   ACURAST_IPFS_URL: undefined,
   ACURAST_IPFS_API_KEY: undefined,
+  ACURAST_RPC: RPC_CANARY,
   DEBUG: 'false',
 }
 
@@ -54,3 +58,5 @@ export const getProjectEnvVars = (config: AcurastProjectConfig): EnvVar[] => {
   })
   return envVars
 }
+
+export const RPC = getEnv('ACURAST_RPC')
