@@ -2,6 +2,8 @@ import 'dotenv/config'
 
 const RPC_CANARY = 'wss://canarynet-ws-1.acurast-h-server-2.papers.tech'
 
+const IPFS_PROXY = 'https://ipfs-proxy.acurast.prod.gke.papers.tech'
+
 export type EnvKeys =
   | 'ACURAST_MNEMONIC'
   | 'ACURAST_IPFS_URL'
@@ -11,8 +13,8 @@ export type EnvKeys =
 
 const defaultValues: Record<EnvKeys, string | undefined> = {
   ACURAST_MNEMONIC: undefined,
-  ACURAST_IPFS_URL: undefined,
-  ACURAST_IPFS_API_KEY: undefined,
+  ACURAST_IPFS_URL: IPFS_PROXY,
+  ACURAST_IPFS_API_KEY: '', // With the default IPFS Proxy, no API key is required
   ACURAST_RPC: RPC_CANARY,
   DEBUG: 'false',
 }
