@@ -11,13 +11,13 @@ import { loadConfig } from '../acurast/loadConfig.js'
 import { parse } from '../util/parse-duration.js'
 import { input } from '@inquirer/prompts'
 import { createJob } from '../acurast/createJob.js'
-import { RPC } from './deploy.js'
 import { DeploymentStatus } from '../acurast/types.js'
 import { AssignmentStrategyVariant } from '../types.js'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { shortenString } from '../util/shortenString.js'
 import { red, green, yellowBright } from 'ansis'
+import { RPC } from '../config.js'
 
 export const addCommandLive = (program: Command) => {
   program
