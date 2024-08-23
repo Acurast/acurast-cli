@@ -18,6 +18,7 @@ import { dirname, join } from 'path'
 import { shortenString } from '../util/shortenString.js'
 import { red, green, yellowBright } from 'ansis'
 import { RPC } from '../config.js'
+import { jobToNumber } from '../util/jobToNumber.js'
 
 export const addCommandLive = (program: Command) => {
   program
@@ -125,9 +126,7 @@ export const addCommandLive = (program: Command) => {
         console.log('')
 
         console.log(
-          `https://console.acurast.com/job-detail/acurast-${jobId[0].Acurast}-${jobId[1]
-            .split(',')
-            .join('')}`
+          `https://console.acurast.com/job-detail/acurast-${jobId[0].Acurast}-${jobToNumber(jobId)}`
         )
         console.log('')
 

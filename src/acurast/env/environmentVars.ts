@@ -3,6 +3,8 @@ import { AcurastService } from './acurastService.js'
 import type { EnvVar, Job, JobAssignmentInfo } from './types.js'
 import { sameJobIds } from './utils.js'
 
+// TODO: Remove this file? It's not used anymore
+
 export class JobEnvHelper {
   public assignments: JobAssignmentInfo[] = []
 

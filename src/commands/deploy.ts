@@ -24,7 +24,8 @@ import { getBalance } from '../util/getBalance.js'
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { getFaucetLinkForAddress } from '../constants.js'
 import * as ora from '../util/ora.js'
-import type { EnvVar } from '../acurast/env/types.js'
+import type { EnvVar, Job } from '../acurast/env/types.js'
+import type { JobRegistration } from '../types.js'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -213,6 +214,9 @@ export const addCommandDeploy = (program: Command) => {
 
         const originalConfig = structuredClone(config)
 
+        const deploymentTime = new Date()
+        let jobRegistrationTemp: JobRegistration | undefined = undefined
+
         const jobRegistration = createJob(
           config,
           RPC,
@@ -227,11 +231,26 @@ export const addCommandDeploy = (program: Command) => {
               // console.log(status, data);
             } else if (status === DeploymentStatus.Prepared) {
               // console.log(status, data);
-              await storeDeployment(originalConfig, data.job)
+              jobRegistrationTemp = data.job as JobRegistration
+              await storeDeployment(
+                deploymentTime,
+                originalConfig,
+                jobRegistrationTemp
+              )
             } else if (status === DeploymentStatus.Submit) {
               // txHash
               // console.log(status, data);
             } else if (status === DeploymentStatus.WaitingForMatch) {
+              if (!jobRegistrationTemp) {
+                throw new Error('Job Registration is null!')
+              }
+              await storeDeployment(
+                deploymentTime,
+                originalConfig,
+                jobRegistrationTemp,
+                data.jobIds[0]
+              )
+
               if (
                 options.output === 'json' &&
                 options.exitEarly &&

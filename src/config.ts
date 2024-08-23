@@ -51,12 +51,12 @@ export const getProjectEnv = (key: string): string => {
 }
 
 export const getProjectEnvVars = (config: AcurastProjectConfig): EnvVar[] => {
-  const envVars: EnvVar[] = []
-  config.includeEnvironmentVariables?.forEach((key) => {
-    const value = getProjectEnv(key)
-    envVars.push({ key, value })
-  })
-  return envVars
+  return (
+    config.includeEnvironmentVariables?.map((key) => ({
+      key,
+      value: getProjectEnv(key),
+    })) || []
+  )
 }
 
 export const RPC = getEnv('ACURAST_RPC')

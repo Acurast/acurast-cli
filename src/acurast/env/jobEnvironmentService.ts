@@ -1,6 +1,7 @@
-import { ec } from 'elliptic'
+import pkg from 'elliptic'
+const { ec } = pkg
+
 import * as crypto from 'crypto'
-import { take } from 'rxjs'
 
 import { getProcessorEncrypionKey } from './utils.js'
 import type {
@@ -14,6 +15,10 @@ import type {
 } from './types.js'
 import { AcurastService } from './acurastService.js'
 import type { KeyringPair } from '@polkadot/keyring/types'
+import { LocalStorage } from '../../util/LocalStorage.js'
+
+// Usage example
+const localStorage = new LocalStorage()
 
 export class JobEnvironmentService {
   constructor() {}
@@ -139,14 +144,14 @@ export class JobEnvironmentService {
     info: Uint8Array,
     length: number
   ): Promise<ArrayBuffer> {
-    const key = await window.crypto.subtle.importKey(
+    const key = await crypto.subtle.importKey(
       'raw',
       keyMaterial,
       { name: 'HKDF' },
       false,
       ['deriveBits']
     )
-    return await window.crypto.subtle.deriveBits(
+    return await crypto.subtle.deriveBits(
       {
         name: 'HKDF',
         salt: salt,

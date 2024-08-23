@@ -13,16 +13,20 @@ import { u32, u64, u128, StorageKey } from '@polkadot/types'
 import { Hash } from '@polkadot/types/interfaces/runtime'
 import { Codec } from '@polkadot/types/types'
 import {
+  AssignmentStrategyVariant,
   CUSTOM_TYPES,
+  type AssignmentStrategy,
+  type Job,
   type JobAssignment,
   type JobAssignmentInfo,
   type JobEnvironmentEncrypted,
   type JobEnvironmentsEncrypted,
   type JobId,
+  type MultiOrigin,
 } from './types.js'
 import { firstValueFrom, ReplaySubject } from 'rxjs'
-import { RPC } from '../../commands/deploy.js'
 import { BigNumber } from 'bignumber.js'
+import { RPC } from '../../config.js'
 
 export const ACURAST_DECIMALS: number = 12
 
@@ -193,6 +197,13 @@ export class AcurastService {
     this.connectPromise = undefined
 
     return this.api
+  }
+
+  public async disconnect(): Promise<void> {
+    if (this.api) {
+      await this.api.disconnect()
+      this.api = undefined
+    }
   }
 
   // public async accountInfo(account: string): Promise<AccountInfo> {
@@ -601,24 +612,22 @@ export class AcurastService {
   //     }
   //   })
   // }
-  // public async getAllJobs(): Promise<Job[]> {
-  //   const api = await this.connect()
-  //   console.log('getAllJobs')
-  //   const jobEntries =
-  //     await api.query['acurast']['storedJobRegistration'].entries()
-  //   console.log(jobEntries)
-  //   return jobEntries.map(([key, value]) => {
-  //     const origin = api.createType('AcurastCommonMultiOrigin', key.args.at(0)!)
-  //     const id = api.createType('u128', key.args.at(1)!)
-  //     const job = api
-  //       .createType('Option<AcurastCommonJobRegistration>', value)
-  //       .unwrap()
-  //     return {
-  //       id: [this.codecToMultiOrigin(origin), id.toNumber()],
-  //       registration: this.codecToJobRegistration(job),
-  //     }
-  //   })
-  // }
+  public async getAllJobs(): Promise<Job[]> {
+    const api = await this.connect()
+    const jobEntries =
+      await api.query['acurast']['storedJobRegistration'].entries()
+    return jobEntries.map(([key, value]) => {
+      const origin = api.createType('AcurastCommonMultiOrigin', key.args.at(0)!)
+      const id = api.createType('u128', key.args.at(1)!)
+      const job = api
+        .createType('Option<AcurastCommonJobRegistration>', value)
+        .unwrap()
+      return {
+        id: [this.codecToMultiOrigin(origin), id.toNumber()],
+        registration: this.codecToJobRegistration(job),
+      }
+    })
+  }
 
   // public async registeredJob(jobId: JobId): Promise<JobRegistration> {
   //   const api = await this.connect()
@@ -1135,16 +1144,16 @@ export class AcurastService {
   //   }
   // }
 
-  // private codecToMultiOrigin(codec: Codec): MultiOrigin {
-  //   const multiOriginJSON = codec.toJSON() as any
-  //   return multiOriginJSON.acurast
-  //     ? {
-  //         Acurast: multiOriginJSON.acurast,
-  //       }
-  //     : {
-  //         Tezos: multiOriginJSON.tezos,
-  //       }
-  // }
+  private codecToMultiOrigin(codec: Codec): MultiOrigin {
+    const multiOriginJSON = codec.toJSON() as any
+    return multiOriginJSON.acurast
+      ? {
+          Acurast: multiOriginJSON.acurast,
+        }
+      : {
+          Tezos: multiOriginJSON.tezos,
+        }
+  }
 
   private async signAndSend(
     api: ApiPromise,
@@ -1304,64 +1313,64 @@ export class AcurastService {
   //   })
   // }
 
-  // private codecToJobRegistration(codec: Codec): JobRegistration {
-  //   const data = codec as any
-  //   return {
-  //     script: new TextDecoder().decode(
-  //       Buffer.from(data.script.toHex().slice(2), 'hex')
-  //     ),
-  //     allowedSources: data.allowedSources.unwrapOr(undefined)?.toJSON(),
-  //     allowOnlyVerifiedSources: data.allowOnlyVerifiedSources.toJSON(),
-  //     schedule: {
-  //       duration: data.schedule.duration.toNumber(),
-  //       startTime: new Date(data.schedule.startTime.toNumber()),
-  //       endTime: new Date(data.schedule.endTime.toNumber()),
-  //       interval: new BigNumber(data.schedule.interval.toBigInt()),
-  //       maxStartDelay: data.schedule.maxStartDelay.toNumber(),
-  //     },
-  //     memory: data.memory.toNumber(),
-  //     networkRequests: data.networkRequests.toNumber(),
-  //     storage: data.storage.toNumber(),
-  //     requiredModules: data.requiredModules.toJSON() ?? undefined,
-  //     extra: {
-  //       requirements: {
-  //         assignmentStrategy: this.codecToAssignmentStrategy(
-  //           data.extra.requirements.assignmentStrategy
-  //         ),
-  //         slots: data.extra.requirements.slots.toNumber(),
-  //         reward: new BigNumber(data.extra.requirements.reward.toBigInt()),
-  //         minReputation: (() => {
-  //           const rep = data.extra.requirements.minReputation
-  //             .unwrapOr(undefined)
-  //             ?.toBigInt()
-  //           if (rep) {
-  //             return new BigNumber(rep)
-  //           }
-  //           return undefined
-  //         })(),
-  //       },
-  //     },
-  //   }
-  // }
+  private codecToJobRegistration(codec: Codec): any /* TODO JobRegistration */ {
+    const data = codec as any
+    return {
+      script: new TextDecoder().decode(
+        Buffer.from(data.script.toHex().slice(2), 'hex')
+      ),
+      allowedSources: data.allowedSources.unwrapOr(undefined)?.toJSON(),
+      allowOnlyVerifiedSources: data.allowOnlyVerifiedSources.toJSON(),
+      schedule: {
+        duration: data.schedule.duration.toNumber(),
+        startTime: new Date(data.schedule.startTime.toNumber()),
+        endTime: new Date(data.schedule.endTime.toNumber()),
+        interval: new BigNumber(data.schedule.interval.toBigInt()),
+        maxStartDelay: data.schedule.maxStartDelay.toNumber(),
+      },
+      memory: data.memory.toNumber(),
+      networkRequests: data.networkRequests.toNumber(),
+      storage: data.storage.toNumber(),
+      requiredModules: data.requiredModules.toJSON() ?? undefined,
+      extra: {
+        requirements: {
+          assignmentStrategy: this.codecToAssignmentStrategy(
+            data.extra.requirements.assignmentStrategy
+          ),
+          slots: data.extra.requirements.slots.toNumber(),
+          reward: new BigNumber(data.extra.requirements.reward.toBigInt()),
+          minReputation: (() => {
+            const rep = data.extra.requirements.minReputation
+              .unwrapOr(undefined)
+              ?.toBigInt()
+            if (rep) {
+              return new BigNumber(rep)
+            }
+            return undefined
+          })(),
+        },
+      },
+    }
+  }
 
-  // private codecToAssignmentStrategy(codec: Codec): AssignmentStrategy {
-  //   const data = codec as any
-  //   if (data.isSingle) {
-  //     return {
-  //       variant: AssignmentStrategyVariant.Single,
-  //       instantMatch: data.asSingle.toJSON()?.map((value: any) => ({
-  //         source: value.source,
-  //         startDelay: new BigNumber(value.startDelay),
-  //       })),
-  //     }
-  //   } else if (data.isCompeting) {
-  //     return { variant: AssignmentStrategyVariant.Competing }
-  //   }
+  private codecToAssignmentStrategy(codec: Codec): AssignmentStrategy {
+    const data = codec as any
+    if (data.isSingle) {
+      return {
+        variant: AssignmentStrategyVariant.Single,
+        instantMatch: data.asSingle.toJSON()?.map((value: any) => ({
+          source: value.source,
+          startDelay: new BigNumber(value.startDelay),
+        })),
+      }
+    } else if (data.isCompeting) {
+      return { variant: AssignmentStrategyVariant.Competing }
+    }
 
-  //   throw new Error(
-  //     `unsupported AssignmentStrategy variant: ${codec.toString()}`
-  //   )
-  // }
+    throw new Error(
+      `unsupported AssignmentStrategy variant: ${codec.toString()}`
+    )
+  }
 
   private codecToJobAssignment(codec: Codec): JobAssignment {
     const json = codec.toJSON() as any
