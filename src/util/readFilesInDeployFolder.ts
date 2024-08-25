@@ -6,13 +6,9 @@ export const readFilesInDeployFolder = async (searchString: string) => {
 
   const files = await readdir(folderPath)
 
-  console.log('files', files)
-
   const file = files.find((file) => file.includes(searchString))
 
-  if (file) {
-    console.log('Matching file:', file)
-  } else {
+  if (!file) {
     console.log('No matching file found')
   }
 

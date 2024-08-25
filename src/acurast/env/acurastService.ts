@@ -163,6 +163,7 @@ export class AcurastService {
 
     this.connectPromise = ApiPromise.create({
       provider,
+      noInitWarn: true,
       types: {
         ...CUSTOM_TYPES,
       },
