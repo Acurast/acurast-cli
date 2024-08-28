@@ -151,7 +151,7 @@ export const addCommandDeploy = (program: Command) => {
 
         spinner.stop()
 
-        if (balance === BigInt(0)) {
+        if (balance === 0) {
           log(
             `Your balance is 0. Visit ${toAcurastColor(
               getFaucetLinkForAddress(wallet.address)

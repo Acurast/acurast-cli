@@ -1074,15 +1074,15 @@ export class AcurastService {
   //   ])
   // }
 
-  // public async deregisterJob(
-  //   origin: string,
-  //   localJobId: number
-  // ): Promise<Hash> {
-  //   const api = await this.connect()
-  //   return this.signAndSend(api, origin, [
-  //     api.tx['acurast']['deregister'](localJobId),
-  //   ])
-  // }
+  public async deregisterJob(
+    keyring: KeyringPair,
+    localJobId: number
+  ): Promise<Hash> {
+    const api = await this.connect()
+    return this.signAndSend(api, keyring, [
+      api.tx['acurast']['deregister'](localJobId),
+    ])
+  }
 
   // public async finalizeJobs(origin: string, jobIds: JobId[]): Promise<Hash> {
   //   const api = await this.connect()

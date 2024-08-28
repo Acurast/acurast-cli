@@ -19,7 +19,7 @@ import { addCommandWatch } from './commands/watch.js'
 import { acurastColor } from './util.js'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
-import { addCommandDeployment } from './commands/deployment.js'
+import { addCommandDeployments } from './commands/deployments.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -37,7 +37,7 @@ program
 
 addCommandDeploy(program)
 addCommandInit(program)
-addCommandDeployment(program)
+addCommandDeployments(program)
 // addCommandJobs(program)
 addCommandLive(program)
 // addCommandLogin(program)
