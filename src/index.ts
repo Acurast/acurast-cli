@@ -8,7 +8,6 @@ import figlet from 'figlet'
 const { textSync } = figlet
 import { addCommandInit } from './commands/init.js'
 import { addCommandDeploy } from './commands/deploy.js'
-import { addCommandJobs } from './commands/jobs.js'
 import { addCommandLogin } from './commands/login.js'
 import { addCommandLogout } from './commands/logout.js'
 import { addCommandOpen } from './commands/open.js'
@@ -38,7 +37,6 @@ program
 addCommandDeploy(program)
 addCommandInit(program)
 addCommandDeployments(program)
-// addCommandJobs(program)
 addCommandLive(program)
 // addCommandLogin(program)
 // addCommandLogout(program)

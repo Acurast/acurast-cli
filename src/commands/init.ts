@@ -152,13 +152,14 @@ export const addCommandInit = (program: Command) => {
           {
             name: 'One Time',
             value: 'onetime',
-            description: 'Select this option if you want the job to run once',
+            description:
+              'Select this option if you want the deployment to run once',
           },
           {
             name: 'Interval',
             value: 'interval',
             description:
-              'Select this option if you want the job to run in an interval',
+              'Select this option if you want the deployment to run in an interval',
           },
         ],
       })

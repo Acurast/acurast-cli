@@ -5,7 +5,9 @@ import { acurastColor } from '../util.js'
 export const addCommandWatch = (program: Command) => {
   program
     .command('watch')
-    .description('Watch the chain and get notified when a job update happens')
+    .description(
+      'Watch the chain and get notified when a deployment update happens'
+    )
     .action(async () => {
       // create new progress bar
       const b1 = new SingleBar({
