@@ -99,92 +99,99 @@ export const registerJob = (
     try {
       const unsub = await api.tx['acurast']
         ['register'](jobRegistration)
-        .signAndSend(injector, ({ status, events, txHash, dispatchError }) => {
-          // console.log(
-          //   "Transaction status:",
-          //   status.type,
-          //   status.isFinalized,
-          //   status.isInBlock,
-          //   status.isBroadcast,
-          //   txHash.toHex()
-          // );
-          const jobRegistrationEvents = events.filter((event) => {
-            return (
-              event.event.section === 'acurast' &&
-              event.event.method === 'JobRegistrationStored'
-            )
-          })
-          const jobIds = jobRegistrationEvents.map((jobRegistrationEvent) => {
-            return jobRegistrationEvent.event.data[1]
-          })
-
-          // console.log("jobIds", jobIds);
-          if (jobIds.length > 0) {
-            statusCallback(DeploymentStatus.WaitingForMatch, {
-              jobIds: jobIds.map((jobId) => jobId.toHuman()),
+        .signAndSend(
+          injector,
+          async ({ status, events, txHash, dispatchError }) => {
+            // console.log(
+            //   "Transaction status:",
+            //   status.type,
+            //   status.isFinalized,
+            //   status.isInBlock,
+            //   status.isBroadcast,
+            //   txHash.toHex()
+            // );
+            const jobRegistrationEvents = events.filter((event) => {
+              return (
+                event.event.section === 'acurast' &&
+                event.event.method === 'JobRegistrationStored'
+              )
             })
-            api.query.acurastMarketplace.storedJobStatus.multi(
-              jobIds,
-              (statuses) => {
-                // console.log("STATUS CB");
-                const stat = api.registry.createType(
-                  'Vec<Option<PalletAcurastMarketplaceJobStatus>>',
-                  statuses
+            const jobIds = jobRegistrationEvents.map((jobRegistrationEvent) => {
+              return jobRegistrationEvent.event.data[1]
+            })
+
+            // console.log("jobIds", jobIds);
+            if (jobIds.length > 0) {
+              statusCallback(DeploymentStatus.WaitingForMatch, {
+                jobIds: jobIds.map((jobId) => jobId.toHuman()),
+              })
+              const unsubStoredJobStatus =
+                await api.query.acurastMarketplace.storedJobStatus.multi(
+                  jobIds,
+                  (statuses) => {
+                    // console.log("STATUS CB");
+                    const stat = api.registry.createType(
+                      'Vec<Option<PalletAcurastMarketplaceJobStatus>>',
+                      statuses
+                    )
+                    const result = stat
+                      .map((value, index) => {
+                        if (value.isSome) {
+                          const statusValue = value.unwrap() as any
+                          let status = 'Open'
+                          if (statusValue.isMatched) {
+                            statusCallback(DeploymentStatus.Matched)
+                            status = 'Matched'
+                          } else if (statusValue.isAssigned) {
+                            statusCallback(DeploymentStatus.Acknowledged, {
+                              acknowledged: statusValue.asAssigned.toNumber(),
+                            })
+                            status = JSON.stringify({
+                              assigned: statusValue.asAssigned.toNumber(),
+                            })
+                            unsubStoredJobStatus()
+                          }
+                          return {
+                            id: jobIds[index],
+                            status,
+                          }
+                        }
+                        return undefined
+                      })
+                      .filter((value) => value !== undefined)
+
+                    // console.log("result", result);
+
+                    // console.log(
+                    //   "statuses",
+                    //   statuses.map((status) => status.toHuman())
+                    // );
+                  }
                 )
-                const result = stat
-                  .map((value, index) => {
-                    if (value.isSome) {
-                      const statusValue = value.unwrap() as any
-                      let status = 'Open'
-                      if (statusValue.isMatched) {
-                        statusCallback(DeploymentStatus.Matched)
-                        status = 'Matched'
-                      } else if (statusValue.isAssigned) {
-                        statusCallback(DeploymentStatus.Acknowledged, {
-                          acknowledged: statusValue.asAssigned.toNumber(),
-                        })
-                        status = JSON.stringify({
-                          assigned: statusValue.asAssigned.toNumber(),
-                        })
-                      }
-                      return {
-                        id: jobIds[index],
-                        status,
-                      }
-                    }
-                    return undefined
-                  })
-                  .filter((value) => value !== undefined)
-
-                // console.log("result", result);
-
-                // console.log(
-                //   "statuses",
-                //   statuses.map((status) => status.toHuman())
-                // );
-              }
-            )
-          }
-
-          if (status.isInBlock || status.isFinalized) {
-            unsub()
-          }
-
-          if (dispatchError) {
-            if (dispatchError.isModule) {
-              // for module errors, we have the section indexed, lookup
-              const decoded = api.registry.findMetaError(dispatchError.asModule)
-              const { docs, name, section } = decoded
-
-              reject(`${section}.${name}: ${docs.join(' ')}`)
-            } else {
-              // Other, CannotLookup, BadOrigin, no extra info
-              reject(dispatchError.toHuman() || dispatchError.toString())
             }
-          } else if (status.isInBlock) {
-            resolve(txHash.toHex())
+
+            if (status.isInBlock || status.isFinalized) {
+              unsub()
+            }
+
+            if (dispatchError) {
+              if (dispatchError.isModule) {
+                // for module errors, we have the section indexed, lookup
+                const decoded = api.registry.findMetaError(
+                  dispatchError.asModule
+                )
+                const { docs, name, section } = decoded
+
+                reject(`${section}.${name}: ${docs.join(' ')}`)
+              } else {
+                // Other, CannotLookup, BadOrigin, no extra info
+                reject(dispatchError.toHuman() || dispatchError.toString())
+              }
+            } else if (status.isInBlock) {
+              resolve(txHash.toHex())
+            }
           }
-        })
+        )
     } catch (e) {
       reject(e)
     }
