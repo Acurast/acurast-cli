@@ -1,7 +1,6 @@
 import { readFileSync, writeFileSync } from 'fs'
 import { ensureDirectoryExistence } from '../acurast/storeDeployment.js'
-
-const acurastFolder = '.acurast'
+import { ACURAST_BASE_PATH } from '../constants.js'
 
 interface LiveCodeProcessor {
   // address: string
@@ -11,7 +10,7 @@ interface LiveCodeProcessor {
   // TODO: Add job info (eg. to re-create link, look up status, etc.)
 }
 
-const file = `${acurastFolder}/live-code-processors.json`
+const file = `${ACURAST_BASE_PATH}/live-code-processors.json`
 
 export const readLiveCodeProcessors = (): LiveCodeProcessor[] => {
   return (() => {

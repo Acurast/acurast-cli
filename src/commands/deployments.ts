@@ -1,23 +1,17 @@
 import { Command, Option } from 'commander'
-import { JobEnvHelper } from '../acurast/env/environmentVars.js'
 import { AcurastService } from '../acurast/env/acurastService.js'
-import { getProjectEnv, getProjectEnvVars, RPC } from '../config.js'
+import { getProjectEnvVars, RPC } from '../config.js'
 import fs from 'fs'
 import { readFilesInDeployFolder } from '../util/readFilesInDeployFolder.js'
-import type {
-  EnvVar,
-  Job,
-  JobEnvironmentsEncrypted,
-  JobId,
-} from '../acurast/env/types.js'
+import type { EnvVar, Job } from '../acurast/env/types.js'
 import type { AcurastDeployment } from '../types.js'
 import { toNumber } from '../util/jobToNumber.js'
-import { JobEnvironmentService } from '../acurast/env/jobEnvironmentService.js'
 import { getWallet } from '../util/getWallet.js'
 import * as ora from '../util/ora.js'
 import { getBalance } from '../util/getBalance.js'
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { setEnvVars } from '../util/setEnvVars.js'
+import { ACURAST_DEPLOYMENTS_PATH } from '../constants.js'
 
 export const addCommandDeployments = (program: Command) => {
   program
@@ -149,7 +143,10 @@ export const addCommandDeployments = (program: Command) => {
           // File found, we can read details from file
 
           const deploymentFileData: AcurastDeployment = JSON.parse(
-            fs.readFileSync(`.acurast/deploy/${deploymentFilename}`, 'utf8')
+            fs.readFileSync(
+              `${ACURAST_DEPLOYMENTS_PATH}/${deploymentFilename}`,
+              'utf8'
+            )
           )
 
           const envVars = getProjectEnvVars(deploymentFileData.config)

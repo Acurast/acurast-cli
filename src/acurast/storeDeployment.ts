@@ -7,8 +7,7 @@ import {
 import path from 'path'
 import type { JobId } from './env/types.js'
 import { jobToNumber } from '../util/jobToNumber.js'
-
-export const ACURAST_BASE_PATH = './.acurast/deploy'
+import { ACURAST_DEPLOYMENTS_PATH } from '../constants.js'
 
 export const ensureDirectoryExistence = (filePath: string) => {
   var dirname = path.dirname(filePath)
@@ -25,7 +24,7 @@ const getFileByDeploymentTime = async (
   { filename: string; contentJson: AcurastDeployment } | undefined
 > => {
   return new Promise((resolve, reject) => {
-    readdir(ACURAST_BASE_PATH, (err, files) => {
+    readdir(ACURAST_DEPLOYMENTS_PATH, (err, files) => {
       if (err) {
         console.error('Error reading directory:', err)
         return
@@ -37,7 +36,7 @@ const getFileByDeploymentTime = async (
         // console.log('Files containing "deploymentTime":', matchingFile)
 
         const fileContents = readFileSync(
-          `${ACURAST_BASE_PATH}/${matchingFile}`,
+          `${ACURAST_DEPLOYMENTS_PATH}/${matchingFile}`,
           'utf8'
         )
 
@@ -87,7 +86,7 @@ export const storeDeployment = async (
       deploymentId: jobId,
     }
 
-    const fileName = `${ACURAST_BASE_PATH}/${config.projectName}-${deploymentTime.getTime().toString()}.json`
+    const fileName = `${ACURAST_DEPLOYMENTS_PATH}/${config.projectName}-${deploymentTime.getTime().toString()}.json`
 
     ensureDirectoryExistence(fileName)
 
@@ -105,7 +104,7 @@ export const storeDeployment = async (
       // console.log('NEW CONTENT', newFilename, newContent)
 
       writeFileSync(
-        `${ACURAST_BASE_PATH}/${newFilename}`,
+        `${ACURAST_DEPLOYMENTS_PATH}/${newFilename}`,
         JSON.stringify(newContent, null, 2)
       )
     }
