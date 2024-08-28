@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import { ensureDirectoryExistence } from '../acurast/storeDeployment.js'
 
 export class LocalStorage {
   private filePath: string
@@ -9,6 +10,7 @@ export class LocalStorage {
   }
 
   private ensureFile() {
+    ensureDirectoryExistence(this.filePath)
     if (!fs.existsSync(this.filePath)) {
       fs.writeFileSync(this.filePath, '{}', 'utf8')
     }
