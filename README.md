@@ -45,6 +45,7 @@ To use the Acurast CLI, type `acurast` followed by any of the available options 
 ### Commands
 
 - `deploy [options] [project]` - Deploy the current project to the Acurast platform.
+- `deployments <'ls' | <id>> --cleanup` - List, view and clean up deployments.
 - `live [options] [project]` - Setup a "live-code-processor" and run your project on the processor in real time.
 - `init` - Create an acurast.json file and .env file.
 - `open` - Open the Acurast resources in your browser.
@@ -94,8 +95,9 @@ Additionaly, a `.env` file is generated that will hold some of the secrets to de
 
 ```
 ACURAST_MNEMONIC=abandon abandon about ...
-ACURAST_IPFS_URL=https://api.pinata.cloud
-ACURAST_IPFS_API_KEY=eyJhb...
+# ACURAST_IPFS_URL=https://api.pinata.cloud
+# ACURAST_IPFS_API_KEY=eyJhb...
+# ACURAST_RPC=wss://...
 ```
 
 ### Configuration Details
@@ -135,8 +137,9 @@ ACURAST_IPFS_API_KEY=eyJhb...
 #### .env
 
 `ACURAST_MNEMONIC`: The mnemonic used to deploy the app. Make sure the account has some cACU! You can claim some on the [faucet](https://faucet.acurast.com).
-`ACURAST_IPFS_URL`: The URL of the IPFS gateway, eg. `https://api.pinata.cloud`.
-`ACURAST_IPFS_API_KEY`: The API key to access the IPFS gateway. You can [register here](https://pinata.cloud/) to get an API key.
+`ACURAST_IPFS_URL` (optional): The URL of the IPFS gateway, eg. `https://api.pinata.cloud`.
+`ACURAST_IPFS_API_KEY` (optional): The API key to access the IPFS gateway. You can [register here](https://pinata.cloud/) to get an API key.
+`ACURAST_RPC` (optional): Set an RPC URL to connect to.
 
 ## Live Code Feature
 
