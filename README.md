@@ -4,7 +4,7 @@
 
 <p align="center">
   <em>
-    Deploy apps on the Acurast Network
+    Deploy apps on the Acurast Cloud
   </em>
 </p>
 
@@ -23,7 +23,7 @@
 
 ## Intro
 
-The Acurast CLI helps you to deploy apps on the Acurast Network.
+The Acurast CLI helps you to deploy apps on the Acurast Cloud.
 
 ## Installation
 

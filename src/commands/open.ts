@@ -1,12 +1,12 @@
 import { select } from '@inquirer/prompts'
 import { Command } from 'commander'
 import open from 'open'
+import { RPC } from '../config.js'
 
 // TODO: Move to config
 const webConsole = 'https://console.acurast.com'
 const website = 'https://docs.acurast.com/'
-const explorer =
-  'https://polkadot.js.org/apps/?rpc=wss://acurast-canarynet-ws.prod.gke.acurast.com#/explorer'
+const explorer = `https://polkadot.js.org/apps/?rpc=${RPC}#/explorer`
 const telegramBot = 'https://t.me/AcurastBot'
 const telegramGroup = 'https://t.me/acurastnetwork'
 const discordGroup = 'https://discord.gg/wqgC6b6aKe'
@@ -33,7 +33,7 @@ export const addCommandOpen = (program: Command) => {
           },
           {
             name: 'Explorer',
-            description: 'Acurast Network Explorer',
+            description: 'Acurast Explorer',
             value: explorer,
           },
           {

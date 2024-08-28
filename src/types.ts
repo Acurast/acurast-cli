@@ -1,3 +1,10 @@
+import type {
+  EnvVar,
+  Job,
+  JobEnvironmentsEncrypted,
+  JobId,
+} from './acurast/env/types.js'
+
 export interface AcurastProjectConfig {
   // The name of the project.
   projectName: string
@@ -82,11 +89,7 @@ export interface AcurastProjectConfig {
 }
 
 export interface AcurastDeployment {
-  transactionId?: string
-
-  deploymentId?: string
-
-  deployedAt: number
+  deployedAt: string
 
   assignments: {
     processorId: string
@@ -96,6 +99,12 @@ export interface AcurastDeployment {
   status: 'init' | 'deployed' | 'failed'
   config: AcurastProjectConfig
   registration: JobRegistration
+  deploymentId?: JobId
+
+  envInfo?: {
+    localPubKey: string
+    envEncrypted: JobEnvironmentsEncrypted
+  }
 }
 
 export interface AcurastCliConfig {

@@ -14,6 +14,8 @@ _STD_.ws.open(
             try {
                 const code = Buffer.from(payload.payload, 'hex').toString('utf8')
 
+                respond(payload.sender, toHex("start", ""))
+
                 console.log = (...args) => {
                     print(args)
                     respond(payload.sender, toHex("log", args))

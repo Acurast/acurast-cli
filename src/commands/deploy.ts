@@ -1,6 +1,11 @@
 import { Command, Option } from 'commander'
 import { loadConfig } from '../acurast/loadConfig.js'
-import { getEnv, validateDeployEnvVars } from '../config.js'
+import {
+  getEnv,
+  validateDeployEnvVars,
+  RPC,
+  getProjectEnvVars,
+} from '../config.js'
 import { delay, Listr } from 'listr2'
 import { createJob } from '../acurast/createJob.js'
 import { storeDeployment } from '../acurast/storeDeployment.js'
@@ -19,10 +24,10 @@ import { getBalance } from '../util/getBalance.js'
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { getFaucetLinkForAddress } from '../constants.js'
 import * as ora from '../util/ora.js'
+import type { EnvVar, Job } from '../acurast/env/types.js'
+import type { JobRegistration } from '../types.js'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-export const RPC = 'wss://canarynet-ws-1.acurast-h-server-2.papers.tech'
 
 export const addCommandDeploy = (program: Command) => {
   program
@@ -102,7 +107,16 @@ export const addCommandDeploy = (program: Command) => {
         }
 
         try {
-          validateDeployEnvVars() // TODO: Also check the environment variables that need to be added to the deployment
+          validateDeployEnvVars()
+        } catch (e: any) {
+          log(e.message)
+          return
+        }
+
+        let envVars: EnvVar[] = []
+
+        try {
+          envVars = getProjectEnvVars(config)
         } catch (e: any) {
           log(e.message)
           return
@@ -137,7 +151,7 @@ export const addCommandDeploy = (program: Command) => {
 
         spinner.stop()
 
-        if (balance === BigInt(0)) {
+        if (balance === 0) {
           log(
             `Your balance is 0. Visit ${toAcurastColor(
               getFaucetLinkForAddress(wallet.address)
@@ -200,10 +214,15 @@ export const addCommandDeploy = (program: Command) => {
 
         const originalConfig = structuredClone(config)
 
+        const deploymentTime = new Date()
+        let jobRegistrationTemp: JobRegistration | undefined = undefined
+
         const jobRegistration = createJob(
           config,
           RPC,
+          envVars,
           async (status: DeploymentStatus, data) => {
+            // console.log(status, data)
             if (options.output === 'json') {
               log('', JSON.stringify({ status, data }))
             }
@@ -212,11 +231,26 @@ export const addCommandDeploy = (program: Command) => {
               // console.log(status, data);
             } else if (status === DeploymentStatus.Prepared) {
               // console.log(status, data);
-              await storeDeployment(originalConfig, data.job)
+              jobRegistrationTemp = data.job as JobRegistration
+              await storeDeployment(
+                deploymentTime,
+                originalConfig,
+                jobRegistrationTemp
+              )
             } else if (status === DeploymentStatus.Submit) {
               // txHash
               // console.log(status, data);
             } else if (status === DeploymentStatus.WaitingForMatch) {
+              if (!jobRegistrationTemp) {
+                throw new Error('Job Registration is null!')
+              }
+              await storeDeployment(
+                deploymentTime,
+                originalConfig,
+                jobRegistrationTemp,
+                data.jobIds[0]
+              )
+
               if (
                 options.output === 'json' &&
                 options.exitEarly &&
@@ -421,13 +455,13 @@ export const addCommandDeploy = (program: Command) => {
                         ),
                     },
                     {
-                      title: 'Setting environment variables (NOT IMPLEMENTED)',
+                      title: 'Setting environment variables',
                       enabled: () => hasEnvironmentVariables,
                       task: async (ctx, task): Promise<void> => {
-                        delay(1000)
-                        // const { envVars } = await awaitStatus(
-                        //   DeploymentStatus.EnvironmentVariablesSet
-                        // );
+                        const { envVars } = await awaitStatus(
+                          DeploymentStatus.EnvironmentVariablesSet
+                        )
+                        task.title = `Environment variables set`
                       },
                     },
                   ]),

@@ -122,11 +122,13 @@ export const addCommandInit = (program: Command) => {
       }
 
       let projectNameFromPackageJson = undefined
+      let mainFileLocationFromPackageJson = undefined
 
       try {
         const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf-8'))
 
         projectNameFromPackageJson = packageJson.name
+        mainFileLocationFromPackageJson = packageJson.main
       } catch {}
 
       const projectName = await input({
@@ -229,7 +231,7 @@ export const addCommandInit = (program: Command) => {
 
       const fileUrl = await input({
         message: 'What is the bundled javascript file to run?',
-        default: projectNameFromPackageJson,
+        default: mainFileLocationFromPackageJson,
         validate: (input) => {
           if (!input) {
             return 'Please enter a valid name'
@@ -273,6 +275,35 @@ export const addCommandInit = (program: Command) => {
           './acurast.json',
           JSON.stringify({ projects: { [projectName]: config } }, null, 2)
         )
+      }
+
+      const hasGitignore = existsSync('./.gitignore')
+      if (hasGitignore) {
+        const gitignoreContent = fs.readFileSync('./.gitignore', {
+          encoding: 'utf-8',
+        })
+
+        const hasAcurastFolderInGitignore = gitignoreContent
+          .split('\n')
+          .some((line) => line.startsWith('.acurast'))
+
+        const hasEnvFileInGitignore = gitignoreContent
+          .split('\n')
+          .some((line) => line.startsWith('.env'))
+
+        let toAdd = ''
+
+        if (!hasAcurastFolderInGitignore) {
+          toAdd += '\n.acurast'
+        }
+
+        if (!hasEnvFileInGitignore) {
+          toAdd += '\n.env'
+        }
+
+        if (toAdd.length > 0) {
+          appendFileSync('./.gitignore', `\n\n# Acurast CLI${toAdd}`)
+        }
       }
 
       console.log()
