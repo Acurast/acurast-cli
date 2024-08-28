@@ -11,7 +11,7 @@ export const day = 24 * hour
 
 export const DEFAULT_DURATION_MS = 10_000
 export const DEFAULT_REPLICAS = 1
-export const DEFAULT_REWARD = 1_000_000_000
+export const DEFAULT_REWARD = 100_000_000_000
 export const DEFAULT_MAX_ALLOWED_START_DELAY_MS = 10_000
 export const DEFAULT_PROCESSOR_REPUTATION = 0
 

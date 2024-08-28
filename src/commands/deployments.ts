@@ -26,7 +26,7 @@ export const addCommandDeployments = (program: Command) => {
     .addOption(
       new Option(
         '-e, --update-env-vars',
-        'Load the environment variables of a job and update them.'
+        'Load the environment variables of a deployment and update them.'
       )
     )
     .addOption(

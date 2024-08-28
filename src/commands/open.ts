@@ -39,7 +39,7 @@ export const addCommandOpen = (program: Command) => {
           {
             name: 'Telegram Bot',
             description:
-              'Telegram Bot to get notified about processor and job changes',
+              'Telegram Bot to get notified about processor and balance changes',
             value: telegramBot,
           },
           {

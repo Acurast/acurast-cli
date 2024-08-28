@@ -242,7 +242,7 @@ export const addCommandDeploy = (program: Command) => {
               // console.log(status, data);
             } else if (status === DeploymentStatus.WaitingForMatch) {
               if (!jobRegistrationTemp) {
-                throw new Error('Job Registration is null!')
+                throw new Error('Deployment Registration is null!')
               }
               await storeDeployment(
                 deploymentTime,
