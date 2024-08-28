@@ -1,12 +1,10 @@
 import * as fs from 'fs'
-import * as path from 'path'
-import { ACURAST_BASE_PATH } from '../acurast/storeDeployment.js'
 
 export class LocalStorage {
   private filePath: string
 
   constructor(fileName = 'keys.json') {
-    this.filePath = `${ACURAST_BASE_PATH}/${fileName}`
+    this.filePath = `.acurast/${fileName}`
     this.ensureFile()
   }
 

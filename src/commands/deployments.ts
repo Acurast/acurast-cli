@@ -17,6 +17,7 @@ import { getWallet } from '../util/getWallet.js'
 import * as ora from '../util/ora.js'
 import { getBalance } from '../util/getBalance.js'
 import { ApiPromise, WsProvider } from '@polkadot/api'
+import { setEnvVars } from '../util/setEnvVars.js'
 
 export const addCommandDeployments = (program: Command) => {
   program
@@ -119,7 +120,7 @@ export const addCommandDeployments = (program: Command) => {
               const balanceNew = await getBalance(wallet.address, api)
               const diff = balanceNew - balanceBefore
               spinner.succeed(
-                `Deployment ${job.id[1]} cleaned up. ${diff > 0 ? `cACU regained: ${diff}` : ``}`
+                `Deployment ${job.id[1]} cleaned up${diff > 0 ? `. cACU regained: ${diff}` : ``}`
               )
               balanceBefore = balanceNew
             }
@@ -142,14 +143,7 @@ export const addCommandDeployments = (program: Command) => {
           `${toNumber(arg)}.json`
         )
 
-        let job:
-          | (Job & {
-              envInfo?: {
-                localPubKey: string
-                envEncrypted: JobEnvironmentsEncrypted
-              }
-            } & { envVars?: EnvVar[] })
-          | undefined
+        let job: (Job & { envVars?: EnvVar[] }) | undefined
 
         if (deploymentFilename) {
           // File found, we can read details from file
@@ -163,7 +157,7 @@ export const addCommandDeployments = (program: Command) => {
           job = {
             id: deploymentFileData.deploymentId!,
             registration: deploymentFileData.registration,
-            envInfo: deploymentFileData.envInfo,
+            // envInfo: deploymentFileData.envInfo,
             envVars,
           }
         } else {
@@ -181,46 +175,23 @@ export const addCommandDeployments = (program: Command) => {
         }
 
         if (options.updateEnvVars) {
-          console.log(
-            'Updating environment variables for deployment',
-            deploymentId
+          const spinner = ora.default(
+            `Setting environment variables for deployment ${deploymentId}...`
           )
+          spinner.start()
 
-          const assignedProcessors = await acurast.assignedProcessors([
-            [
-              { Acurast: job.id[0].Acurast },
-              Number(toNumber(job.id[1] as any)),
-            ],
-          ])
-          const keys: [string, JobId][] = Array.from(
-            assignedProcessors.entries()
-          ).flatMap(([_, [jobId, processors]]) =>
-            processors.map((account) => [account, jobId])
-          )
-
-          const jobAssignmentInfos = await acurast.jobAssignments(keys)
-
-          const envVars = job.envVars ?? []
-
-          if (envVars.length === 0) {
-            console.log(
-              'No environment variables found for deployment',
-              deploymentId
-            )
-            return
+          if (!job.envVars) {
+            throw new Error('No environment variables found for deployment')
           }
 
-          const jobEnvironmentService = new JobEnvironmentService()
-          const res = await jobEnvironmentService.setEnvironmentVariablesMulti(
-            wallet,
-            jobAssignmentInfos,
-            deploymentId,
-            envVars
-          )
+          const { hash } = await setEnvVars(job)
 
-          acurast.disconnect()
+          spinner.succeed(`${job.envVars?.length} environment variables set`)
+          spinner.stop()
 
-          console.log('Environment variables set, tx ID:', res.hash)
+          console.log('Transaction ID:', hash)
+
+          await acurast.disconnect()
 
           // If no file found, have user select the deployment config to be used
 

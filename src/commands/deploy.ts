@@ -455,13 +455,13 @@ export const addCommandDeploy = (program: Command) => {
                         ),
                     },
                     {
-                      title: 'Setting environment variables (NOT IMPLEMENTED)',
+                      title: 'Setting environment variables',
                       enabled: () => hasEnvironmentVariables,
                       task: async (ctx, task): Promise<void> => {
-                        delay(1000)
-                        // const { envVars } = await awaitStatus(
-                        //   DeploymentStatus.EnvironmentVariablesSet
-                        // );
+                        const { envVars } = await awaitStatus(
+                          DeploymentStatus.EnvironmentVariablesSet
+                        )
+                        task.title = `Environment variables set`
                       },
                     },
                   ]),

@@ -34,7 +34,7 @@ const getFileByDeploymentTime = async (
       const matchingFile = files.find((file) => file.includes(deploymentTime))
 
       if (matchingFile) {
-        console.log('Files containing "deploymentTime":', matchingFile)
+        // console.log('Files containing "deploymentTime":', matchingFile)
 
         const fileContents = readFileSync(
           `${ACURAST_BASE_PATH}/${matchingFile}`,
@@ -48,7 +48,7 @@ const getFileByDeploymentTime = async (
           reject(e)
         }
       } else {
-        console.log('No files contain deploymentTime.')
+        // console.log(`No files contain deploymentTime "${deploymentTime}".`)
         resolve(undefined)
       }
     })
@@ -99,10 +99,10 @@ export const storeDeployment = async (
         `-${jobToNumber(jobId)}.json`
       const newContent = {
         ...existingFile.contentJson,
-        jobId: jobId,
+        deploymentId: jobId,
       }
 
-      console.log('NEW CONTENT', newFilename, newContent)
+      // console.log('NEW CONTENT', newFilename, newContent)
 
       writeFileSync(
         `${ACURAST_BASE_PATH}/${newFilename}`,
