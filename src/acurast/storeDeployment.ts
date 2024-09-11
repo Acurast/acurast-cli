@@ -10,12 +10,11 @@ import { jobToNumber } from '../util/jobToNumber.js'
 import { ACURAST_DEPLOYMENTS_PATH } from '../constants.js'
 
 export const ensureDirectoryExistence = (filePath: string) => {
-  var dirname = path.dirname(filePath)
-  if (existsSync(dirname)) {
+  if (existsSync(filePath)) {
     return true
   }
 
-  mkdirSync(dirname, { recursive: true })
+  mkdirSync(filePath, { recursive: true })
 }
 
 const getFileByDeploymentTime = async (
