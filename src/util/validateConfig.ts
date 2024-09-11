@@ -32,7 +32,7 @@ const acurastProjectConfigSchema = z.object({
             )
             .refine(
               (val) => {
-                return val < Date.now()
+                return val >= Date.now()
               },
               { message: 'Timestamp cannot be in the past' }
             ),

@@ -163,6 +163,60 @@ acurast live
 
 This will run your project in the live-processor. It will use the same configuration that was set up during the `acurast init` step.
 
+## Environment Variables
+
+You can use environment variables in Acurast depoyments. The environment variables that are encrypted during deployment and only decrypted when the code is run on the processor. This is useful for storing sensitive information like API keys.
+
+To use environment variables in your project, you first need to add them to the `.env` file like this:
+
+```text
+API_KEY=your-api-key
+```
+
+To configure which of your deployments make use of the environment variables, edit the `acurast.json` file and add all the environment variables to be included to the `includeEnvironmentVariables` array.
+
+```json
+{
+  "projects": {
+    "tutorial": {
+      "projectName": "tutorial",
+      "fileUrl": "dist/bundle.js",
+      "network": "canary",
+      "onlyAttestedDevices": true,
+      "assignmentStrategy": {
+        "type": "Single"
+      },
+      "execution": {
+        "type": "onetime",
+        "maxExecutionTimeInMs": 60000
+      },
+      "maxAllowedStartDelayInMs": 10000,
+      "usageLimit": {
+        "maxMemory": 0,
+        "maxNetworkRequests": 0,
+        "maxStorage": 0
+      },
+      "numberOfReplicas": 1,
+      "requiredModules": [],
+      "minProcessorReputation": 0,
+      "maxCostPerExecution": 1000000000,
+      "includeEnvironmentVariables": ["API_KEY"],
+      "processorWhitelist": []
+    }
+  }
+}
+```
+
+Then, in your code, you can access the environment variables like this:
+
+```typescript
+const API_KEY = _STD_.env[API_KEY]
+```
+
+When running `acurast deploy`, the environment variables will now automatically be added to the deployment.
+
+When running interval based deployments with multiple executions, the environment variables can be updated between executions. To do that, update the `.env` file and run `acurast deployments <id> -e`. This will update the environment variables for the deployment with the given ID.
+
 ## Development
 
 To contribute to the development of Acurast CLI, follow these steps:
