@@ -4,18 +4,16 @@ import {
   AcurastProjectConfig,
   JobRegistration,
 } from '../types.js'
-import path from 'path'
 import type { JobId } from './env/types.js'
 import { jobToNumber } from '../util/jobToNumber.js'
 import { ACURAST_DEPLOYMENTS_PATH } from '../constants.js'
+import { getDirectoryFromFilePath } from '../util/getDirectoryFromFilePath.js'
 
 export const ensureDirectoryExistence = (filePath: string) => {
-  var dirname = path.dirname(filePath)
-  if (existsSync(dirname)) {
-    return true
+  const dir = getDirectoryFromFilePath(filePath)
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true })
   }
-
-  mkdirSync(dirname, { recursive: true })
 }
 
 const getFileByDeploymentTime = async (
