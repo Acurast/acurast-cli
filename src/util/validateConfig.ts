@@ -60,15 +60,19 @@ const acurastProjectConfigSchema = z.object({
     }),
   ]),
   execution: z.union([
-    z.object({
-      type: z.literal('onetime'),
-      maxExecutionTimeInMs: z.number().min(1),
-    }),
-    z.object({
-      type: z.literal('interval'),
-      intervalInMs: z.number().min(1),
-      numberOfExecutions: z.number().min(1),
-    }),
+    z
+      .object({
+        type: z.literal('onetime'),
+        maxExecutionTimeInMs: z.number().min(1),
+      })
+      .strict(),
+    z
+      .object({
+        type: z.literal('interval'),
+        intervalInMs: z.number().min(1),
+        numberOfExecutions: z.number().min(1),
+      })
+      .strict(),
   ]),
   maxAllowedStartDelayInMs: z.number().min(0),
   usageLimit: z.object({
