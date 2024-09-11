@@ -193,17 +193,28 @@ export const addCommandDeploy = (program: Command) => {
           config.execution.type === 'onetime'
             ? 1
             : config.execution.numberOfExecutions
+
+        const costPerExecution =
+          config.maxCostPerExecution * config.numberOfReplicas
+
+        const totalCost = numberOfExecutions * costPerExecution
+
+        const pluralize = (number: number, text: string) => {
+          return number === 1 ? text : text + 's'
+        }
+
         log(
           `There will be ${toAcurastColor(
             numberOfExecutions.toString()
-          )} executions with a cost of ${toAcurastColor(
-            (
-              (config.maxCostPerExecution *
-                config.numberOfReplicas *
-                numberOfExecutions) /
-              1_000_000_000_000
-            ).toString()
-          )} cACU each.`
+          )} ${pluralize(numberOfExecutions, 'execution')} with ${toAcurastColor(config.numberOfReplicas.toString())} ${pluralize(config.numberOfReplicas, 'replica')}.`
+        )
+        log(
+          `Each execution has a cost of ${toAcurastColor(
+            (costPerExecution / 1_000_000_000_000).toString()
+          )} cACU.`
+        )
+        log(
+          `The total cost will be ${toAcurastColor((totalCost / 1_000_000_000_000).toString())} cACU.`
         )
         log('')
 
