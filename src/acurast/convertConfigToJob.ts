@@ -65,7 +65,8 @@ export const convertConfigToJob = (
       startTime +
       config.execution.intervalInMs * config.execution.numberOfExecutions +
       1
-    duration = config.execution.intervalInMs - 1
+    duration =
+      config.execution.maxExecutionTimeInMs ?? config.execution.intervalInMs - 1
   } else {
     throw new Error('Invalid execution type')
   }
