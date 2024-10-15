@@ -44,6 +44,7 @@ To use the Acurast CLI, type `acurast` followed by any of the available options 
 
 ### Commands
 
+- `new <project-name>` - Create a new Acurast project from a template.
 - `deploy [options] [project]` - Deploy the current project to the Acurast platform.
 - `deployments <'ls' | <id>> --cleanup` - List, view and clean up deployments.
 - `live [options] [project]` - Setup a "live-code-processor" and run your project on the processor in real time.

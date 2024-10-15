@@ -19,6 +19,7 @@ import { acurastColor } from './util.js'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { addCommandDeployments } from './commands/deployments.js'
+import { addCommandNew } from './commands/new.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -44,6 +45,7 @@ addCommandOpen(program)
 // addCommandRun(program)
 // addCommandTest(program)
 // addCommandWatch(program)
+addCommandNew(program)
 
 if (!process.argv.slice(2).length) {
   console.log(acurastColor(textSync('Acurast CLI')))
