@@ -87,18 +87,18 @@ export type JobRequirements = {
   assignmentStrategy: AssignmentStrategy
   slots: number
   reward: BigNumber
-  minReputation?: BigNumber,
-  processorVersion?: ProcessorVersionRequirements;
-};
+  minReputation?: BigNumber
+  processorVersion?: ProcessorVersionRequirements
+}
 
 export type ProcessorVersionRequirements = {
-    min: Version[];
-};
+  min: Version[]
+}
 
 export type Version = {
-    platform: number;
-    buildNumber: number;
-};
+  platform: number
+  buildNumber: number
+}
 
 export type AssignmentStrategy = {
   variant: AssignmentStrategyVariant
