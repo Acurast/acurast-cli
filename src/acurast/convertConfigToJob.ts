@@ -105,6 +105,25 @@ export const convertConfigToJob = (
         slots: slots,
         reward: rewardPerExecution,
         minReputation: processorReputation,
+        processorVersion: config.minAndroidProcessorVersion
+          ? {
+              min: [
+                {
+                  platform: 0,
+                  buildNumber: config.minAndroidProcessorVersion!,
+                },
+              ],
+            }
+          : config.minIOSProcessorVersion
+            ? {
+                min: [
+                  {
+                    platform: 1,
+                    buildNumber: config.minIOSProcessorVersion!,
+                  },
+                ],
+              }
+            : undefined,
       },
     },
   }

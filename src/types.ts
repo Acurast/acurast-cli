@@ -80,6 +80,10 @@ export interface AcurastProjectConfig {
   requiredModules?: ['DataEncryption'] | []
   // The minimum required reputation of the processor.
   minProcessorReputation: number
+  // The minimum required version of the processor.
+  minAndroidProcessorVersion?: number
+  // The minimum required version of the processor.
+  minIOSProcessorVersion?: number
   // The maximum cost per execution in the smallest denomination of cACUs.
   maxCostPerExecution: number
   // An array of environment variables in the .env file that will be passed to the deployment.
@@ -142,7 +146,17 @@ export interface JobRegistration {
       slots: number
       reward: number
       minReputation?: number
+      processorVersion?: ProcessorVersionRequirements
       instantMatch?: { source: string; startDelay: number }[]
     }
   }
+}
+
+export type ProcessorVersionRequirements = {
+  min: Version[]
+}
+
+export type Version = {
+  platform: number
+  buildNumber: number
 }
