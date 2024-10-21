@@ -133,6 +133,9 @@ ACURAST_MNEMONIC=abandon abandon about ...
 - `maxCostPerExecution`: The maximum cost per execution in the smallest denomination of cACUs.
 - `includeEnvironmentVariables`: An array of environment variables in the .env file that will be passed to the deployment.
 - `processorWhitelist`: A whitelist of processors that can be used for the deployment.
+- `minProcessorVersions`: The minimum processor versions that will be used for the deployment.
+  - `android`: The minimum Android version.
+  - `ios`: The minimum iOS version.
 
 #### .env
 

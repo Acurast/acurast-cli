@@ -71,8 +71,19 @@ const acurastProjectConfigSchema = z.object({
         type: z.literal('interval'),
         intervalInMs: z.number().min(1),
         numberOfExecutions: z.number().min(1),
+        maxExecutionTimeInMs: z.number().min(1).optional(),
       })
-      .strict(),
+      .strict()
+      .refine(
+        (data) => {
+          if (data.maxExecutionTimeInMs === undefined) return true
+          return data.maxExecutionTimeInMs < data.intervalInMs
+        },
+        {
+          message: 'maxExecutionTimeInMs must be less than intervalInMs',
+          path: ['maxExecutionTimeInMs'],
+        }
+      ),
   ]),
   maxAllowedStartDelayInMs: z.number().min(0),
   usageLimit: z.object({
@@ -90,6 +101,22 @@ const acurastProjectConfigSchema = z.object({
   includeEnvironmentVariables: z.array(z.string()).optional(),
   processorWhitelist: z
     .array(z.string().refine(isAcurastAddress, isNotAcurastAddressMessage))
+    .optional(),
+  minProcessorVersions: z
+    .union([
+      z.object({
+        android: z.union([z.string(), z.number()]),
+        ios: z.union([z.string(), z.number()]).optional(),
+      }),
+      z.object({
+        android: z.union([z.string(), z.number()]).optional(),
+        ios: z.union([z.string(), z.number()]),
+      }),
+      z.object({
+        android: z.union([z.string(), z.number()]),
+        ios: z.union([z.string(), z.number()]),
+      }),
+    ])
     .optional(),
 })
 

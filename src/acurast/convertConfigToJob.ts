@@ -3,6 +3,7 @@ import {
   AssignmentStrategyVariant,
   JobRegistration,
 } from '../types.js'
+import { deviceVersions } from './app-versions.js'
 
 export const second = 1000
 export const minute = 60 * second
@@ -29,6 +30,63 @@ export function isStartAtTimestamp(
   return (startAt as { timestamp: string | number }).timestamp !== undefined
 }
 
+function getKeyFromValue<T = unknown>(
+  map: Map<T, string> | undefined,
+  value: string
+): T | undefined {
+  if (!map) {
+    return undefined
+  }
+
+  return Array.from(map.entries()).find(
+    ([_, version]) => version === value
+  )?.[0]
+}
+
+function convertMinProcessorVersions(
+  minProcessorVersions: AcurastProjectConfig['minProcessorVersions']
+): JobRegistration['extra']['requirements']['processorVersion'] {
+  const minAndroidVersion = minProcessorVersions?.android
+  const minIosVersion = minProcessorVersions?.ios
+
+  const versions: { platform: number; buildNumber: number }[] = []
+
+  function addVersionIfDefined(
+    version: string | number | undefined,
+    platform: number,
+    platformName: string
+  ) {
+    if (version !== undefined) {
+      const buildNumber =
+        typeof version === 'number'
+          ? version
+          : getKeyFromValue(deviceVersions.get(platform), version)
+
+      if (buildNumber) {
+        versions.push({
+          platform,
+          buildNumber,
+        })
+      } else {
+        throw new Error(
+          `Cannot resolve min processor version for ${platformName} from version "${version}" to buildNumber. Please specify the build number directly.`
+        )
+      }
+    }
+  }
+
+  addVersionIfDefined(minAndroidVersion, 0, 'Android')
+  addVersionIfDefined(minIosVersion, 1, 'iOS')
+
+  if (versions.length === 0) {
+    return undefined
+  }
+
+  return {
+    min: versions,
+  }
+}
+
 export const convertConfigToJob = (
   config: AcurastProjectConfig
 ): JobRegistration => {
@@ -38,6 +96,9 @@ export const convertConfigToJob = (
     config.maxAllowedStartDelayInMs ?? DEFAULT_MAX_ALLOWED_START_DELAY_MS
   const processorReputation =
     config.minProcessorReputation ?? DEFAULT_PROCESSOR_REPUTATION
+  const minProcessorVersions = convertMinProcessorVersions(
+    config.minProcessorVersions
+  )
 
   const now = Date.now()
 
@@ -65,7 +126,8 @@ export const convertConfigToJob = (
       startTime +
       config.execution.intervalInMs * config.execution.numberOfExecutions +
       1
-    duration = config.execution.intervalInMs - 1
+    duration =
+      config.execution.maxExecutionTimeInMs ?? config.execution.intervalInMs - 1
   } else {
     throw new Error('Invalid execution type')
   }
@@ -105,6 +167,7 @@ export const convertConfigToJob = (
         slots: slots,
         reward: rewardPerExecution,
         minReputation: processorReputation,
+        processorVersion: minProcessorVersions,
       },
     },
   }
