@@ -1,6 +1,6 @@
 {
   "name": "@acurast/cli",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A cli to interact with the Acurast Cloud.",
   "main": "dist/index.js",
   "bin": {
