@@ -3,6 +3,7 @@ import {
   AssignmentStrategyVariant,
   JobRegistration,
 } from '../types.js'
+import { deviceVersions } from './app-versions.js'
 
 export const second = 1000
 export const minute = 60 * second
@@ -29,6 +30,70 @@ export function isStartAtTimestamp(
   return (startAt as { timestamp: string | number }).timestamp !== undefined
 }
 
+function getKeyFromValue<T = unknown>(
+  map: Map<T, string> | undefined,
+  value: string
+): T | undefined {
+  if (!map) {
+    return undefined
+  }
+
+  return Array.from(map.entries()).find(
+    ([_, version]) => version === value
+  )?.[0]
+}
+
+function convertMinProcessorVersions(
+  minProcessorVersions: AcurastProjectConfig['minProcessorVersions']
+): JobRegistration['extra']['requirements']['processorVersion'] {
+  deviceVersions
+
+  const minAndroidVersion = minProcessorVersions?.android
+  const minIosVersion = minProcessorVersions?.ios
+
+  const versions = []
+
+  if (minAndroidVersion) {
+    const buildNumber =
+      typeof minAndroidVersion === 'number'
+        ? minAndroidVersion
+        : getKeyFromValue(deviceVersions.get(0), minAndroidVersion)
+
+    if (buildNumber) {
+      versions.push({
+        platform: 0,
+        buildNumber,
+      })
+    } else {
+      throw new Error(
+        `Cannot resolve min processor version for Android from version "${minAndroidVersion}" to buildNumber. Please specify the build number directly.`
+      )
+    }
+  }
+
+  if (minIosVersion) {
+    const buildNumber =
+      typeof minIosVersion === 'number'
+        ? minIosVersion
+        : getKeyFromValue(deviceVersions.get(0), minIosVersion)
+
+    if (buildNumber) {
+      versions.push({
+        platform: 1,
+        buildNumber,
+      })
+    } else {
+      throw new Error(
+        `Cannot resolve min processor version for iOS from version "${minIosVersion}" to buildNumber. Please specify the build number directly.`
+      )
+    }
+  }
+
+  return {
+    min: versions,
+  }
+}
+
 export const convertConfigToJob = (
   config: AcurastProjectConfig
 ): JobRegistration => {
@@ -38,6 +103,9 @@ export const convertConfigToJob = (
     config.maxAllowedStartDelayInMs ?? DEFAULT_MAX_ALLOWED_START_DELAY_MS
   const processorReputation =
     config.minProcessorReputation ?? DEFAULT_PROCESSOR_REPUTATION
+  const minProcessorVersions = convertMinProcessorVersions(
+    config.minProcessorVersions
+  )
 
   const now = Date.now()
 
@@ -105,25 +173,7 @@ export const convertConfigToJob = (
         slots: slots,
         reward: rewardPerExecution,
         minReputation: processorReputation,
-        processorVersion: config.minAndroidProcessorVersion
-          ? {
-              min: [
-                {
-                  platform: 0,
-                  buildNumber: config.minAndroidProcessorVersion!,
-                },
-              ],
-            }
-          : config.minIOSProcessorVersion
-            ? {
-                min: [
-                  {
-                    platform: 1,
-                    buildNumber: config.minIOSProcessorVersion!,
-                  },
-                ],
-              }
-            : undefined,
+        processorVersion: minProcessorVersions,
       },
     },
   }

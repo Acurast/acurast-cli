@@ -80,16 +80,19 @@ export interface AcurastProjectConfig {
   requiredModules?: ['DataEncryption'] | []
   // The minimum required reputation of the processor.
   minProcessorReputation: number
-  // The minimum required version of the processor.
-  minAndroidProcessorVersion?: number
-  // The minimum required version of the processor.
-  minIOSProcessorVersion?: number
   // The maximum cost per execution in the smallest denomination of cACUs.
   maxCostPerExecution: number
   // An array of environment variables in the .env file that will be passed to the deployment.
   includeEnvironmentVariables?: string[]
   // A whitelist of processors that can be used for the deployment.
   processorWhitelist?: string[]
+  // The minimum processor version requirements. If you specify only one platform, the deployment will only be matched with processors of that platform. You can pass a string (e.g., "1.0.0") or a build number (e.g., 10000). Note: If the "human readable" version number is used, it will be converted to the build number. If the CLI isn't up to date, it is possible that the version number is unknown. In this case, use the build number instead.
+  minProcessorVersions?: {
+    // The minimum version for Android.
+    android?: string | number
+    // The minimum version for iOS.
+    ios?: string | number
+  }
 }
 
 export interface AcurastDeployment {
@@ -146,17 +149,13 @@ export interface JobRegistration {
       slots: number
       reward: number
       minReputation?: number
-      processorVersion?: ProcessorVersionRequirements
       instantMatch?: { source: string; startDelay: number }[]
+      processorVersion?: {
+        min: {
+          platform: number
+          buildNumber: number
+        }[]
+      }
     }
   }
-}
-
-export type ProcessorVersionRequirements = {
-  min: Version[]
-}
-
-export type Version = {
-  platform: number
-  buildNumber: number
 }
