@@ -46,8 +46,6 @@ function getKeyFromValue<T = unknown>(
 function convertMinProcessorVersions(
   minProcessorVersions: AcurastProjectConfig['minProcessorVersions']
 ): JobRegistration['extra']['requirements']['processorVersion'] {
-  deviceVersions
-
   const minAndroidVersion = minProcessorVersions?.android
   const minIosVersion = minProcessorVersions?.ios
 
@@ -87,6 +85,10 @@ function convertMinProcessorVersions(
         `Cannot resolve min processor version for iOS from version "${minIosVersion}" to buildNumber. Please specify the build number directly.`
       )
     }
+  }
+
+  if (versions.length === 0) {
+    return undefined
   }
 
   return {

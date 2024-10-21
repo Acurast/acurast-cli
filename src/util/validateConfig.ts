@@ -92,10 +92,20 @@ const acurastProjectConfigSchema = z.object({
     .array(z.string().refine(isAcurastAddress, isNotAcurastAddressMessage))
     .optional(),
   minProcessorVersions: z
-    .object({
-      android: z.union([z.string(), z.number()]).optional(),
-      ios: z.union([z.string(), z.number()]).optional(),
-    })
+    .union([
+      z.object({
+        android: z.union([z.string(), z.number()]),
+        ios: z.union([z.string(), z.number()]).optional(),
+      }),
+      z.object({
+        android: z.union([z.string(), z.number()]).optional(),
+        ios: z.union([z.string(), z.number()]),
+      }),
+      z.object({
+        android: z.union([z.string(), z.number()]),
+        ios: z.union([z.string(), z.number()]),
+      }),
+    ])
     .optional(),
 })
 
