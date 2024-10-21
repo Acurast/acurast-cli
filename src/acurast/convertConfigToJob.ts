@@ -49,43 +49,34 @@ function convertMinProcessorVersions(
   const minAndroidVersion = minProcessorVersions?.android
   const minIosVersion = minProcessorVersions?.ios
 
-  const versions = []
+  const versions: { platform: number; buildNumber: number }[] = []
 
-  if (minAndroidVersion) {
-    const buildNumber =
-      typeof minAndroidVersion === 'number'
-        ? minAndroidVersion
-        : getKeyFromValue(deviceVersions.get(0), minAndroidVersion)
+  function addVersionIfDefined(
+    version: string | number | undefined,
+    platform: number,
+    platformName: string
+  ) {
+    if (version !== undefined) {
+      const buildNumber =
+        typeof version === 'number'
+          ? version
+          : getKeyFromValue(deviceVersions.get(platform), version)
 
-    if (buildNumber) {
-      versions.push({
-        platform: 0,
-        buildNumber,
-      })
-    } else {
-      throw new Error(
-        `Cannot resolve min processor version for Android from version "${minAndroidVersion}" to buildNumber. Please specify the build number directly.`
-      )
+      if (buildNumber) {
+        versions.push({
+          platform,
+          buildNumber,
+        })
+      } else {
+        throw new Error(
+          `Cannot resolve min processor version for ${platformName} from version "${version}" to buildNumber. Please specify the build number directly.`
+        )
+      }
     }
   }
 
-  if (minIosVersion) {
-    const buildNumber =
-      typeof minIosVersion === 'number'
-        ? minIosVersion
-        : getKeyFromValue(deviceVersions.get(0), minIosVersion)
-
-    if (buildNumber) {
-      versions.push({
-        platform: 1,
-        buildNumber,
-      })
-    } else {
-      throw new Error(
-        `Cannot resolve min processor version for iOS from version "${minIosVersion}" to buildNumber. Please specify the build number directly.`
-      )
-    }
-  }
+  addVersionIfDefined(minAndroidVersion, 0, 'Android')
+  addVersionIfDefined(minIosVersion, 1, 'iOS')
 
   if (versions.length === 0) {
     return undefined
