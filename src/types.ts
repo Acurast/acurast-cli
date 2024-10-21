@@ -62,6 +62,8 @@ export interface AcurastProjectConfig {
         intervalInMs: number
         // The number of executions.
         numberOfExecutions: number
+        // The maximum execution time for each execution in milliseconds. This is optional. If not specified, the full duration of the interval will be used.
+        maxExecutionTimeInMs?: number
       }
   // Specifies the maximum allowed start delay (relative to the starting time) of the deployment in milliseconds.
   maxAllowedStartDelayInMs: number
