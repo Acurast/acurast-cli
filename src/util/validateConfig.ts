@@ -102,6 +102,22 @@ const acurastProjectConfigSchema = z.object({
   processorWhitelist: z
     .array(z.string().refine(isAcurastAddress, isNotAcurastAddressMessage))
     .optional(),
+  minProcessorVersions: z
+    .union([
+      z.object({
+        android: z.union([z.string(), z.number()]),
+        ios: z.union([z.string(), z.number()]).optional(),
+      }),
+      z.object({
+        android: z.union([z.string(), z.number()]).optional(),
+        ios: z.union([z.string(), z.number()]),
+      }),
+      z.object({
+        android: z.union([z.string(), z.number()]),
+        ios: z.union([z.string(), z.number()]),
+      }),
+    ])
+    .optional(),
 })
 
 const acurastProjectConfigSchemaWithNotes =

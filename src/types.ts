@@ -88,6 +88,13 @@ export interface AcurastProjectConfig {
   includeEnvironmentVariables?: string[]
   // A whitelist of processors that can be used for the deployment.
   processorWhitelist?: string[]
+  // The minimum processor version requirements. If you specify only one platform, the deployment will only be matched with processors of that platform. You can pass a string (e.g., "1.0.0") or a build number (e.g., 10000). Note: If the "human readable" version number is used, it will be converted to the build number. If the CLI isn't up to date, it is possible that the version number is unknown. In this case, use the build number instead.
+  minProcessorVersions?: {
+    // The minimum version for Android.
+    android?: string | number
+    // The minimum version for iOS.
+    ios?: string | number
+  }
 }
 
 export interface AcurastDeployment {
@@ -145,6 +152,12 @@ export interface JobRegistration {
       reward: number
       minReputation?: number
       instantMatch?: { source: string; startDelay: number }[]
+      processorVersion?: {
+        min: {
+          platform: number
+          buildNumber: number
+        }[]
+      }
     }
   }
 }

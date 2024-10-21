@@ -79,6 +79,15 @@ export const registerJob = (
                   job.extra.requirements.minReputation
                 )
               : api.createType('Option<u128>', undefined),
+            processorVersion: job.extra.requirements.processorVersion
+              ? api.createType(
+                  'Option<PalletAcurastMarketplaceProcessorVersionRequirements>',
+                  job.extra.requirements.processorVersion
+                )
+              : api.createType(
+                  'Option<PalletAcurastMarketplaceProcessorVersionRequirements>',
+                  undefined
+                ),
             instantMatch: job.extra.requirements.instantMatch
               ? api.createType(
                   'Option<Vec<PalletAcurastMarketplacePlannedExecution>>',
