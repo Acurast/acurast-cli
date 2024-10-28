@@ -182,7 +182,16 @@ export const addCommandDeploy = (program: Command) => {
         }
 
         log(
-          `The deployment will be scheduled to start in ${toAcurastColor(`${humanTime(now - startTime, true)}`)}.`
+          `The deployment will be scheduled to start in ${toAcurastColor(
+            `${humanTime(now - startTime, true)}`
+          )}. It will run for ${toAcurastColor(
+            config.execution.type === 'onetime'
+              ? humanTime(config.execution.maxExecutionTimeInMs, true)
+              : humanTime(
+                  config.execution.numberOfExecutions *
+                    config.execution.intervalInMs
+                )
+          )}.`
         )
         log('')
 
@@ -194,10 +203,11 @@ export const addCommandDeploy = (program: Command) => {
             ? 1
             : config.execution.numberOfExecutions
 
-        const costPerExecution =
+        const costPerExecution = config.maxCostPerExecution
+        const costPerExecutionAndReplicas =
           config.maxCostPerExecution * config.numberOfReplicas
 
-        const totalCost = numberOfExecutions * costPerExecution
+        const totalCost = numberOfExecutions * costPerExecutionAndReplicas
 
         const pluralize = (number: number, text: string) => {
           return number === 1 ? text : text + 's'
@@ -209,8 +219,10 @@ export const addCommandDeploy = (program: Command) => {
           )} ${pluralize(numberOfExecutions, 'execution')} with ${toAcurastColor(config.numberOfReplicas.toString())} ${pluralize(config.numberOfReplicas, 'replica')}.`
         )
         log(
-          `Each execution has a cost of ${toAcurastColor(
+          `Each replica has a cost of ${toAcurastColor(
             (costPerExecution / 1_000_000_000_000).toString()
+          )} cACU, which means each execution will cost ${toAcurastColor(
+            (costPerExecutionAndReplicas / 1_000_000_000_000).toString()
           )} cACU.`
         )
         log(
