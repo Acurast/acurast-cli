@@ -29,6 +29,17 @@ export const setEnvVars = async (
     return {}
   }
 
+  if (
+    jobAssignmentInfos.length === 0 ||
+    jobAssignmentInfos.every((info) => info.assignment.pubKeys.length === 0)
+  ) {
+    // If no pubkeys are present, it means that the match is done, but has not been acknowledged.
+    // We wait a little and try again.
+    await new Promise((resolve) => setTimeout(resolve, 30_000))
+
+    return setEnvVars(job)
+  }
+
   const jobEnvironmentService = new JobEnvironmentService()
   const res = await jobEnvironmentService.setEnvironmentVariablesMulti(
     wallet,

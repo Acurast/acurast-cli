@@ -58,7 +58,7 @@ export const createJob = async (
 
       const timeToJobStart = job.schedule.startTime - Date.now()
 
-      const setEnv = () => {
+      const setEnv = async () => {
         envHasBeenSet = true
         timeout = undefined
         // console.log('SETTING ENV')
@@ -67,7 +67,7 @@ export const createJob = async (
           throw new Error('DeploymentId not set')
         }
 
-        const envs = setEnvVars({
+        const envs = await setEnvVars({
           id: jobId,
           registration: job,
           envVars,
