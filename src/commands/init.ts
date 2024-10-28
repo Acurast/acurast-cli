@@ -17,6 +17,65 @@ import { parse } from '../util/parse-duration.js'
 import { generateMnemonic } from 'bip39'
 import { getWallet } from '../util/getWallet.js'
 
+const setupEnvFile = () => {
+  const requiredEnvVariables = [
+    'ACURAST_MNEMONIC',
+    'ACURAST_IPFS_URL',
+    'ACURAST_IPFS_API_KEY',
+  ]
+
+  const mnemonic = generateMnemonic()
+
+  const hasEnvFile = existsSync('./.env')
+  if (hasEnvFile) {
+    // Check if we already have the env variables in the .env file
+    const envFileContent = fs.readFileSync('./.env', {
+      encoding: 'utf-8',
+    })
+
+    const missingEnvVariables = requiredEnvVariables.filter(
+      (envVar) => !envFileContent.includes(envVar)
+    )
+
+    if (missingEnvVariables.length === 0) {
+      console.log('All required environment variables are already set')
+    } else {
+      console.log(
+        `You already have a .env file. The following variables will be added to it:`
+      )
+
+      requiredEnvVariables.forEach((envVar) => {
+        console.log(`- ${envVar}`)
+      })
+
+      appendFileSync('./.env', `\n\n# Acurast CLI`)
+
+      if (missingEnvVariables.includes('ACURAST_MNEMONIC')) {
+        process.env['ACURAST_MNEMONIC'] = mnemonic
+        appendFileSync('./.env', `\nACURAST_MNEMONIC=${mnemonic}`)
+      }
+
+      missingEnvVariables.forEach((envVar) => {
+        appendFileSync('./.env', `\n# ${envVar}=`)
+      })
+    }
+  }
+
+  if (!hasEnvFile) {
+    console.log('There is no .env file, creating one now...')
+
+    const envVarsText = requiredEnvVariables
+      .slice(1)
+      .map((el) => `\n# ${el}=`)
+      .join('')
+
+    process.env['ACURAST_MNEMONIC'] = mnemonic
+    writeFileSync('./.env', `ACURAST_MNEMONIC=${mnemonic}${envVarsText}`)
+
+    console.log(`.env file created. Visit ${ENV_HELP_LINK} to learn more.`)
+  }
+}
+
 export const addCommandInit = (program: Command) => {
   program
     .command('init')
@@ -26,14 +85,9 @@ export const addCommandInit = (program: Command) => {
 
       if (existsSync('./acurast.json')) {
         console.log('An acurast.json file already exists')
-        const newProject = await confirm({
-          message: 'Do you want to add another project?',
-        })
 
-        if (!newProject) {
-          console.log('You can deploy your app using "acurast deploy"')
-          return
-        }
+        setupEnvFile()
+        return
       }
 
       const acurastConfig: AcurastCliConfig | undefined = (() => {
@@ -48,62 +102,7 @@ export const addCommandInit = (program: Command) => {
         }
       })()
 
-      const requiredEnvVariables = [
-        'ACURAST_MNEMONIC',
-        'ACURAST_IPFS_URL',
-        'ACURAST_IPFS_API_KEY',
-      ]
-
-      const mnemonic = generateMnemonic()
-
-      const hasEnvFile = existsSync('./.env')
-      if (hasEnvFile) {
-        console.log(
-          `You already have a .env file. The following variables will be added to it:`
-        )
-
-        // Check if we already have the env variables in the .env file
-        const envFileContent = fs.readFileSync('./.env', {
-          encoding: 'utf-8',
-        })
-
-        const missingEnvVariables = requiredEnvVariables.filter(
-          (envVar) => !envFileContent.includes(envVar)
-        )
-
-        if (missingEnvVariables.length === 0) {
-          console.log('All required environment variables are already set')
-        } else {
-          requiredEnvVariables.forEach((envVar) => {
-            console.log(`- ${envVar}`)
-          })
-
-          appendFileSync('./.env', `\n\n# Acurast CLI`)
-
-          if (missingEnvVariables.includes('ACURAST_MNEMONIC')) {
-            process.env['ACURAST_MNEMONIC'] = mnemonic
-            appendFileSync('./.env', `\nACURAST_MNEMONIC=${mnemonic}`)
-          }
-
-          missingEnvVariables.forEach((envVar) => {
-            appendFileSync('./.env', `\n# ${envVar}=`)
-          })
-        }
-      }
-
-      if (!hasEnvFile) {
-        console.log('There is no .env file, creating one now...')
-
-        const envVarsText = requiredEnvVariables
-          .slice(1)
-          .map((el) => `\n# ${el}=`)
-          .join('')
-
-        process.env['ACURAST_MNEMONIC'] = mnemonic
-        writeFileSync('./.env', `ACURAST_MNEMONIC=${mnemonic}${envVarsText}`)
-
-        console.log(`.env file created. Visit ${ENV_HELP_LINK} to learn more.`)
-      }
+      setupEnvFile()
 
       const wallet = await getWallet()
       console.log('')
