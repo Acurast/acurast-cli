@@ -159,6 +159,13 @@ export const addCommandDeploy = (program: Command) => {
           )
           log('')
           return
+        } else if (balance < 1) {
+          log(
+            `Your balance is low. Visit ${toAcurastColor(
+              getFaucetLinkForAddress(wallet.address)
+            )} to get some tokens.`
+          )
+          log('')
         }
 
         log('The CLI will use the following address: ' + wallet.address)
