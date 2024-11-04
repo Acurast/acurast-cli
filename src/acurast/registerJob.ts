@@ -132,7 +132,7 @@ export const registerJob = (
             // console.log("jobIds", jobIds);
             if (jobIds.length > 0) {
               statusCallback(DeploymentStatus.WaitingForMatch, {
-                jobIds: jobIds.map((jobId) => jobId.toHuman()),
+                jobIds: jobIds.map((jobId) => jobId.toJSON()),
               })
               const unsubStoredJobStatus =
                 await api.query.acurastMarketplace.storedJobStatus.multi(

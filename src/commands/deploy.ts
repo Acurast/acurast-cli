@@ -184,7 +184,7 @@ export const addCommandDeploy = (program: Command) => {
         log(
           `The deployment will be scheduled to start in ${toAcurastColor(
             `${humanTime(now - startTime, true)}`
-          )}. It will run for ${toAcurastColor(
+          )}. (${new Date(startTime).toLocaleString()}) It will run for ${toAcurastColor(
             config.execution.type === 'onetime'
               ? humanTime(config.execution.maxExecutionTimeInMs, true)
               : humanTime(
