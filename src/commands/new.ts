@@ -5,7 +5,7 @@ import path from 'path'
 import { select } from '@inquirer/prompts'
 import * as ora from '../util/ora.js'
 
-const TEMPLATES_REPO = 'git@github.com:Acurast/acurast-example-apps.git'
+const TEMPLATES_REPO = 'https://github.com/Acurast/acurast-example-apps.git'
 const TEMPLATES_DIR = 'templates'
 const LOCAL_REPO_DIR = 'acurast-templates'
 
