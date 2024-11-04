@@ -20,6 +20,7 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { addCommandDeployments } from './commands/deployments.js'
 import { addCommandNew } from './commands/new.js'
+import { ACURAST_CLI_VERSION_CHECK_URL } from './constants.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -63,4 +64,25 @@ if (!process.argv.slice(2).length) {
   process.exit(0) // If no command is provided, exit the process
 }
 
-program.parse(process.argv)
+// Check if there's a newer version available
+fetch(ACURAST_CLI_VERSION_CHECK_URL)
+  .then((response) => response.json())
+  .then((remotePackage) => {
+    const localVersion = packageJson.version
+    const remoteVersion = remotePackage.version
+
+    if (remoteVersion > localVersion) {
+      console.log(
+        acurastColor(
+          `\nA new version (v${remoteVersion}) is available! You are currently on version v${localVersion}\n` +
+            'Update by running: npm install -g @acurast/cli\n'
+        )
+      )
+    }
+  })
+  .catch(() => {
+    // Silently fail if unable to check version
+  })
+  .finally(() => {
+    program.parse(process.argv)
+  })

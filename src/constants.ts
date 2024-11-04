@@ -10,3 +10,6 @@ ensureDirectoryExistence(ACURAST_BASE_PATH)
 
 export const ACURAST_DEPLOYMENTS_PATH = `${ACURAST_BASE_PATH}/deploy`
 ensureDirectoryExistence(ACURAST_DEPLOYMENTS_PATH)
+
+export const ACURAST_CLI_VERSION_CHECK_URL =
+  'https://raw.githubusercontent.com/Acurast/acurast-cli/refs/heads/main/package.json'
