@@ -12,6 +12,7 @@ import { storeDeployment } from '../acurast/storeDeployment.js'
 import { acurastColor } from '../util.js'
 import { humanTime } from '../util/humanTime.js'
 import {
+  convertConfigToJob,
   DEFAULT_START_DELAY,
   isStartAtMsFromNow,
   isStartAtTimestamp,
@@ -26,6 +27,24 @@ import { getFaucetLinkForAddress } from '../constants.js'
 import * as ora from '../util/ora.js'
 import type { EnvVar, Job } from '../acurast/env/types.js'
 import type { JobRegistration } from '../types.js'
+
+import { BigNumber } from 'bignumber.js'
+const ACURAST_DECIMALS: number = 12
+const DEFAULT_BASE_FEE: BigNumber = new BigNumber('2000000000')
+const DEFAULT_FEE_PER_MILLIS: BigNumber = new BigNumber(1)
+const DEFAULT_FEE_PER_BYTE: BigNumber = new BigNumber(1)
+
+const suggestReward = (duration: number, storage: number) => {
+  if (duration === null) {
+    throw Error('Invalid duration')
+  }
+  const minDefaultReward = DEFAULT_FEE_PER_MILLIS.times(duration)
+    .plus(DEFAULT_FEE_PER_BYTE.times(storage))
+    .plus(DEFAULT_BASE_FEE)
+  const suggestedReward = minDefaultReward.times(2)
+
+  return suggestedReward.shiftedBy(-ACURAST_DECIMALS).toNumber()
+}
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -237,6 +256,20 @@ export const addCommandDeploy = (program: Command) => {
         )
         log('')
 
+        const job = convertConfigToJob(config)
+
+        const suggestedReward = suggestReward(
+          job.schedule.duration,
+          job.storage
+        )
+
+        log(
+          `The calculated suggested reward for your deployment is ${toAcurastColor(
+            suggestedReward.toString()
+          )} cACU.`
+        )
+        log('')
+
         if (options.dryRun) {
           log('🧪 Dry run, not deploying.')
           return
@@ -249,6 +282,7 @@ export const addCommandDeploy = (program: Command) => {
 
         const jobRegistration = createJob(
           config,
+          job,
           RPC,
           envVars,
           async (status: DeploymentStatus, data) => {
@@ -262,6 +296,7 @@ export const addCommandDeploy = (program: Command) => {
             } else if (status === DeploymentStatus.Prepared) {
               // console.log(status, data);
               jobRegistrationTemp = data.job as JobRegistration
+
               await storeDeployment(
                 deploymentTime,
                 originalConfig,

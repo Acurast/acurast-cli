@@ -12,13 +12,17 @@ import { parse } from '../util/parse-duration.js'
 import { input } from '@inquirer/prompts'
 import { createJob } from '../acurast/createJob.js'
 import { DeploymentStatus } from '../acurast/types.js'
-import { AssignmentStrategyVariant } from '../types.js'
+import {
+  AssignmentStrategyVariant,
+  type AcurastProjectConfig,
+} from '../types.js'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { shortenString } from '../util/shortenString.js'
 import { red, green, yellowBright } from 'ansis'
 import { RPC } from '../config.js'
 import { jobToNumber } from '../util/jobToNumber.js'
+import { convertConfigToJob } from '../acurast/convertConfigToJob.js'
 
 export const addCommandLive = (program: Command) => {
   program
@@ -79,45 +83,44 @@ export const addCommandLive = (program: Command) => {
             'live-code-processor.js'
           )
 
-          createJob(
-            {
-              projectName: 'report',
-              fileUrl: filePath,
-              network: 'canary',
-              onlyAttestedDevices: false,
-              startAt: {
-                msFromNow: 300000,
-              },
-              assignmentStrategy: {
-                type: AssignmentStrategyVariant.Single,
-              },
-              execution: {
-                type: 'onetime',
-                maxExecutionTimeInMs: durationInMilliseconds,
-              },
-              maxAllowedStartDelayInMs: 60000,
-              usageLimit: {
-                maxMemory: 0,
-                maxNetworkRequests: 0,
-                maxStorage: 0,
-              },
-              numberOfReplicas: numberOfProcessors,
-              requiredModules: [],
-              minProcessorReputation: 0,
-              maxCostPerExecution: 10000000000,
-              includeEnvironmentVariables: [],
-              processorWhitelist: [],
+          const config: AcurastProjectConfig = {
+            projectName: 'report',
+            fileUrl: filePath,
+            network: 'canary',
+            onlyAttestedDevices: false,
+            startAt: {
+              msFromNow: 300000,
             },
-            RPC,
-            [],
-            (status, data) => {
-              if (status === DeploymentStatus.WaitingForMatch) {
-                const jobId = data.jobIds[0]
-                resolve(jobId)
-                spinner.succeed('Live code environment scheduled')
-              }
+            assignmentStrategy: {
+              type: AssignmentStrategyVariant.Single,
+            },
+            execution: {
+              type: 'onetime',
+              maxExecutionTimeInMs: durationInMilliseconds,
+            },
+            maxAllowedStartDelayInMs: 60000,
+            usageLimit: {
+              maxMemory: 0,
+              maxNetworkRequests: 0,
+              maxStorage: 0,
+            },
+            numberOfReplicas: numberOfProcessors,
+            requiredModules: [],
+            minProcessorReputation: 0,
+            maxCostPerExecution: 10000000000,
+            includeEnvironmentVariables: [],
+            processorWhitelist: [],
+          }
+
+          const job = convertConfigToJob(config)
+
+          createJob(config, job, RPC, [], (status, data) => {
+            if (status === DeploymentStatus.WaitingForMatch) {
+              const jobId = data.jobIds[0]
+              resolve(jobId)
+              spinner.succeed('Live code environment scheduled')
             }
-          )
+          })
         })
 
         console.log(

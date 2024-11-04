@@ -11,6 +11,7 @@ import { setEnvVars } from '../util/setEnvVars.js'
 
 export const createJob = async (
   config: AcurastProjectConfig,
+  job: JobRegistration,
   rpc: string,
   envVars: EnvVar[],
   statusCallback: (
@@ -30,8 +31,6 @@ export const createJob = async (
 
   statusCallback(DeploymentStatus.Uploaded, { ipfsHash })
   config.fileUrl = ipfsHash
-
-  const job = convertConfigToJob(config)
 
   statusCallback(DeploymentStatus.Prepared, { job })
 
