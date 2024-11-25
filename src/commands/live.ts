@@ -114,7 +114,7 @@ export const addCommandLive = (program: Command) => {
 
           const job = convertConfigToJob(config)
 
-          createJob(config, job, RPC, [], (status, data) => {
+          createJob(config, job, RPC, [], false, (status, data) => {
             if (status === DeploymentStatus.WaitingForMatch) {
               const jobId = data.jobIds[0]
               resolve(jobId)

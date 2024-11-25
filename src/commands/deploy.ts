@@ -78,6 +78,7 @@ export const addCommandDeploy = (program: Command) => {
         'Do not ask for any input. Use this when triggering the CLI in a CD/CI pipeline.'
       )
     )
+    .addOption(new Option('-u, --only-upload', 'Only upload to IPFS and quit.'))
     .action(
       async (
         project: string,
@@ -87,6 +88,7 @@ export const addCommandDeploy = (program: Command) => {
           exitEarly?: boolean
           // Currently this command has no interactive parts, so this option is not used
           nonInteractive?: boolean
+          onlyUpload?: boolean
         }
       ) => {
         const log = consoleOutput(options.output)
@@ -285,6 +287,7 @@ export const addCommandDeploy = (program: Command) => {
           job,
           RPC,
           envVars,
+          options.onlyUpload ?? false,
           async (status: DeploymentStatus, data) => {
             // console.log(status, data)
             if (options.output === 'json') {
