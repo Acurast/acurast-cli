@@ -8,6 +8,7 @@ import { registerJob } from './registerJob.js'
 import { getWallet } from '../util/getWallet.js'
 import type { EnvVar, JobId } from './env/types.js'
 import { setEnvVars } from '../util/setEnvVars.js'
+import { filelogger } from '../util/fileLogger.js'
 
 export const createJob = async (
   config: AcurastProjectConfig,
@@ -49,10 +50,15 @@ export const createJob = async (
   ) => {
     if (status === DeploymentStatus.WaitingForMatch) {
       jobId = data.jobIds[0]
+      if (jobId) {
+        filelogger.setJobId(jobId)
+      }
     }
     if (status === DeploymentStatus.Acknowledged) {
       if (envHasBeenSet) {
-        // console.log('ENV HAS BEEN SET, BUT NEW ACKS HAVE BEEN RECEIVED')
+        filelogger.log(
+          'Setting Environment Variables: Env has been set, but new acks have been received.'
+        )
         return statusCallback(status, data)
       }
 
@@ -60,10 +66,14 @@ export const createJob = async (
 
       const setEnv = async () => {
         envHasBeenSet = true
+        if (timeout) {
+          clearTimeout(timeout)
+        }
         timeout = undefined
-        // console.log('SETTING ENV')
+        filelogger.debug('Setting Environment Variables: Preparing transaction')
 
         if (!jobId) {
+          filelogger.error('Setting Environment Variables: JobId not set')
           throw new Error('DeploymentId not set')
         }
 
@@ -72,28 +82,42 @@ export const createJob = async (
           registration: job,
           envVars,
         })
+
+        filelogger.debug(
+          `Setting Environment Variables: Done ${envs.hash ? `(hash: ${envs.hash})` : ''}`
+        )
         statusCallback(DeploymentStatus.EnvironmentVariablesSet, envs)
-      }
-
-      // If start time is within specified timeframe, set env vars now, regardless if all acks are here.
-      if (timeToJobStart <= TWO_MINUTES) {
-        // console.log('START IS SOON TRIGGERED')
-        setEnv()
-        return statusCallback(status, data)
-      }
-
-      // If start time is in the future, set timout to 2 mins before start time
-      if (!timeout) {
-        timeout = setTimeout(() => {
-          // console.log('TIMEOUT TRIGGERED')
-          setEnv()
-        }, timeToJobStart - TWO_MINUTES)
       }
 
       if (data.acknowledged >= config.numberOfReplicas) {
         // Now we can set env vars
-        // console.log('HAVE ALL ACKS', data)
+        filelogger.debug(
+          'Setting Environment Variables: Have all acknowledgements, so we can set the env vars now.'
+        )
         setEnv()
+      } else {
+        // If start time is within specified timeframe, set env vars now, regardless if all acks are here.
+        if (timeToJobStart <= TWO_MINUTES) {
+          filelogger.debug(
+            'Setting Environment Variables: Start is scheduled within 2 minutes, so we do it now.'
+          )
+          setEnv()
+        } else {
+          // If start time is in the future, set timeout to 2 mins before start time
+          if (!timeout) {
+            filelogger.debug(
+              `Setting Environment Variables: Start is in the future, timeout will trigger in ${
+                timeToJobStart - TWO_MINUTES
+              }ms, 2 minutes before start time.`
+            )
+            timeout = setTimeout(() => {
+              filelogger.debug(
+                'Setting Environment Variables: Was in the future, timeout was awaited, now it will be set.'
+              )
+              setEnv()
+            }, timeToJobStart - TWO_MINUTES)
+          }
+        }
       }
     }
 

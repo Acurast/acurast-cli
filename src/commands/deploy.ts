@@ -26,6 +26,7 @@ import { getFaucetLinkForAddress } from '../constants.js'
 import * as ora from '../util/ora.js'
 import type { EnvVar, Job } from '../acurast/env/types.js'
 import type { JobRegistration } from '../types.js'
+import { filelogger } from '../util/fileLogger.js'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -448,6 +449,9 @@ export const addCommandDeploy = (program: Command) => {
                             {
                               title: `Acknowledged by 0/${config.numberOfReplicas}`,
                               task: async (ctx, task): Promise<void> => {
+                                filelogger.info(
+                                  `Waiting for processor acknowledgements: ${config.numberOfReplicas} expected`
+                                )
                                 let allAcknowledged = false
                                 // while (!allAcknowledged) {
                                 // TODO: Make reactive
@@ -455,6 +459,9 @@ export const addCommandDeploy = (program: Command) => {
                                   DeploymentStatus.Acknowledged
                                 )
 
+                                filelogger.info(
+                                  `Acknowledged by ${acknowledged}/${config.numberOfReplicas}`
+                                )
                                 task.title = `Acknowledged by ${acknowledged}/${config.numberOfReplicas}`
                                 // }
                               },
