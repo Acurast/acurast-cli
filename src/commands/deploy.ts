@@ -421,7 +421,7 @@ export const addCommandDeploy = (program: Command) => {
 
                         task.title =
                           'Deployment registered' +
-                          ` (JobID: ${jobIds
+                          ` (ID: ${jobIds
                             .map((jobId: any) => jobId[1])
                             .join(' | ')})`
                       },
