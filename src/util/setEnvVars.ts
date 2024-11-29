@@ -1,3 +1,4 @@
+import { appendFileSync } from 'fs'
 import { AcurastService } from '../acurast/env/acurastService.js'
 import { JobEnvironmentService } from '../acurast/env/jobEnvironmentService.js'
 import type { EnvVar, Job, JobId } from '../acurast/env/types.js'
@@ -11,7 +12,7 @@ export const setEnvVars = async (
   const wallet = await getWallet()
 
   const assignedProcessors = await acurast.assignedProcessors([
-    [{ Acurast: job.id[0].Acurast }, Number(toNumber(job.id[1] as any))],
+    [{ acurast: job.id[0].acurast }, Number(toNumber(job.id[1]))],
   ])
 
   const keys: [string, JobId][] = Array.from(

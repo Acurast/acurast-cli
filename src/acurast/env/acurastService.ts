@@ -821,10 +821,10 @@ export class AcurastService {
       const jobId: JobId = [
         jobIdJSON[0].acurast
           ? {
-              Acurast: jobIdJSON[0].acurast,
+              acurast: jobIdJSON[0].acurast,
             }
           : {
-              Tezos: jobIdJSON[0].tezos,
+              tezos: jobIdJSON[0].tezos,
             },
         jobIdJSON[1],
       ]
@@ -838,7 +838,7 @@ export class AcurastService {
   }
 
   public jobIdToString(jobId: JobId): string {
-    if (jobId[0].Acurast) {
+    if (jobId[0].acurast) {
       return `Acurast#${jobId[1]}`
     }
     return `Tezos#${jobId[1]}`
@@ -1088,7 +1088,7 @@ export class AcurastService {
   //   const api = await this.connect()
   //   return this.signAndSend(api, origin, [
   //     api.tx['acurastMarketplace']['finalizeJobs'](
-  //       jobIds.filter((id) => id[0].Acurast !== undefined).map((id) => id[1])
+  //       jobIds.filter((id) => id[0].acurast !== undefined).map((id) => id[1])
   //     ),
   //   ])
   // }
@@ -1149,10 +1149,10 @@ export class AcurastService {
     const multiOriginJSON = codec.toJSON() as any
     return multiOriginJSON.acurast
       ? {
-          Acurast: multiOriginJSON.acurast,
+          acurast: multiOriginJSON.acurast,
         }
       : {
-          Tezos: multiOriginJSON.tezos,
+          tezos: multiOriginJSON.tezos,
         }
   }
 
@@ -1197,10 +1197,10 @@ export class AcurastService {
     return [
       jobIdJSON[0].acurast
         ? {
-            Acurast: jobIdJSON[0].acurast,
+            acurast: jobIdJSON[0].acurast,
           }
         : {
-            Tezos: jobIdJSON[0].tezos,
+            tezos: jobIdJSON[0].tezos,
           },
       jobIdJSON[1],
     ]

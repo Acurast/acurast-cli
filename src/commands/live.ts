@@ -126,7 +126,7 @@ export const addCommandLive = (program: Command) => {
         console.log('')
 
         console.log(
-          `https://console.acurast.com/job-detail/acurast-${jobId[0].Acurast}-${jobToNumber(jobId)}`
+          `https://console.acurast.com/job-detail/acurast-${jobId[0].acurast}-${jobToNumber(jobId)}`
         )
         console.log('')
 
