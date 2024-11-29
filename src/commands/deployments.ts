@@ -45,7 +45,7 @@ export const addCommandDeployments = (program: Command) => {
           const jobs = await acurast.getAllJobs()
 
           const filteredJobs = jobs
-            .filter((job) => job.id[0].Acurast === wallet.address)
+            .filter((job) => job.id[0].acurast === wallet.address)
             .sort((a, b) => b.id[1] - a.id[1])
 
           spinner.stop()
@@ -93,7 +93,7 @@ export const addCommandDeployments = (program: Command) => {
             const now = Date.now()
 
             const filteredJobs = jobs
-              .filter((job) => job.id[0].Acurast === wallet.address)
+              .filter((job) => job.id[0].acurast === wallet.address)
               .filter((job) => job.registration.schedule.endTime < now)
               .sort((a, b) => a.id[1] - b.id[1])
 
@@ -198,7 +198,7 @@ export const addCommandDeployments = (program: Command) => {
           if (job.id) {
             console.log('Click here to open the deployment in your browser:')
             console.log(
-              `https://console.acurast.com/job-detail/acurast-${job.id[0].Acurast}-${deploymentId}`
+              `https://console.acurast.com/job-detail/acurast-${job.id[0].acurast}-${deploymentId}`
             )
           }
 
