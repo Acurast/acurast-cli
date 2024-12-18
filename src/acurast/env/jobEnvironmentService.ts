@@ -3,7 +3,7 @@ const { ec } = pkg
 
 import * as crypto from 'crypto'
 
-import { getProcessorEncrypionKey } from './utils.js'
+import { getProcessorEncryptionKey } from './utils.js'
 import type {
   EncKeyCurve,
   EncryptedValue,
@@ -211,7 +211,7 @@ export class JobEnvironmentService {
     jobId: number,
     jobEnvironmentVariables: EnvVar[]
   ) {
-    const processorEncryptionKey = getProcessorEncrypionKey(assignment)
+    const processorEncryptionKey = getProcessorEncryptionKey(assignment)
     if (processorEncryptionKey !== undefined) {
       const sharedKey = await this.generateSharedKey(
         processorEncryptionKey.publicKey,
@@ -271,7 +271,7 @@ export class JobEnvironmentService {
     let jobEnvironments: JobEnvironmentsEncrypted = []
 
     for (let assignment of assignments) {
-      const processorEncryptionKey = getProcessorEncrypionKey(assignment)
+      const processorEncryptionKey = getProcessorEncryptionKey(assignment)
 
       if (processorEncryptionKey !== undefined) {
         const sharedKey = await this.generateSharedKey(
