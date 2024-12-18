@@ -19,7 +19,7 @@ function findProcessorEncrypionKey(
     .find((key) => key !== undefined)
 }
 
-export function getProcessorEncrypionKey(
+export function getProcessorEncryptionKey(
   assignment: JobAssignmentInfo
 ): ProcessorEncryptionKey | undefined {
   const key =
