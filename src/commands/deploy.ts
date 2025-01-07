@@ -245,7 +245,7 @@ export const addCommandDeploy = (program: Command) => {
         log(
           `There will be ${toAcurastColor(
             numberOfExecutions.toString()
-          )} ${pluralize(numberOfExecutions, 'execution')} with ${toAcurastColor(config.numberOfReplicas.toString())} ${pluralize(config.numberOfReplicas, 'replica')}.`
+          )} ${pluralize(numberOfExecutions, 'execution')} with ${toAcurastColor(config.numberOfReplicas.toString())} ${pluralize(config.numberOfReplicas, 'replica')}. (Total runs: ${toAcurastColor((numberOfExecutions * config.numberOfReplicas).toString())})`
         )
         log(
           `Each replica has a cost of ${toAcurastColor(
