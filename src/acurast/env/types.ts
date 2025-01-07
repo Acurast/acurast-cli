@@ -36,8 +36,8 @@ export type JobEnvironmentsEncrypted = {
 }[]
 
 export type MultiOrigin = {
-  Acurast?: string
-  Tezos?: string
+  acurast?: string
+  tezos?: string
 }
 
 export type PubKey = {

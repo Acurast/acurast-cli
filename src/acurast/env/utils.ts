@@ -19,7 +19,7 @@ function findProcessorEncrypionKey(
     .find((key) => key !== undefined)
 }
 
-export function getProcessorEncrypionKey(
+export function getProcessorEncryptionKey(
   assignment: JobAssignmentInfo
 ): ProcessorEncryptionKey | undefined {
   const key =
@@ -40,5 +40,5 @@ export function getProcessorEncrypionKey(
 
 export const sameJobIds = (first: JobId, second: JobId): boolean =>
   !(
-    first[0].Acurast !== second[0].Acurast || first[0].Tezos !== second[0].Tezos
+    first[0].acurast !== second[0].acurast || first[0].tezos !== second[0].tezos
   ) && first[1] === second[1]

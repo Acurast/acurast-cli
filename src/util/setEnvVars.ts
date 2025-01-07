@@ -1,17 +1,21 @@
+import { appendFileSync } from 'fs'
 import { AcurastService } from '../acurast/env/acurastService.js'
 import { JobEnvironmentService } from '../acurast/env/jobEnvironmentService.js'
 import type { EnvVar, Job, JobId } from '../acurast/env/types.js'
 import { getWallet } from './getWallet.js'
 import { toNumber } from './jobToNumber.js'
+import { KeyringPair } from '@polkadot/keyring/types'
 
 export const setEnvVars = async (
-  job: Job & { envVars?: EnvVar[] }
+  job: Job & { envVars?: EnvVar[] },
+  wallet?: KeyringPair
 ): Promise<{ hash?: string }> => {
   const acurast = new AcurastService()
-  const wallet = await getWallet()
+  // If a wallet is not provided, get the one from the environment configuration
+  wallet ||= await getWallet()
 
   const assignedProcessors = await acurast.assignedProcessors([
-    [{ Acurast: job.id[0].Acurast }, Number(toNumber(job.id[1] as any))],
+    [{ acurast: job.id[0].acurast }, Number(toNumber(job.id[1]))],
   ])
 
   const keys: [string, JobId][] = Array.from(

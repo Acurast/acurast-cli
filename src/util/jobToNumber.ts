@@ -4,6 +4,9 @@ export const jobToNumber = (job: JobId) => {
   return toNumber(job[1].toString())
 }
 
-export const toNumber = (jobId: string) => {
+export const toNumber = (jobId: string | number) => {
+  if (typeof jobId === 'number') {
+    return jobId
+  }
   return jobId.split(',').join('')
 }

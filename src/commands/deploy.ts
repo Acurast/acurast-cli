@@ -27,6 +27,7 @@ import { getFaucetLinkForAddress } from '../constants.js'
 import * as ora from '../util/ora.js'
 import type { EnvVar, Job } from '../acurast/env/types.js'
 import type { JobRegistration } from '../types.js'
+import { filelogger } from '../util/fileLogger.js'
 
 import { BigNumber } from 'bignumber.js'
 const ACURAST_DECIMALS: number = 12
@@ -459,7 +460,7 @@ export const addCommandDeploy = (program: Command) => {
 
                         task.title =
                           'Deployment registered' +
-                          ` (JobID: ${jobIds
+                          ` (ID: ${jobIds
                             .map((jobId: any) => jobId[1])
                             .join(' | ')})`
                       },
@@ -486,6 +487,9 @@ export const addCommandDeploy = (program: Command) => {
                             {
                               title: `Acknowledged by 0/${config.numberOfReplicas}`,
                               task: async (ctx, task): Promise<void> => {
+                                filelogger.info(
+                                  `Waiting for processor acknowledgements: ${config.numberOfReplicas} expected`
+                                )
                                 let allAcknowledged = false
                                 // while (!allAcknowledged) {
                                 // TODO: Make reactive
@@ -493,6 +497,9 @@ export const addCommandDeploy = (program: Command) => {
                                   DeploymentStatus.Acknowledged
                                 )
 
+                                filelogger.info(
+                                  `Acknowledged by ${acknowledged}/${config.numberOfReplicas}`
+                                )
                                 task.title = `Acknowledged by ${acknowledged}/${config.numberOfReplicas}`
                                 // }
                               },
