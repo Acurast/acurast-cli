@@ -51,6 +51,12 @@ const androidVersions = new Map<buildNumber, string>([
   [65, '1.10.4-beta1'],
   [66, '1.11.0-rc2'],
   [67, '1.11.0'],
+  [68, '1.12.0-beta1'],
+  [69, '1.12.0-rc1'],
+  [70, '1.12.0'],
+  [71, '1.12.1'],
+  [72, '1.13.0-rc1'],
+  [73, '1.13.0'],
 ])
 
 const iosVersions = new Map<buildNumber, string>([])
