@@ -15,6 +15,7 @@ export const createJob = async (
   job: JobRegistration,
   rpc: string,
   envVars: EnvVar[],
+  onlyUpload: boolean,
   statusCallback: (
     status: DeploymentStatus,
     data?: JobRegistration | any
@@ -41,89 +42,96 @@ export const createJob = async (
 
   let timeout: NodeJS.Timeout | undefined
 
-  let jobId: JobId | undefined
-  // We want to wrap the status callback to set the environment variables
-  const statusCallbackWrapper = (
-    status: DeploymentStatus,
-    data?: JobRegistration | any
-  ) => {
-    if (status === DeploymentStatus.WaitingForMatch) {
-      jobId = data.jobIds[0]
-      if (jobId) {
-        filelogger.setJobId(jobId)
-      }
-    }
-    if (status === DeploymentStatus.Acknowledged) {
-      if (envHasBeenSet) {
-        filelogger.log(
-          'Setting Environment Variables: Env has been set, but new acks have been received.'
-        )
-        return statusCallback(status, data)
-      }
-
-      const timeToJobStart = job.schedule.startTime - Date.now()
-
-      const setEnv = async () => {
-        envHasBeenSet = true
-        if (timeout) {
-          clearTimeout(timeout)
+  if (!onlyUpload) {
+    let jobId: JobId | undefined
+    // We want to wrap the status callback to set the environment variables
+    const statusCallbackWrapper = (
+      status: DeploymentStatus,
+      data?: JobRegistration | any
+    ) => {
+      if (status === DeploymentStatus.WaitingForMatch) {
+        jobId = data.jobIds[0]
+        if (jobId) {
+          filelogger.setJobId(jobId)
         }
-        timeout = undefined
-        filelogger.debug('Setting Environment Variables: Preparing transaction')
-
-        if (!jobId) {
-          filelogger.error('Setting Environment Variables: JobId not set')
-          throw new Error('DeploymentId not set')
+      }
+      if (status === DeploymentStatus.Acknowledged) {
+        if (envHasBeenSet) {
+          filelogger.log(
+            'Setting Environment Variables: Env has been set, but new acks have been received.'
+          )
+          return statusCallback(status, data)
         }
 
-        const envs = await setEnvVars({
-          id: jobId,
-          registration: job,
-          envVars,
-        })
+        const timeToJobStart = job.schedule.startTime - Date.now()
 
-        filelogger.debug(
-          `Setting Environment Variables: Done ${envs.hash ? `(hash: ${envs.hash})` : ''}`
-        )
-        statusCallback(DeploymentStatus.EnvironmentVariablesSet, envs)
-      }
+        const setEnv = async () => {
+          envHasBeenSet = true
+          if (timeout) {
+            clearTimeout(timeout)
+          }
 
-      if (data.acknowledged >= config.numberOfReplicas) {
-        // Now we can set env vars
-        filelogger.debug(
-          'Setting Environment Variables: Have all acknowledgements, so we can set the env vars now.'
-        )
-        setEnv()
-      } else {
-        // If start time is within specified timeframe, set env vars now, regardless if all acks are here.
-        if (timeToJobStart <= TWO_MINUTES) {
+          timeout = undefined
           filelogger.debug(
-            'Setting Environment Variables: Start is scheduled within 2 minutes, so we do it now.'
+            'Setting Environment Variables: Preparing transaction'
+          )
+
+          if (!jobId) {
+            filelogger.error('Setting Environment Variables: JobId not set')
+            throw new Error('DeploymentId not set')
+          }
+
+          const envs = await setEnvVars({
+            id: jobId,
+            registration: job,
+            envVars,
+          })
+
+          filelogger.debug(
+            `Setting Environment Variables: Done ${envs.hash ? `(hash: ${envs.hash})` : ''}`
+          )
+          statusCallback(DeploymentStatus.EnvironmentVariablesSet, envs)
+        }
+
+        if (data.acknowledged >= config.numberOfReplicas) {
+          // Now we can set env vars
+          filelogger.debug(
+            'Setting Environment Variables: Have all acknowledgements, so we can set the env vars now.'
           )
           setEnv()
         } else {
-          // If start time is in the future, set timeout to 2 mins before start time
-          if (!timeout) {
+          // If start time is within specified timeframe, set env vars now, regardless if all acks are here.
+          if (timeToJobStart <= TWO_MINUTES) {
             filelogger.debug(
-              `Setting Environment Variables: Start is in the future, timeout will trigger in ${
-                timeToJobStart - TWO_MINUTES
-              }ms, 2 minutes before start time.`
+              'Setting Environment Variables: Start is scheduled within 2 minutes, so we do it now.'
             )
-            timeout = setTimeout(() => {
+            setEnv()
+          } else {
+            // If start time is in the future, set timeout to 2 mins before start time
+            if (!timeout) {
               filelogger.debug(
-                'Setting Environment Variables: Was in the future, timeout was awaited, now it will be set.'
+                `Setting Environment Variables: Start is in the future, timeout will trigger in ${
+                  timeToJobStart - TWO_MINUTES
+                }ms, 2 minutes before start time.`
               )
-              setEnv()
-            }, timeToJobStart - TWO_MINUTES)
+              timeout = setTimeout(() => {
+                filelogger.debug(
+                  'Setting Environment Variables: Was in the future, timeout was awaited, now it will be set.'
+                )
+                setEnv()
+              }, timeToJobStart - TWO_MINUTES)
+            }
           }
         }
       }
+
+      statusCallback(status, data)
     }
 
-    statusCallback(status, data)
+    const result = await registerJob(api, wallet, job, statusCallbackWrapper)
+
+    statusCallback(DeploymentStatus.Submit, { txHash: result })
   }
 
-  const result = await registerJob(api, wallet, job, statusCallbackWrapper)
-
-  statusCallback(DeploymentStatus.Submit, { txHash: result })
+  return job
 }
