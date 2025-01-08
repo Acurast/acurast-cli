@@ -5,6 +5,7 @@ import {
 import {
   AcurastProjectConfig,
   AssignmentStrategyVariant,
+  DeploymentRuntime,
   JobRegistration,
 } from '../src/types.js'
 
@@ -48,6 +49,7 @@ describe('convertConfigToJob', () => {
       requiredModules: undefined,
       extra: {
         requirements: {
+          runtime: DeploymentRuntime.NodeJSWithBundle,
           assignmentStrategy: {
             variant: AssignmentStrategyVariant.Single,
             instantMatch: undefined,

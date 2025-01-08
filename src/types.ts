@@ -10,7 +10,14 @@ export interface AcurastProjectConfig {
   projectName: string
 
   // The path to the bundled file, including all dependencies (e.g., dist/bundle.js).
+  // 3 separate types are accepted:
+  // 1. A local file path (single file)
+  // 2. A local folder path (folder will be zipped and uploaded)
+  // 3. An IPFS hash (ipfs://...)
   fileUrl: string
+
+  // The file that will be started during execution. Defaults to "index.js"
+  entrypoint?: string
 
   // The network on which the project will be deployed.
   network: 'canary'
@@ -95,6 +102,9 @@ export interface AcurastProjectConfig {
     // The minimum version for iOS.
     ios?: string | number
   }
+
+  // The restart policy for the deployment. Defaults to "onFailure".
+  restartPolicy?: RestartPolicy
 }
 
 export interface AcurastDeployment {
@@ -158,6 +168,18 @@ export interface JobRegistration {
           buildNumber: number
         }[]
       }
+      runtime: DeploymentRuntime
     }
   }
+}
+
+export enum RestartPolicy {
+  No = 'no',
+  OnFailure = 'onFailure',
+  Always = 'always',
+}
+
+export enum DeploymentRuntime {
+  NodeJS = 'NodeJS',
+  NodeJSWithBundle = 'NodeJSWithBundle',
 }
