@@ -1,6 +1,7 @@
 import {
   AcurastProjectConfig,
   AssignmentStrategyVariant,
+  DeploymentRuntime,
   JobRegistration,
 } from '../types.js'
 import { deviceVersions } from './app-versions.js'
@@ -168,6 +169,7 @@ export const convertConfigToJob = (
         reward: rewardPerExecution,
         minReputation: processorReputation,
         processorVersion: minProcessorVersions,
+        runtime: DeploymentRuntime.NodeJSWithBundle,
       },
     },
   }

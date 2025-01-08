@@ -1,14 +1,19 @@
 import '@polkadot/api-augment'
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { uploadScript } from './uploadToIpfs.js'
-import { AcurastProjectConfig, JobRegistration } from '../types.js'
-import { convertConfigToJob } from './convertConfigToJob.js'
+import {
+  AcurastProjectConfig,
+  JobRegistration,
+  RestartPolicy,
+} from '../types.js'
 import { DeploymentStatus } from './types.js'
 import { registerJob } from './registerJob.js'
 import { getWallet } from '../util/getWallet.js'
 import type { EnvVar, JobId } from './env/types.js'
 import { setEnvVars } from '../util/setEnvVars.js'
 import { filelogger } from '../util/fileLogger.js'
+import { zipFolder } from '../util/zipFolder.js'
+import { createManifest } from '../util/createManifest.js'
 
 export const createJob = async (
   config: AcurastProjectConfig,
@@ -29,10 +34,36 @@ export const createJob = async (
 
   const wallet = await getWallet()
 
-  const ipfsHash = await uploadScript({ file: config.fileUrl })
+  let ipfsHash: string | undefined
+
+  if (config.fileUrl.startsWith('ipfs://')) {
+    ipfsHash = config.fileUrl
+    filelogger.debug(`config.fileUrl is an IPFS hash, so we this: ${ipfsHash}`)
+  } else {
+    filelogger.debug(
+      `config.fileUrl is not an IPFS hash, so we zip it: ${config.fileUrl}`
+    )
+    let { zipPath } = await zipFolder(
+      config.fileUrl,
+      '.acurast/bundles',
+      createManifest(
+        config.projectName,
+        config.entrypoint ?? config.fileUrl,
+        config.restartPolicy ?? RestartPolicy.OnFailure
+      ),
+      config.projectName
+    )
+
+    filelogger.log(`zipPath ${zipPath}`)
+
+    ipfsHash = await uploadScript({ file: zipPath })
+
+    filelogger.debug(`ipfsHash: ${ipfsHash}`)
+  }
 
   statusCallback(DeploymentStatus.Uploaded, { ipfsHash })
   config.fileUrl = ipfsHash
+  job.script = ipfsHash
 
   statusCallback(DeploymentStatus.Prepared, { job })
 

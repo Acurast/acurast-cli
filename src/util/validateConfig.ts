@@ -2,6 +2,7 @@ import { z, type ZodIssue } from 'zod'
 import {
   AssignmentStrategyVariant,
   type AcurastProjectConfig,
+  RestartPolicy,
 } from '../types.js'
 
 const isAcurastAddress = (val: string) => {
@@ -13,6 +14,7 @@ const isNotAcurastAddressMessage: string = 'Invalid Acurast address'
 const acurastProjectConfigSchema = z.object({
   projectName: z.string(),
   fileUrl: z.string(),
+  entrypoint: z.string().optional(),
   network: z.literal('canary'),
   onlyAttestedDevices: z.boolean(),
   startAt: z
@@ -118,6 +120,7 @@ const acurastProjectConfigSchema = z.object({
       }),
     ])
     .optional(),
+  restartPolicy: z.nativeEnum(RestartPolicy).optional(),
 })
 
 const acurastProjectConfigSchemaWithNotes =
