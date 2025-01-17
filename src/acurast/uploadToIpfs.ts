@@ -1,7 +1,6 @@
 import axios from 'axios'
 import FormDataModule from 'form-data'
 import fs from 'fs'
-import path from 'path'
 import { getEnv } from '../config.js'
 
 export const uploadScript = async (

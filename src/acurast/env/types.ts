@@ -89,6 +89,7 @@ export type JobRequirements = {
   reward: BigNumber
   minReputation?: BigNumber
   processorVersion?: ProcessorVersionRequirements
+  runtime: DeploymentRuntime
 }
 
 export type ProcessorVersionRequirements = {
@@ -148,7 +149,7 @@ export type ProcessorEncryptionKey = {
 }
 
 import { RegistryTypes } from '@polkadot/types-codec/types'
-import type { JobRegistration } from '../../types.js'
+import type { DeploymentRuntime, JobRegistration } from '../../types.js'
 
 export const CUSTOM_TYPES: RegistryTypes = {
   PalletAcurastMarketplacePartialJobRegistration: {
