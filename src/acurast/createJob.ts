@@ -33,6 +33,7 @@ export const createJob = async (
 
   statusCallback(DeploymentStatus.Uploaded, { ipfsHash })
   config.fileUrl = ipfsHash
+  job.script = ipfsHash
 
   statusCallback(DeploymentStatus.Prepared, { job })
 
