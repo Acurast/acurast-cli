@@ -16,6 +16,10 @@ export const zipFolder = async (
 
   const zip = new AdmZip()
 
+  // Set fixed timestamp for all entries. This is needed to make the zip file deterministic. Otherwise, the zip file and the IPFS hash will be different.
+  // Using January 1, 1980 00:00:00 UTC because zip files use the DOS timestamp epoch
+  const CREATED_AT = new Date('1980-01-01T00:00:00.000Z')
+
   zip.addFile('manifest.json', Buffer.from(manifest, 'utf8'))
 
   const stats = statSync(input)
@@ -25,7 +29,11 @@ export const zipFolder = async (
     zip.addLocalFolder(input)
   }
 
-  const zipPath = `${outputFolder}/${deploymentName}-${new Date().toISOString().replace(/[:.]/g, '-')}.zip`
+  zip.getEntries().forEach((entry) => {
+    entry.header.time = CREATED_AT
+  })
+
+  const zipPath = `${outputFolder}/${deploymentName}.zip`
   filelogger.debug(`zipPath: ${zipPath}`)
 
   zip.writeZip(zipPath, (error) => {

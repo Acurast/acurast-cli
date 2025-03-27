@@ -14,6 +14,10 @@ import { setEnvVars } from '../util/setEnvVars.js'
 import { filelogger } from '../util/fileLogger.js'
 import { zipFolder } from '../util/zipFolder.js'
 import { createManifest } from '../util/createManifest.js'
+import { checkIsFolder } from '../util/checkIsFolder.js'
+import { basename } from 'node:path'
+
+const BUNDLE_FOLDER = '.acurast/bundles'
 
 export const createJob = async (
   config: AcurastProjectConfig,
@@ -43,12 +47,25 @@ export const createJob = async (
     filelogger.debug(
       `config.fileUrl is not an IPFS hash, so we zip it: ${config.fileUrl}`
     )
+
+    // Check if the fileUrl is a folder
+    const isFolder = await checkIsFolder(config.fileUrl)
+    if (isFolder) {
+      if (!config.entrypoint) {
+        filelogger.error('entrypoint is required for folders')
+        throw new Error('entrypoint is required for folders')
+      }
+      filelogger.debug(
+        `config.fileUrl is a folder, so we use the entrypoint: ${config.entrypoint}`
+      )
+    }
+
     let { zipPath } = await zipFolder(
       config.fileUrl,
-      '.acurast/bundles',
+      BUNDLE_FOLDER,
       createManifest(
         config.projectName,
-        config.entrypoint ?? config.fileUrl,
+        config.entrypoint ?? basename(config.fileUrl),
         config.restartPolicy ?? RestartPolicy.OnFailure
       ),
       config.projectName
