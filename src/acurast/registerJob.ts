@@ -1,14 +1,7 @@
 import '@polkadot/api-augment'
-import { ApiPromise, WsProvider, Keyring } from '@polkadot/api'
+import { ApiPromise } from '@polkadot/api'
 import { KeyringPair } from '@polkadot/keyring/types'
-import { uploadScript } from './uploadToIpfs.js'
-import { getEnv } from '../config.js'
-import {
-  AcurastProjectConfig,
-  AssignmentStrategyVariant,
-  JobRegistration,
-} from '../types.js'
-import { convertConfigToJob } from './convertConfigToJob.js'
+import { AssignmentStrategyVariant, JobRegistration } from '../types.js'
 import { DeploymentStatus } from './types.js'
 
 export const registerJob = (
@@ -97,6 +90,10 @@ export const registerJob = (
                   }))
                 )
               : api.createType('Option<bool>', undefined),
+            runtime: api.createType(
+              'PalletAcurastMarketplaceRuntime',
+              job.extra.requirements.runtime
+            ),
           }
         ),
         // expectedFulfillmentFee: api.createType(

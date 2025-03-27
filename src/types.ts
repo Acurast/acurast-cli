@@ -10,7 +10,14 @@ export interface AcurastProjectConfig {
   projectName: string
 
   // The path to the bundled file, including all dependencies (e.g., dist/bundle.js).
+  // 3 separate types are accepted:
+  // 1. A local file path (single file)
+  // 2. A local folder path (folder will be zipped and uploaded)
+  // 3. An IPFS hash (ipfs://...)
   fileUrl: string
+
+  // The file that will be started during execution. Defaults to "index.js"
+  entrypoint?: string
 
   // The network on which the project will be deployed.
   network: 'canary'
@@ -79,7 +86,7 @@ export interface AcurastProjectConfig {
   // The number of replicas. This specifies how many processors will run the deployment in parallel.
   numberOfReplicas: number
   // Modules that the processor need to support to run the deployment.
-  requiredModules?: ['DataEncryption'] | []
+  requiredModules?: ['DataEncryption', 'LLM'] | []
   // The minimum required reputation of the processor.
   minProcessorReputation: number
   // The maximum cost per execution in the smallest denomination of cACUs.
@@ -95,6 +102,12 @@ export interface AcurastProjectConfig {
     // The minimum version for iOS.
     ios?: string | number
   }
+
+  // The restart policy for the deployment. Defaults to "onFailure".
+  restartPolicy?: RestartPolicy
+
+  // The runtime of the deployment. Defaults to "NodeJSWithBundle". This setting should only be set if you are using an ipfs hash as the fileUrl and that ipfs hash contains a single js file, not a bundle.
+  runtime?: DeploymentRuntime
 }
 
 export interface AcurastDeployment {
@@ -158,6 +171,29 @@ export interface JobRegistration {
           buildNumber: number
         }[]
       }
+      runtime: DeploymentRuntime
     }
   }
+}
+
+export enum RestartPolicy {
+  /**
+   * The execution will not be restarted, it will run once and then stop. If it fails, it will not be restarted.
+   */
+  No = 'no',
+
+  /**
+   * The execution will be restarted only if it fails. It will restart 3 times per execution to prevent a crash-loop. If it succeeds, it will not be restarted. NOTE: There will be no failure reports on the first and second failure. Only the third failure will be reported.
+   */
+  OnFailure = 'onFailure',
+
+  /**
+   * The execution will be restarted if it fails or succeeds during the execution window, for a maximum of 3 times per execution. NOTE: There will be no execution reports for the first and second termination. Only the third termination will be reported.
+   */
+  Always = 'always',
+}
+
+export enum DeploymentRuntime {
+  NodeJS = 'NodeJS',
+  NodeJSWithBundle = 'NodeJSWithBundle',
 }

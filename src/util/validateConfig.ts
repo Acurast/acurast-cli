@@ -2,6 +2,8 @@ import { z, type ZodIssue } from 'zod'
 import {
   AssignmentStrategyVariant,
   type AcurastProjectConfig,
+  RestartPolicy,
+  DeploymentRuntime,
 } from '../types.js'
 
 const isAcurastAddress = (val: string) => {
@@ -13,6 +15,7 @@ const isNotAcurastAddressMessage: string = 'Invalid Acurast address'
 const acurastProjectConfigSchema = z.object({
   projectName: z.string(),
   fileUrl: z.string(),
+  entrypoint: z.string().optional(),
   network: z.literal('canary'),
   onlyAttestedDevices: z.boolean(),
   startAt: z
@@ -92,9 +95,11 @@ const acurastProjectConfigSchema = z.object({
     maxStorage: z.number().min(0),
   }),
   numberOfReplicas: z.number().min(1).max(64),
-  // requiredModules: z.array(z.literal('DataEncryption')).optional(),
   requiredModules: z
-    .union([z.tuple([z.literal('DataEncryption')]), z.tuple([])])
+    .union([
+      z.tuple([z.literal('DataEncryption'), z.literal('LLM')]),
+      z.tuple([]),
+    ])
     .optional(),
   minProcessorReputation: z.number().min(0),
   maxCostPerExecution: z.number().min(0),
@@ -118,6 +123,8 @@ const acurastProjectConfigSchema = z.object({
       }),
     ])
     .optional(),
+  restartPolicy: z.nativeEnum(RestartPolicy).optional(),
+  runtime: z.nativeEnum(DeploymentRuntime).optional(),
 })
 
 const acurastProjectConfigSchemaWithNotes =
