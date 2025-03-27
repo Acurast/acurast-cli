@@ -169,7 +169,7 @@ export const convertConfigToJob = (
         reward: rewardPerExecution,
         minReputation: processorReputation,
         processorVersion: minProcessorVersions,
-        runtime: DeploymentRuntime.NodeJSWithBundle,
+        runtime: config.runtime ?? DeploymentRuntime.NodeJSWithBundle,
       },
     },
   }

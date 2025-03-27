@@ -105,6 +105,9 @@ export interface AcurastProjectConfig {
 
   // The restart policy for the deployment. Defaults to "onFailure".
   restartPolicy?: RestartPolicy
+
+  // The runtime of the deployment. Defaults to "NodeJSWithBundle". This setting should only be set if you are using an ipfs hash as the fileUrl and that ipfs hash contains a single js file, not a bundle.
+  runtime?: DeploymentRuntime
 }
 
 export interface AcurastDeployment {
