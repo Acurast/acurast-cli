@@ -1,0 +1,130 @@
+{
+  "projects": {
+    "test-single-onetime": {
+      "projectName": "test-single-onetime",
+      "fileUrl": "examples/test.js",
+      "network": "canary",
+      "onlyAttestedDevices": true,
+      "assignmentStrategy": {
+        "type": "Single"
+      },
+      "execution": {
+        "type": "onetime",
+        "maxExecutionTimeInMs": 60000
+      },
+      "maxAllowedStartDelayInMs": 10000,
+      "usageLimit": {
+        "maxMemory": 0,
+        "maxNetworkRequests": 0,
+        "maxStorage": 0
+      },
+      "numberOfReplicas": 1,
+      "requiredModules": [],
+      "minProcessorReputation": 0,
+      "maxCostPerExecution": 100000000000,
+      "includeEnvironmentVariables": [],
+      "processorWhitelist": []
+    },
+    "test-single-onetime-with-env": {
+      "projectName": "test-single-onetime-with-env",
+      "fileUrl": "examples/test.js",
+      "network": "canary",
+      "onlyAttestedDevices": true,
+      "assignmentStrategy": {
+        "type": "Single"
+      },
+      "execution": {
+        "type": "onetime",
+        "maxExecutionTimeInMs": 60000
+      },
+      "maxAllowedStartDelayInMs": 10000,
+      "usageLimit": {
+        "maxMemory": 0,
+        "maxNetworkRequests": 0,
+        "maxStorage": 0
+      },
+      "numberOfReplicas": 1,
+      "requiredModules": [],
+      "minProcessorReputation": 0,
+      "maxCostPerExecution": 100000000000,
+      "includeEnvironmentVariables": ["TEST_ENV_VAR"],
+      "processorWhitelist": []
+    },
+    "test-ipfs": {
+      "projectName": "test-ipfs",
+      "fileUrl": "ipfs://QmUCUxqof4MFkvCpsAaangue9njQBudcPaLq7ppp7yvtrL",
+      "network": "canary",
+      "onlyAttestedDevices": true,
+      "assignmentStrategy": {
+        "type": "Single"
+      },
+      "execution": {
+        "type": "onetime",
+        "maxExecutionTimeInMs": 60000
+      },
+      "maxAllowedStartDelayInMs": 10000,
+      "usageLimit": {
+        "maxMemory": 0,
+        "maxNetworkRequests": 0,
+        "maxStorage": 0
+      },
+      "numberOfReplicas": 1,
+      "requiredModules": [],
+      "minProcessorReputation": 0,
+      "maxCostPerExecution": 100000000000,
+      "includeEnvironmentVariables": [],
+      "processorWhitelist": []
+    },
+    "test-bundle-file": {
+      "projectName": "test-bundle-file",
+      "fileUrl": "examples/nested/file/test.js",
+      "network": "canary",
+      "onlyAttestedDevices": true,
+      "assignmentStrategy": {
+        "type": "Single"
+      },
+      "execution": {
+        "type": "onetime",
+        "maxExecutionTimeInMs": 60000
+      },
+      "maxAllowedStartDelayInMs": 10000,
+      "usageLimit": {
+        "maxMemory": 0,
+        "maxNetworkRequests": 0,
+        "maxStorage": 0
+      },
+      "numberOfReplicas": 1,
+      "requiredModules": [],
+      "minProcessorReputation": 0,
+      "maxCostPerExecution": 100000000000,
+      "includeEnvironmentVariables": [],
+      "processorWhitelist": []
+    },
+    "test-bundle-folder": {
+      "projectName": "test-bundle-folder",
+      "fileUrl": "examples/folder",
+      "entrypoint": "index.js",
+      "network": "canary",
+      "onlyAttestedDevices": true,
+      "assignmentStrategy": {
+        "type": "Single"
+      },
+      "execution": {
+        "type": "onetime",
+        "maxExecutionTimeInMs": 60000
+      },
+      "maxAllowedStartDelayInMs": 10000,
+      "usageLimit": {
+        "maxMemory": 0,
+        "maxNetworkRequests": 0,
+        "maxStorage": 0
+      },
+      "numberOfReplicas": 1,
+      "requiredModules": [],
+      "minProcessorReputation": 0,
+      "maxCostPerExecution": 100000000000,
+      "includeEnvironmentVariables": [],
+      "processorWhitelist": []
+    }
+  }
+}

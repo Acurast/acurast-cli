@@ -1,0 +1,1 @@
+throw new Error(`CLI test. TEST_ENV_VAR: ${_STD_.env.TEST_ENV_VAR}`)

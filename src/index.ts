@@ -21,6 +21,7 @@ import { dirname, join } from 'path'
 import { addCommandDeployments } from './commands/deployments.js'
 import { addCommandNew } from './commands/new.js'
 import { ACURAST_CLI_VERSION_CHECK_URL } from './constants.js'
+import { filelogger } from './util/fileLogger.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -28,6 +29,10 @@ const __dirname = dirname(__filename)
 // Read package.json
 const packagePath = join(__dirname, '..', 'package.json')
 const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf-8'))
+
+filelogger.debug(`--------------------------------`)
+filelogger.debug(`CLI is running version ${packageJson.version}`)
+filelogger.debug(`COMMAND: acurast ${process.argv.slice(2).join(' ')}`)
 
 const program = new Command()
 
@@ -72,6 +77,9 @@ fetch(ACURAST_CLI_VERSION_CHECK_URL)
     const remoteVersion = remotePackage.version
 
     if (remoteVersion > localVersion) {
+      filelogger.debug(
+        `New version available. Local: ${localVersion}, Remote: ${remoteVersion}`
+      )
       console.log(
         acurastColor(
           `\nA new version (v${remoteVersion}) is available! You are currently on version v${localVersion}\n` +

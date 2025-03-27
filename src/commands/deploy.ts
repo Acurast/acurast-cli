@@ -125,12 +125,19 @@ export const addCommandDeploy = (program: Command) => {
           log('')
           log(configResult.error)
 
+          filelogger.error(
+            `Config is invalid ${JSON.stringify(configResult.error)}`
+          )
+
           return
         }
 
         try {
           validateDeployEnvVars()
         } catch (e: any) {
+          filelogger.error(
+            `Deploy env vars are invalid ${JSON.stringify(e.message)}`
+          )
           log(e.message)
           return
         }
@@ -140,6 +147,9 @@ export const addCommandDeploy = (program: Command) => {
         try {
           envVars = getProjectEnvVars(config)
         } catch (e: any) {
+          filelogger.error(
+            `Project env vars are invalid ${JSON.stringify(e.message)}`
+          )
           log(e.message)
           return
         }
@@ -149,6 +159,11 @@ export const addCommandDeploy = (program: Command) => {
         log('')
 
         if (configResult.notes) {
+          filelogger.warn(
+            `Project config is valid, but here are some notes: ${JSON.stringify(
+              configResult.notes
+            )}`
+          )
           log('⚠️ Project config is valid, but here are some notes:')
           configResult.notes.forEach((issue) => {
             log(`- ${issue.message}`)
@@ -168,6 +183,8 @@ export const addCommandDeploy = (program: Command) => {
         })
 
         const balance = await getBalance(wallet.address, api)
+
+        filelogger.debug(`Balance: ${balance} cACU`)
 
         await api.disconnect()
 
@@ -207,8 +224,22 @@ export const addCommandDeploy = (program: Command) => {
 
         if (startTime < now) {
           log(`Start time cannot be in the past`)
+          filelogger.error(`Start time cannot be in the past: ${startTime}`)
           return
         }
+
+        filelogger.debug(`Start time: ${startTime}`)
+
+        filelogger.debug(
+          `The deployment will be scheduled to start in ${humanTime(now - startTime, true)}. (${new Date(startTime).toLocaleString()}) It will run for ${
+            config.execution.type === 'onetime'
+              ? humanTime(config.execution.maxExecutionTimeInMs, true)
+              : humanTime(
+                  config.execution.numberOfExecutions *
+                    config.execution.intervalInMs
+                )
+          }.`
+        )
 
         log(
           `The deployment will be scheduled to start in ${toAcurastColor(
@@ -274,9 +305,14 @@ export const addCommandDeploy = (program: Command) => {
         log('')
 
         if (options.dryRun) {
+          filelogger.debug('🧪 Dry run, not deploying.')
           log('🧪 Dry run, not deploying.')
           return
         }
+
+        filelogger.debug('🚀 Deploying...')
+        log('🚀 Deploying...')
+        log('')
 
         const originalConfig = structuredClone(config)
 
