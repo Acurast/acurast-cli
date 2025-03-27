@@ -174,8 +174,19 @@ export interface JobRegistration {
 }
 
 export enum RestartPolicy {
+  /**
+   * The execution will not be restarted, it will run once and then stop. If it fails, it will not be restarted.
+   */
   No = 'no',
+
+  /**
+   * The execution will be restarted only if it fails. It will restart 3 times per execution to prevent a crash-loop. If it succeeds, it will not be restarted. NOTE: There will be no failure reports on the first and second failure. Only the third failure will be reported.
+   */
   OnFailure = 'onFailure',
+
+  /**
+   * The execution will be restarted if it fails or succeeds during the execution window, for a maximum of 3 times per execution. NOTE: There will be no execution reports for the first and second termination. Only the third termination will be reported.
+   */
   Always = 'always',
 }
 
