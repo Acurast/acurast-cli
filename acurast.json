@@ -19,7 +19,7 @@
         "maxStorage": 0
       },
       "numberOfReplicas": 1,
-      "requiredModules": [],
+      "requiredModules": ["DataEncryption", "LLM"],
       "minProcessorReputation": 0,
       "maxCostPerExecution": 100000000000,
       "includeEnvironmentVariables": [],

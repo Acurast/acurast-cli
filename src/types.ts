@@ -86,7 +86,7 @@ export interface AcurastProjectConfig {
   // The number of replicas. This specifies how many processors will run the deployment in parallel.
   numberOfReplicas: number
   // Modules that the processor need to support to run the deployment.
-  requiredModules?: ['DataEncryption', 'LLM'] | []
+  requiredModules?: RequiredModules[]
   // The minimum required reputation of the processor.
   minProcessorReputation: number
   // The maximum cost per execution in the smallest denomination of cACUs.
@@ -196,4 +196,9 @@ export enum RestartPolicy {
 export enum DeploymentRuntime {
   NodeJS = 'NodeJS',
   NodeJSWithBundle = 'NodeJSWithBundle',
+}
+
+export enum RequiredModules {
+  DataEncryption = 'DataEncryption',
+  LLM = 'LLM',
 }
