@@ -12,6 +12,7 @@ import { getBalance } from '../util/getBalance.js'
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { setEnvVars } from '../util/setEnvVars.js'
 import { ACURAST_DEPLOYMENTS_PATH } from '../constants.js'
+import { getAcknowledgedProcessors } from '../acurast/jobAssignments.js'
 
 export const addCommandDeployments = (program: Command) => {
   program
@@ -203,6 +204,19 @@ export const addCommandDeployments = (program: Command) => {
           }
 
           console.log('Deployment:', job)
+
+          await acurast.connect()
+
+          if (!acurast.api) {
+            throw new Error('API not connected')
+          }
+
+          const assignments = await getAcknowledgedProcessors(
+            acurast.api,
+            job.id
+          )
+
+          console.log('Assignments:', JSON.stringify(assignments, null, 2))
 
           acurast.disconnect()
 
