@@ -4,7 +4,7 @@ import open from 'open'
 import { RPC } from '../config.js'
 
 // TODO: Move to config
-const webConsole = 'https://console.acurast.com'
+const acurastHub = 'https://hub.acurast.com'
 const website = 'https://docs.acurast.com/'
 const explorer = `https://polkadot.js.org/apps/?rpc=${RPC}#/explorer`
 const telegramBot = 'https://t.me/AcurastBot'
@@ -20,7 +20,7 @@ export const addCommandOpen = (program: Command) => {
       const answer = await select({
         message: 'Which website do you want to open?',
         choices: [
-          { name: 'Console', description: 'Web Console', value: webConsole },
+          { name: 'Hub', description: 'Acurast Hub', value: acurastHub },
           {
             name: 'Docs',
             description: 'Acurast Documentation',
