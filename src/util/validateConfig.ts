@@ -4,6 +4,7 @@ import {
   type AcurastProjectConfig,
   RestartPolicy,
   DeploymentRuntime,
+  RequiredModules,
 } from '../types.js'
 
 const isAcurastAddress = (val: string) => {
@@ -95,12 +96,7 @@ const acurastProjectConfigSchema = z.object({
     maxStorage: z.number().min(0),
   }),
   numberOfReplicas: z.number().min(1).max(64),
-  requiredModules: z
-    .union([
-      z.tuple([z.literal('DataEncryption'), z.literal('LLM')]),
-      z.tuple([]),
-    ])
-    .optional(),
+  requiredModules: z.array(z.nativeEnum(RequiredModules)).optional(),
   minProcessorReputation: z.number().min(0),
   maxCostPerExecution: z.number().min(0),
   includeEnvironmentVariables: z.array(z.string()).optional(),
