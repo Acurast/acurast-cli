@@ -1,7 +1,11 @@
 import '@polkadot/api-augment'
 import { ApiPromise } from '@polkadot/api'
 import { KeyringPair } from '@polkadot/keyring/types'
-import { AssignmentStrategyVariant, JobRegistration } from '../types.js'
+import {
+  AssignmentStrategyVariant,
+  JobRegistration,
+  DeploymentError,
+} from '../types.js'
 import { DeploymentStatus } from './types.js'
 
 export const registerJob = (
@@ -119,11 +123,11 @@ export const registerJob = (
             const jobRegistrationEvents = events.filter((event) => {
               return (
                 event.event.section === 'acurast' &&
-                event.event.method === 'JobRegistrationStored'
+                event.event.method === 'JobRegistrationStoredV2'
               )
             })
             const jobIds = jobRegistrationEvents.map((jobRegistrationEvent) => {
-              return jobRegistrationEvent.event.data[1]
+              return jobRegistrationEvent.event.data[0]
             })
 
             // console.log("jobIds", jobIds);
@@ -188,10 +192,22 @@ export const registerJob = (
                 )
                 const { docs, name, section } = decoded
 
-                reject(`${section}.${name}: ${docs.join(' ')}`)
+                reject(
+                  new DeploymentError(
+                    `${docs.join(' ')}`,
+                    `${section}.${name}`,
+                    { section, name, docs }
+                  )
+                )
               } else {
                 // Other, CannotLookup, BadOrigin, no extra info
-                reject(dispatchError.toHuman() || dispatchError.toString())
+                const error =
+                  dispatchError.toHuman() || dispatchError.toString()
+                reject(
+                  new DeploymentError(error, 'TransactionError', {
+                    originalError: error,
+                  })
+                )
               }
             } else if (status.isInBlock) {
               resolve(txHash.toHex())
@@ -199,7 +215,15 @@ export const registerJob = (
           }
         )
     } catch (e) {
-      reject(e)
+      reject(
+        new DeploymentError(
+          e instanceof Error
+            ? e.message
+            : 'Unknown error during job registration',
+          'RegistrationError',
+          { originalError: e }
+        )
+      )
     }
   })
 }

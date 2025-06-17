@@ -125,6 +125,33 @@
       "maxCostPerExecution": 100000000000,
       "includeEnvironmentVariables": [],
       "processorWhitelist": []
+    },
+    "long-running-deployment": {
+      "projectName": "long-running-deployment",
+      "fileUrl": "examples/folder",
+      "entrypoint": "index.js",
+      "network": "canary",
+      "onlyAttestedDevices": true,
+      "assignmentStrategy": {
+        "type": "Single"
+      },
+      "execution": {
+        "type": "interval",
+        "intervalInMs": 60000,
+        "numberOfExecutions": 1000
+      },
+      "maxAllowedStartDelayInMs": 10000,
+      "usageLimit": {
+        "maxMemory": 0,
+        "maxNetworkRequests": 0,
+        "maxStorage": 0
+      },
+      "numberOfReplicas": 10,
+      "requiredModules": [],
+      "minProcessorReputation": 0,
+      "maxCostPerExecution": 10000000000000,
+      "includeEnvironmentVariables": [],
+      "processorWhitelist": []
     }
   }
 }
