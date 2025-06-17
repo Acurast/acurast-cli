@@ -202,3 +202,20 @@ export enum RequiredModules {
   DataEncryption = 'DataEncryption',
   LLM = 'LLM',
 }
+
+export class DeploymentError extends Error {
+  constructor(
+    messageOrError: unknown,
+    public readonly code: string,
+    public readonly details?: any
+  ) {
+    super(
+      messageOrError instanceof Error
+        ? messageOrError.message
+        : typeof messageOrError === 'string'
+          ? messageOrError
+          : JSON.stringify(messageOrError)
+    )
+    this.name = 'DeploymentError'
+  }
+}
