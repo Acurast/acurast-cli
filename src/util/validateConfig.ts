@@ -5,6 +5,8 @@ import {
   RestartPolicy,
   DeploymentRuntime,
   RequiredModules,
+  ScriptMutability,
+  MultiOrigin,
 } from '../types.js'
 
 const isAcurastAddress = (val: string) => {
@@ -121,6 +123,10 @@ const acurastProjectConfigSchema = z.object({
     .optional(),
   restartPolicy: z.nativeEnum(RestartPolicy).optional(),
   runtime: z.nativeEnum(DeploymentRuntime).optional(),
+  mutability: z.nativeEnum(ScriptMutability).optional(),
+  reuseKeysFrom: z
+    .tuple([z.nativeEnum(MultiOrigin), z.string(), z.number()])
+    .optional(),
 })
 
 const acurastProjectConfigSchemaWithNotes =

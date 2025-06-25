@@ -8,7 +8,7 @@ import {
 } from '../types.js'
 import { DeploymentStatus } from './types.js'
 
-export const registerJob = (
+export const deployJob = (
   api: ApiPromise,
   injector: KeyringPair,
   job: JobRegistration,
@@ -106,9 +106,25 @@ export const registerJob = (
         // ),
       }),
     })
+
+    // Create the additional parameters for the deploy extrinsic
+    const mutability = api.createType(
+      'AcurastCommonScriptMutability',
+      job.mutability
+    )
+    const reuseKeysFrom = job.reuseKeysFrom
+      ? api.createType('Option<(AcurastCommonMultiOrigin, u128)>', [
+          api.createType('AcurastCommonMultiOrigin', {
+            acurast: job.reuseKeysFrom[1],
+          }),
+          api.createType('u128', job.reuseKeysFrom[2]),
+        ])
+      : api.createType('Option<(AcurastCommonMultiOrigin, u128)>', undefined)
+    const minMetrics = api.createType('Option<Vec<(u8, u128, u128)>>', [])
+
     try {
       const unsub = await api.tx['acurast']
-        ['register'](jobRegistration)
+        ['deploy'](jobRegistration, mutability, reuseKeysFrom, minMetrics)
         .signAndSend(
           injector,
           async ({ status, events, txHash, dispatchError }) => {
@@ -219,8 +235,8 @@ export const registerJob = (
         new DeploymentError(
           e instanceof Error
             ? e.message
-            : 'Unknown error during job registration',
-          'RegistrationError',
+            : 'Unknown error during job deployment',
+          'DeploymentError',
           { originalError: e }
         )
       )

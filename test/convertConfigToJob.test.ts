@@ -7,6 +7,7 @@ import {
   AssignmentStrategyVariant,
   DeploymentRuntime,
   JobRegistration,
+  ScriptMutability,
 } from '../src/types.js'
 
 describe('convertConfigToJob', () => {
@@ -47,6 +48,8 @@ describe('convertConfigToJob', () => {
       networkRequests: 0,
       storage: 0,
       requiredModules: undefined,
+      mutability: ScriptMutability.Immutable,
+      reuseKeysFrom: undefined,
       extra: {
         requirements: {
           runtime: DeploymentRuntime.NodeJSWithBundle,
