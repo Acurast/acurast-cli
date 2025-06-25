@@ -69,6 +69,43 @@ if (!process.argv.slice(2).length) {
   process.exit(0) // If no command is provided, exit the process
 }
 
+process.on('unhandledRejection', (reason, promise) => {
+  if (reason instanceof Error) {
+    console.error('Unhandled Rejection:', reason.message)
+    console.error('Stack Trace:', reason.stack)
+  } else {
+    console.error('Unhandled Rejection with non-error reason:', reason)
+  }
+
+  promise
+    .then((value) => {
+      filelogger.error(
+        `Unhandled Rejection: ${JSON.stringify(value)} reason: ${JSON.stringify(
+          reason
+        )}`
+      )
+    })
+    .catch((e) => {
+      console.log(e)
+      filelogger.error(
+        `Unhandled Rejection caught: ${JSON.stringify(reason)}, error: ${e}`
+      )
+    })
+    .finally(() => {
+      setTimeout(() => {
+        process.exit(1)
+      }, 100)
+    })
+})
+
+process.on('uncaughtException', (err, origin) => {
+  console.log(err)
+  filelogger.error(`Caught exception: ${err}\n` + `Exception origin: ${origin}`)
+  setTimeout(() => {
+    process.exit(1)
+  }, 100)
+})
+
 // Check if there's a newer version available
 fetch(ACURAST_CLI_VERSION_CHECK_URL)
   .then((response) => response.json())

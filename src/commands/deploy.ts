@@ -6,10 +6,10 @@ import {
   RPC,
   getProjectEnvVars,
 } from '../config.js'
-import { delay, Listr } from 'listr2'
+import { Listr } from 'listr2'
 import { createJob } from '../acurast/createJob.js'
 import { storeDeployment } from '../acurast/storeDeployment.js'
-import { acurastColor } from '../util.js'
+import { acurastColor, errorColor } from '../util.js'
 import { humanTime } from '../util/humanTime.js'
 import {
   convertConfigToJob,
@@ -26,7 +26,7 @@ import { ApiPromise, WsProvider } from '@polkadot/api'
 import { getFaucetLinkForAddress } from '../constants.js'
 import * as ora from '../util/ora.js'
 import type { EnvVar, Job } from '../acurast/env/types.js'
-import type { JobRegistration } from '../types.js'
+import { DeploymentError, type JobRegistration } from '../types.js'
 import { filelogger } from '../util/fileLogger.js'
 
 import { BigNumber } from 'bignumber.js'
@@ -228,7 +228,7 @@ export const addCommandDeploy = (program: Command) => {
           return
         }
 
-        filelogger.debug(`Start time: ${startTime}`)
+        filelogger.debug(`Start time: ${new Date(startTime).toLocaleString()}`)
 
         filelogger.debug(
           `The deployment will be scheduled to start in ${humanTime(now - startTime, true)}. (${new Date(startTime).toLocaleString()}) It will run for ${
@@ -609,7 +609,16 @@ export const addCommandDeploy = (program: Command) => {
               //   },
               // },
             ],
-            { concurrent: false, rendererOptions: { collapseSubtasks: false } }
+            {
+              concurrent: false,
+              exitOnError: true,
+              rendererOptions: {
+                collapseSubtasks: false,
+                showSubtasks: true,
+                clearOutput: false,
+                formatOutput: 'wrap',
+              },
+            }
           )
 
           jobRegistration
@@ -625,11 +634,42 @@ export const addCommandDeploy = (program: Command) => {
             })
           try {
             await tasks.run()
-
             process.exit(0)
           } catch (e) {
-            console.log('Error', e)
-            process.exit(1)
+            // Add a newline to separate from Listr output
+            console.log('\n')
+            if (e instanceof DeploymentError) {
+              filelogger.error(`Deployment failed: ${e.message}`)
+              if (e.details) {
+                filelogger.error(`Error details: ${JSON.stringify(e.details)}`)
+              }
+              console.error(errorColor(`Deployment failed: ${e.message}`))
+              if (e.code === 'Token.FundsUnavailable') {
+                console.log(
+                  `Visit ${getFaucetLinkForAddress(
+                    wallet.address
+                  )} to get some tokens.`
+                )
+              }
+            } else {
+              filelogger.error(
+                `Deployment failed: ${e instanceof Error ? e.message : String(e)}`
+              )
+              if (e instanceof Error && e.stack) {
+                filelogger.error(`Stack trace: ${e.stack}`)
+              }
+              console.error(
+                errorColor(
+                  `Deployment failed: ${e instanceof Error ? e.message : String(e)}`
+                )
+              )
+            }
+            tasks.errors.forEach((error) => {
+              console.error(errorColor(error.message))
+            })
+            setTimeout(() => {
+              process.exit(1)
+            }, 100)
           }
         }
       }
