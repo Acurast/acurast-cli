@@ -123,7 +123,7 @@ export const deployJob = (
     const minMetrics = api.createType('Option<Vec<(u8, u128, u128)>>', [])
 
     try {
-      const unsub = await api.tx['acurast']
+      const unsub = await api.tx['acurastMarketplace']
         ['deploy'](jobRegistration, mutability, reuseKeysFrom, minMetrics)
         .signAndSend(
           injector,
