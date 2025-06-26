@@ -46,7 +46,14 @@ To use the Acurast CLI, type `acurast` followed by any of the available options 
 
 - `new <project-name>` - Create a new Acurast project from a template.
 - `deploy [options] [project]` - Deploy the current project to the Acurast platform.
-- `deployments <'ls' | <id>> --cleanup` - List, view and clean up deployments.
+- `deployments [arg] [options]` - List, view, and manage deployments.
+  - `deployments ls` or `deployments list` - List all your deployments.
+  - `deployments <id>` - View details of a specific deployment.
+  - `deployments <id> --update-env-vars` - Update environment variables for a deployment.
+  - `deployments --cleanup` - Clean up old, finished deployments.
+  - `deployments <id> --cleanup` - Clean up a specific deployment.
+  - `deployments update script <deployment-id> <script-ipfs> [options]` - Update the script of a mutable deployment.
+  - `deployments update editor <deployment-id> <new-editor-address> [options]` - Transfer editor permissions for a mutable deployment.
 - `live [options] [project]` - Setup a "live-code-processor" and run your project on the processor in real time.
 - `init` - Create an acurast.json file and .env file.
 - `open` - Open the Acurast resources in your browser.
@@ -230,6 +237,157 @@ const API_KEY = _STD_.env[API_KEY]
 When running `acurast deploy`, the environment variables will now automatically be added to the deployment.
 
 When running interval based deployments with multiple executions, the environment variables can be updated between executions. To do that, update the `.env` file and run `acurast deployments <id> -e`. This will update the environment variables for the deployment with the given ID.
+
+## Deployment Management
+
+The Acurast CLI provides comprehensive deployment management capabilities, including the ability to update mutable deployments and transfer editor permissions.
+
+### Basic Deployment Commands
+
+```bash
+# List all deployments
+acurast deployments ls
+
+# View a specific deployment
+acurast deployments "Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123456"
+
+# Update environment variables for a deployment
+acurast deployments "Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123456" --update-env-vars
+
+# Clean up old deployments
+acurast deployments --cleanup
+
+# Clean up a specific deployment
+acurast deployments "Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123456" --cleanup
+```
+
+**Note**: All deployment commands require the full deployment ID format: `"origin:address:number"`
+
+### Updating Mutable Deployments
+
+For deployments that were created with `"mutability": "Mutable"`, you can update the script and transfer editor permissions.
+
+#### Update Deployment Script
+
+**Command**: `acurast deployments update script <deployment-id> <script-ipfs> [options]`
+
+**Arguments**:
+
+- `<deployment-id>`: The deployment ID in format `"origin:address:number"` (e.g., `"Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123456"`)
+- `<script-ipfs>`: IPFS hash of the new script (e.g., `"ipfs://QmNewScriptHash"`)
+
+**Options**:
+
+- `--dry-run`: Preview the update without applying
+- `--force`: Skip confirmation prompts
+
+**Examples**:
+
+```bash
+# Update script (dry run)
+acurast deployments update script "Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123456" "ipfs://QmNewScriptHash" --dry-run
+
+# Update script (actual)
+acurast deployments update script "Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123456" "ipfs://QmNewScriptHash"
+```
+
+**Requirements**:
+
+- The deployment must have `"mutability": "Mutable"`
+- You must be the current editor of the deployment
+- The script must be uploaded to IPFS and provided as an IPFS hash
+
+#### Transfer Editor Permissions
+
+**Command**: `acurast deployments update editor <deployment-id> <new-editor-address> [options]`
+
+**Arguments**:
+
+- `<deployment-id>`: The deployment ID in format `"origin:address:number"` (e.g., `"Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123456"`)
+- `<new-editor-address>`: The AccountId32 address of the new editor
+
+**Options**:
+
+- `--dry-run`: Preview the transfer without executing
+- `--force`: Skip confirmation prompts
+
+**Examples**:
+
+```bash
+# Transfer editor permissions (dry run)
+acurast deployments update editor "Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123456" "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL" --dry-run
+
+# Transfer editor permissions (actual)
+acurast deployments update editor "Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123456" "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL"
+```
+
+**Requirements**:
+
+- The deployment must have `"mutability": "Mutable"`
+- You must be the current editor of the deployment
+- The new editor address must be a valid AccountId32 format
+
+### Deployment ID Format
+
+The deployment ID is a unique identifier for each deployment on the Acurast platform. It follows the format:
+
+```
+"origin:address:number"
+```
+
+**Components**:
+
+- **`origin`**: The chain name where the deployment was created
+  - Currently only `"Acurast"` is supported
+  - This is case-sensitive
+- **`address`**: The AccountId32 address of the original deployer
+  - Must be a valid Substrate AccountId32 format (e.g., `5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL`)
+  - This is the address that deployed the job initially
+- **`number`**: The deployment number (u128)
+  - This is a sequential number assigned by the blockchain
+  - Must be a positive integer
+
+**Examples**:
+
+```bash
+# Valid deployment IDs
+"Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123456"
+"Acurast:5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY:1"
+"Acurast:5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty:999999"
+
+# Invalid deployment IDs
+"Acurast:invalid-address:123"  # Invalid address format
+"acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123"  # Wrong case
+"Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:-1"  # Negative number
+```
+
+**Usage**:
+
+- **All deployment operations** require the full deployment ID format: `"origin:address:number"`
+- **Configuration** (reuseKeysFrom): You must use the full format as an array
+
+**Finding your deployment ID**:
+
+1. Run `acurast deployments ls` to see all your deployments
+2. The deployment ID will be displayed in the list
+3. For advanced operations, use the full format shown in the list
+
+### Validation and Error Handling
+
+The CLI provides comprehensive validation for all deployment management commands:
+
+- **Deployment ID validation**: Ensures proper format and valid components
+- **Address validation**: Verifies AccountId32 format for all addresses
+- **IPFS hash validation**: Ensures scripts are provided as valid IPFS hashes
+- **Permission validation**: Checks that you have the necessary permissions
+- **Mutability validation**: Ensures the deployment is mutable before allowing updates
+
+### Safety Features
+
+- **Dry-run mode**: Preview changes before applying them
+- **Confirmation prompts**: Require explicit confirmation for destructive operations
+- **Error messages**: Clear, descriptive error messages for validation failures
+- **Transaction feedback**: Display transaction hashes for successful operations
 
 ## Deployment Features
 
