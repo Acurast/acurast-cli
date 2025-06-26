@@ -24,8 +24,7 @@
       "maxCostPerExecution": 100000000000,
       "includeEnvironmentVariables": [],
       "processorWhitelist": [],
-      "mutability": "Immutable",
-      "reuseKeysFrom": null
+      "mutability": "Immutable"
     },
     "test-single-onetime-with-key-reuse": {
       "projectName": "test-single-onetime-with-key-reuse",
