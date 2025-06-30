@@ -19,11 +19,38 @@
         "maxStorage": 0
       },
       "numberOfReplicas": 1,
-      "requiredModules": ["DataEncryption", "LLM"],
+      "requiredModules": [],
       "minProcessorReputation": 0,
       "maxCostPerExecution": 100000000000,
       "includeEnvironmentVariables": [],
-      "processorWhitelist": []
+      "processorWhitelist": [],
+      "mutability": "Immutable"
+    },
+    "test-single-onetime-mutable": {
+      "projectName": "test-single-onetime-with-key-reuse",
+      "fileUrl": "examples/test.js",
+      "network": "canary",
+      "onlyAttestedDevices": true,
+      "assignmentStrategy": {
+        "type": "Single"
+      },
+      "execution": {
+        "type": "onetime",
+        "maxExecutionTimeInMs": 60000
+      },
+      "maxAllowedStartDelayInMs": 10000,
+      "usageLimit": {
+        "maxMemory": 0,
+        "maxNetworkRequests": 0,
+        "maxStorage": 0
+      },
+      "numberOfReplicas": 1,
+      "requiredModules": [],
+      "minProcessorReputation": 0,
+      "maxCostPerExecution": 100000000000,
+      "includeEnvironmentVariables": [],
+      "processorWhitelist": [],
+      "mutability": "Mutable"
     },
     "test-single-onetime-with-env": {
       "projectName": "test-single-onetime-with-env",

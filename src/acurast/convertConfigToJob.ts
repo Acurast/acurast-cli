@@ -3,6 +3,7 @@ import {
   AssignmentStrategyVariant,
   DeploymentRuntime,
   JobRegistration,
+  ScriptMutability,
 } from '../types.js'
 import { deviceVersions } from './app-versions.js'
 
@@ -100,6 +101,7 @@ export const convertConfigToJob = (
   const minProcessorVersions = convertMinProcessorVersions(
     config.minProcessorVersions
   )
+  const mutability = config.mutability ?? ScriptMutability.Immutable
 
   const now = Date.now()
 
@@ -162,6 +164,8 @@ export const convertConfigToJob = (
     networkRequests: config.usageLimit.maxNetworkRequests,
     storage: config.usageLimit.maxStorage,
     requiredModules: config.requiredModules,
+    mutability,
+    reuseKeysFrom: config.reuseKeysFrom,
     extra: {
       requirements: {
         assignmentStrategy,

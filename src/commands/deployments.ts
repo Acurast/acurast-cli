@@ -13,11 +13,15 @@ import { ApiPromise, WsProvider } from '@polkadot/api'
 import { setEnvVars } from '../util/setEnvVars.js'
 import { ACURAST_DEPLOYMENTS_PATH } from '../constants.js'
 import { getAcknowledgedProcessors } from '../acurast/jobAssignments.js'
+import { MultiOrigin } from '../types.js'
+import { editScript } from '../acurast/editScript.js'
+import { transferEditor } from '../acurast/transferEditor.js'
 
 export const addCommandDeployments = (program: Command) => {
-  program
-    .command('deployments [arg]')
+  const deploymentsCommand = program
+    .command('deployments')
     .description('Manage deployments')
+    .argument('[arg]', 'Deployment ID or command (ls/list)')
     .addOption(
       new Option(
         '-e, --update-env-vars',
@@ -221,6 +225,189 @@ export const addCommandDeployments = (program: Command) => {
           acurast.disconnect()
 
           return
+        }
+      }
+    )
+
+  // Update subcommands
+  const updateCommand = deploymentsCommand
+    .command('update')
+    .description('Update deployment properties')
+
+  // Update script subcommand
+  updateCommand
+    .command('script')
+    .description('Update the script of a mutable deployment')
+    .argument(
+      '<deployment-id>',
+      'The deployment/job ID in format "origin:address:number" (e.g., "Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123456")'
+    )
+    .argument(
+      '<script-ipfs>',
+      'IPFS hash of the new script (e.g., "ipfs://QmNewScriptHash")'
+    )
+    .addOption(new Option('--dry-run', 'Preview the update without applying'))
+    .addOption(new Option('--force', 'Skip confirmation prompts'))
+    .action(
+      async (
+        deploymentId: string,
+        scriptIpfs: string,
+        options: { dryRun?: boolean; force?: boolean }
+      ) => {
+        // Parse deploymentId in format "origin:address:number"
+        const deploymentIdParts = deploymentId.split(':')
+        if (deploymentIdParts.length !== 3) {
+          console.error(
+            'Invalid deployment ID format. Expected format: "origin:address:number" (e.g., "Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123456")'
+          )
+          return
+        }
+
+        const [origin, address, numberStr] = deploymentIdParts
+        const deploymentIdNumber = Number(numberStr)
+
+        if (isNaN(deploymentIdNumber)) {
+          console.error(
+            'Invalid deployment number. Please provide a valid number.'
+          )
+          return
+        }
+
+        // Validate origin
+        if (origin !== 'Acurast') {
+          console.error(
+            'Invalid origin. Currently only "Acurast" is supported.'
+          )
+          return
+        }
+
+        // Validate address format (AccountId32)
+        if (!address.match(/^5[a-km-zA-HJ-NP-Z1-9]{47}$/)) {
+          console.error(
+            'Invalid address format. Please provide a valid AccountId32 address.'
+          )
+          return
+        }
+
+        // Validate IPFS hash format
+        if (!scriptIpfs.startsWith('ipfs://')) {
+          console.error(
+            'Invalid script format. Please provide an IPFS hash starting with "ipfs://"'
+          )
+          return
+        }
+
+        if (options.dryRun) {
+          console.log(
+            `[DRY RUN] Would update script for deployment [${origin}, ${address}, ${deploymentIdNumber}] with: ${scriptIpfs}`
+          )
+          return
+        }
+
+        const spinner = ora.default(
+          `Updating script for deployment [${origin}, ${address}, ${deploymentIdNumber}]...`
+        )
+        spinner.start()
+
+        try {
+          const txHash = await editScript(
+            [MultiOrigin.Acurast, address, deploymentIdNumber],
+            scriptIpfs
+          )
+          spinner.succeed(`Script updated successfully`)
+          console.log('Transaction ID:', txHash)
+        } catch (error) {
+          spinner.fail(`Failed to update script: ${error}`)
+        }
+      }
+    )
+
+  // Update editor subcommand
+  updateCommand
+    .command('editor')
+    .description('Transfer editor permissions for a mutable deployment')
+    .argument(
+      '<deployment-id>',
+      'The deployment/job ID in format "origin:address:number" (e.g., "Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123456")'
+    )
+    .argument(
+      '<new-editor-address>',
+      'The AccountId32 address of the new editor'
+    )
+    .addOption(
+      new Option('--dry-run', 'Preview the transfer without executing')
+    )
+    .addOption(new Option('--force', 'Skip confirmation prompts'))
+    .action(
+      async (
+        deploymentId: string,
+        newEditorAddress: string,
+        options: { dryRun?: boolean; force?: boolean }
+      ) => {
+        // Parse deploymentId in format "origin:address:number"
+        const deploymentIdParts = deploymentId.split(':')
+        if (deploymentIdParts.length !== 3) {
+          console.error(
+            'Invalid deployment ID format. Expected format: "origin:address:number" (e.g., "Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123456")'
+          )
+          return
+        }
+
+        const [origin, address, numberStr] = deploymentIdParts
+        const deploymentIdNumber = Number(numberStr)
+
+        if (isNaN(deploymentIdNumber)) {
+          console.error(
+            'Invalid deployment number. Please provide a valid number.'
+          )
+          return
+        }
+
+        // Validate origin
+        if (origin !== 'Acurast') {
+          console.error(
+            'Invalid origin. Currently only "Acurast" is supported.'
+          )
+          return
+        }
+
+        // Validate address format (AccountId32)
+        if (!address.match(/^5[a-km-zA-HJ-NP-Z1-9]{47}$/)) {
+          console.error(
+            'Invalid address format. Please provide a valid AccountId32 address.'
+          )
+          return
+        }
+
+        // Basic validation for AccountId32 format (starts with 5 and is 48 characters)
+        if (!newEditorAddress.match(/^5[a-km-zA-HJ-NP-Z1-9]{47}$/)) {
+          console.error(
+            'Invalid editor address. Please provide a valid AccountId32 address.'
+          )
+          return
+        }
+
+        if (options.dryRun) {
+          console.log(
+            `[DRY RUN] Would transfer editor permissions for deployment [${origin}, ${address}, ${deploymentIdNumber}] to: ${newEditorAddress}`
+          )
+          return
+        }
+
+        const spinner = ora.default(
+          `Transferring editor permissions for deployment [${origin}, ${address}, ${deploymentIdNumber}]...`
+        )
+        spinner.start()
+
+        try {
+          const txHash = await transferEditor(
+            [MultiOrigin.Acurast, address, deploymentIdNumber],
+            newEditorAddress
+          )
+          spinner.succeed(`Editor permissions transferred successfully`)
+          console.log('Transaction ID:', txHash)
+        } catch (error) {
+          spinner.fail(`Failed to transfer editor permissions: ${error}`)
         }
       }
     )
