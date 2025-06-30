@@ -108,6 +108,12 @@ export interface AcurastProjectConfig {
 
   // The runtime of the deployment. Defaults to "NodeJSWithBundle". This setting should only be set if you are using an ipfs hash as the fileUrl and that ipfs hash contains a single js file, not a bundle.
   runtime?: DeploymentRuntime
+
+  // The mutability of the deployment. Defaults to "Immutable".
+  mutability?: ScriptMutability
+
+  // The reuseKeysFrom field. Format: [MultiOrigin, string, number] where MultiOrigin is the chain name (e.g., "Acurast"), the second element is the address of the original deployer, and the last element is the deploymentId.
+  reuseKeysFrom?: [MultiOrigin, string, number]
 }
 
 export interface AcurastDeployment {
@@ -155,6 +161,8 @@ export interface JobRegistration {
   networkRequests: number
   storage: number
   requiredModules?: any[]
+  mutability: ScriptMutability
+  reuseKeysFrom?: [MultiOrigin, string, number]
   extra: {
     requirements: {
       assignmentStrategy: {
@@ -196,6 +204,15 @@ export enum RestartPolicy {
 export enum DeploymentRuntime {
   NodeJS = 'NodeJS',
   NodeJSWithBundle = 'NodeJSWithBundle',
+}
+
+export enum ScriptMutability {
+  Immutable = 'Immutable',
+  Mutable = 'Mutable',
+}
+
+export enum MultiOrigin {
+  Acurast = 'Acurast',
 }
 
 export enum RequiredModules {

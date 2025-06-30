@@ -7,7 +7,7 @@ import {
   RestartPolicy,
 } from '../types.js'
 import { DeploymentStatus } from './types.js'
-import { registerJob } from './registerJob.js'
+import { deployJob } from './deployJob.js'
 import { getWallet } from '../util/getWallet.js'
 import type { EnvVar, JobId } from './env/types.js'
 import { setEnvVars } from '../util/setEnvVars.js'
@@ -176,7 +176,7 @@ export const createJob = async (
       statusCallback(status, data)
     }
 
-    const result = await registerJob(api, wallet, job, statusCallbackWrapper)
+    const result = await deployJob(api, wallet, job, statusCallbackWrapper)
 
     statusCallback(DeploymentStatus.Submit, { txHash: result })
   }
