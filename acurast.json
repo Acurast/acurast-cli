@@ -19,14 +19,14 @@
         "maxStorage": 0
       },
       "numberOfReplicas": 1,
-      "requiredModules": ["DataEncryption", "LLM"],
+      "requiredModules": [],
       "minProcessorReputation": 0,
       "maxCostPerExecution": 100000000000,
       "includeEnvironmentVariables": [],
       "processorWhitelist": [],
       "mutability": "Immutable"
     },
-    "test-single-onetime-with-key-reuse": {
+    "test-single-onetime-mutable": {
       "projectName": "test-single-onetime-with-key-reuse",
       "fileUrl": "examples/test.js",
       "network": "canary",
@@ -45,17 +45,12 @@
         "maxStorage": 0
       },
       "numberOfReplicas": 1,
-      "requiredModules": ["DataEncryption", "LLM"],
+      "requiredModules": [],
       "minProcessorReputation": 0,
       "maxCostPerExecution": 100000000000,
       "includeEnvironmentVariables": [],
       "processorWhitelist": [],
-      "mutability": "Immutable",
-      "reuseKeysFrom": [
-        "Acurast",
-        "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
-        123456
-      ]
+      "mutability": "Mutable"
     },
     "test-single-onetime-with-env": {
       "projectName": "test-single-onetime-with-env",
