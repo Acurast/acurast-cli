@@ -30,9 +30,11 @@ import type { JobRegistration } from '../types.js'
 import { filelogger } from '../util/fileLogger.js'
 
 import { BigNumber } from 'bignumber.js'
+
 const ACURAST_DECIMALS: number = 12
+
 const DEFAULT_BASE_FEE: BigNumber = new BigNumber('2000000000')
-const DEFAULT_FEE_PER_MILLIS: BigNumber = new BigNumber(1)
+const DEFAULT_FEE_PER_MILLIS: BigNumber = new BigNumber(12538)
 const DEFAULT_FEE_PER_BYTE: BigNumber = new BigNumber(1)
 
 const suggestReward = (duration: number, storage: number) => {
