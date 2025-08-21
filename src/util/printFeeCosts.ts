@@ -26,10 +26,8 @@ export const printFeeCosts = (
   const suggestedCostPerExecution = feeAnalysis.suggestedCostPerExecution
   const maxCostPerExecution = feeAnalysis.maxCostPerExecution
   const maxCostPerExecutionCACU = feeAnalysis.maxCostPerExecutionCACU
-  const maxCostPerExecutionAndReplicas =
-    feeAnalysis.maxCostPerExecutionAndReplicas
-  const maxCostPerExecutionAndReplicasCACU =
-    feeAnalysis.maxCostPerExecutionAndReplicasCACU
+  const maxCostPerExecutionPerReplicaCACU =
+    feeAnalysis.maxCostPerExecutionPerReplicaCACU
 
   const excessCostPerExecution = feeAnalysis.excessCostPerExecution
   const excessCostPerExecutionPercentage =
@@ -66,7 +64,7 @@ export const printFeeCosts = (
     `The maximum cost per execution is ${toAcurastColor(
       maxCostPerExecutionCACU.toString()
     )} cACU, which means each replica will cost ${toAcurastColor(
-      maxCostPerExecutionAndReplicasCACU.toString()
+      maxCostPerExecutionPerReplicaCACU.toString()
     )} cACU.`
   )
   log('')

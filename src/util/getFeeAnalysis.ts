@@ -33,15 +33,16 @@ export const getFeeAnalysis = (config: AcurastProjectConfig) => {
 
   const numberOfReplicas = BigNumber(config.numberOfReplicas)
 
-  const maxCostPerExecutionAndReplicas =
-    maxCostPerExecution.times(numberOfReplicas)
+  const maxCostPerExecutionPerReplica =
+    maxCostPerExecution.times(numberOfExecutions)
+  const maxCostPerExecutionPerReplicaCACU = toCacu(
+    maxCostPerExecutionPerReplica
+  )
 
-  const totalCost = numberOfExecutions.times(maxCostPerExecutionAndReplicas)
+  const totalCost = numberOfReplicas.times(maxCostPerExecutionPerReplica)
 
   const maxCostPerExecutionCACU = toCacu(maxCostPerExecution)
-  const maxCostPerExecutionAndReplicasCACU = toCacu(
-    maxCostPerExecutionAndReplicas
-  )
+
   const maxTotalCostCACU = toCacu(totalCost)
 
   const totalRuns = numberOfExecutions.times(numberOfReplicas)
@@ -53,8 +54,8 @@ export const getFeeAnalysis = (config: AcurastProjectConfig) => {
     totalRuns,
     maxCostPerExecution,
     maxCostPerExecutionCACU,
-    maxCostPerExecutionAndReplicas,
-    maxCostPerExecutionAndReplicasCACU,
+    maxCostPerExecutionPerReplica,
+    maxCostPerExecutionPerReplicaCACU,
     maxTotalCostCACU,
     excessCostPerExecution: excessCostPerExecutionBN,
     excessCostPerExecutionPercentage,

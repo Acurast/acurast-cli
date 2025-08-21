@@ -40,7 +40,7 @@ describe('getFeeAnalysis', () => {
     expect(result.excessCostPerExecutionPercentage).toBeDefined()
     expect(result.totalRuns.toString()).toBe('2')
     expect(result.maxCostPerExecutionCACU).toBeDefined()
-    expect(result.maxCostPerExecutionAndReplicasCACU).toBeDefined()
+    expect(result.maxCostPerExecutionPerReplicaCACU).toBeDefined()
     expect(result.maxTotalCostCACU).toBeDefined()
   })
 
@@ -223,7 +223,7 @@ describe('getFeeAnalysis', () => {
     expect(result.maxCostPerExecutionCACU).toBeInstanceOf(
       require('bignumber.js')
     )
-    expect(result.maxCostPerExecutionAndReplicasCACU).toBeInstanceOf(
+    expect(result.maxCostPerExecutionPerReplicaCACU).toBeInstanceOf(
       require('bignumber.js')
     )
     expect(result.maxTotalCostCACU).toBeInstanceOf(require('bignumber.js'))
@@ -238,7 +238,7 @@ describe('getFeeAnalysis', () => {
 
     // CACU values should be properly converted from satoshi
     expect(result.maxCostPerExecutionCACU.toString()).toBe('1')
-    expect(result.maxCostPerExecutionAndReplicasCACU.toString()).toBe('2')
+    expect(result.maxCostPerExecutionPerReplicaCACU.toString()).toBe('1')
     expect(result.maxTotalCostCACU.toString()).toBe('2')
   })
 })
