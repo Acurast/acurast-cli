@@ -29,23 +29,7 @@ import type { EnvVar, Job } from '../acurast/env/types.js'
 import type { JobRegistration } from '../types.js'
 import { filelogger } from '../util/fileLogger.js'
 
-import { BigNumber } from 'bignumber.js'
-const ACURAST_DECIMALS: number = 12
-const DEFAULT_BASE_FEE: BigNumber = new BigNumber('2000000000')
-const DEFAULT_FEE_PER_MILLIS: BigNumber = new BigNumber(1)
-const DEFAULT_FEE_PER_BYTE: BigNumber = new BigNumber(1)
-
-const suggestReward = (duration: number, storage: number) => {
-  if (duration === null) {
-    throw Error('Invalid duration')
-  }
-  const minDefaultReward = DEFAULT_FEE_PER_MILLIS.times(duration)
-    .plus(DEFAULT_FEE_PER_BYTE.times(storage))
-    .plus(DEFAULT_BASE_FEE)
-  const suggestedReward = minDefaultReward.times(2)
-
-  return suggestedReward.shiftedBy(-ACURAST_DECIMALS).toNumber()
-}
+import { printFeeCosts } from '../util/printFeeCosts.js'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -258,51 +242,7 @@ export const addCommandDeploy = (program: Command) => {
         const hasEnvironmentVariables: boolean =
           (config.includeEnvironmentVariables?.length ?? 0) > 0
 
-        const numberOfExecutions =
-          config.execution.type === 'onetime'
-            ? 1
-            : config.execution.numberOfExecutions
-
-        const costPerExecution = config.maxCostPerExecution
-        const costPerExecutionAndReplicas =
-          config.maxCostPerExecution * config.numberOfReplicas
-
-        const totalCost = numberOfExecutions * costPerExecutionAndReplicas
-
-        const pluralize = (number: number, text: string) => {
-          return number === 1 ? text : text + 's'
-        }
-
-        log(
-          `There will be ${toAcurastColor(
-            numberOfExecutions.toString()
-          )} ${pluralize(numberOfExecutions, 'execution')} with ${toAcurastColor(config.numberOfReplicas.toString())} ${pluralize(config.numberOfReplicas, 'replica')}. (Total runs: ${toAcurastColor((numberOfExecutions * config.numberOfReplicas).toString())})`
-        )
-        log(
-          `Each replica has a cost of ${toAcurastColor(
-            (costPerExecution / 1_000_000_000_000).toString()
-          )} cACU, which means each execution will cost ${toAcurastColor(
-            (costPerExecutionAndReplicas / 1_000_000_000_000).toString()
-          )} cACU.`
-        )
-        log(
-          `The total cost will be ${toAcurastColor((totalCost / 1_000_000_000_000).toString())} cACU.`
-        )
-        log('')
-
-        const job = convertConfigToJob(config)
-
-        const suggestedReward = suggestReward(
-          job.schedule.duration,
-          job.storage
-        )
-
-        log(
-          `The calculated suggested reward for your deployment is ${toAcurastColor(
-            suggestedReward.toString()
-          )} cACU.`
-        )
-        log('')
+        printFeeCosts(config, options)
 
         if (options.dryRun) {
           filelogger.debug('🧪 Dry run, not deploying.')
@@ -318,6 +258,8 @@ export const addCommandDeploy = (program: Command) => {
 
         const deploymentTime = new Date()
         let jobRegistrationTemp: JobRegistration | undefined = undefined
+
+        const job = convertConfigToJob(config)
 
         const jobRegistration = createJob(
           config,
