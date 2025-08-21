@@ -46,6 +46,7 @@ To use the Acurast CLI, type `acurast` followed by any of the available options 
 
 - `new <project-name>` - Create a new Acurast project from a template.
 - `deploy [options] [project]` - Deploy the current project to the Acurast platform.
+- `estimate-fee [options] [project]` - Estimate the fee for the current project.
 - `deployments [arg] [options]` - List, view, and manage deployments.
   - `deployments ls` or `deployments list` - List all your deployments.
   - `deployments <id>` - View details of a specific deployment.
