@@ -18,6 +18,8 @@ export const DEFAULT_REWARD = 100_000_000_000
 export const DEFAULT_MAX_ALLOWED_START_DELAY_MS = 10_000
 export const DEFAULT_PROCESSOR_REPUTATION = 0
 
+export const DEFAULT_TIME_BETWEEN_EXECUTIONS_MS = 10 * second
+
 export const DEFAULT_START_DELAY = 5 * minute
 
 export function isStartAtMsFromNow(
@@ -130,7 +132,12 @@ export const convertConfigToJob = (
       config.execution.intervalInMs * config.execution.numberOfExecutions +
       1
     duration =
-      config.execution.maxExecutionTimeInMs ?? config.execution.intervalInMs - 1
+      config.execution.maxExecutionTimeInMs ??
+      config.execution.intervalInMs - DEFAULT_TIME_BETWEEN_EXECUTIONS_MS - 1
+
+    if (duration < 0) {
+      throw new Error('Duration is less than 0')
+    }
   } else {
     throw new Error('Invalid execution type')
   }
