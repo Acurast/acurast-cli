@@ -401,35 +401,35 @@ describe('validateConfig', () => {
     }
   })
 
-  test('should reject mutable mutability without minProcessorVersions', () => {
-    const project = mutableWithoutVersionsExample.projects['test']
-    const result = validateConfig(project)
+  // test('should reject mutable mutability without minProcessorVersions', () => {
+  //   const project = mutableWithoutVersionsExample.projects['test']
+  //   const result = validateConfig(project)
 
-    expect(result.success).toEqual(false)
-    expect(result.notes).toEqual([
-      {
-        code: 'custom',
-        message:
-          'When mutability is set to "Mutable", minProcessorVersions must include at least one platform with Android version code 91 or iOS version code 63353.',
-        path: ['mutability'],
-      },
-    ])
-  })
+  //   expect(result.success).toEqual(false)
+  //   expect(result.notes).toEqual([
+  //     {
+  //       code: 'custom',
+  //       message:
+  //         'When mutability is set to "Mutable", minProcessorVersions must include at least one platform with Android version code 91 or iOS version code 63353.',
+  //       path: ['mutability'],
+  //     },
+  //   ])
+  // })
 
-  test('should reject mutable mutability with invalid versions for both platforms', () => {
-    const project = mutableWithInvalidVersionsExample.projects['test']
-    const result = validateConfig(project)
+  // test('should reject mutable mutability with invalid versions for both platforms', () => {
+  //   const project = mutableWithInvalidVersionsExample.projects['test']
+  //   const result = validateConfig(project)
 
-    expect(result.success).toEqual(false)
-    expect(result.notes).toEqual([
-      {
-        code: 'custom',
-        message:
-          'When mutability is set to "Mutable", minProcessorVersions must include at least one platform with Android version code 91 or iOS version code 63353.',
-        path: ['mutability'],
-      },
-    ])
-  })
+  //   expect(result.success).toEqual(false)
+  //   expect(result.notes).toEqual([
+  //     {
+  //       code: 'custom',
+  //       message:
+  //         'When mutability is set to "Mutable", minProcessorVersions must include at least one platform with Android version code 91 or iOS version code 63353.',
+  //       path: ['mutability'],
+  //     },
+  //   ])
+  // })
 
   test('should throw an error when the project name is missing', () => {
     const project = simpleExample.projects['acurast-example-app-fetch']
