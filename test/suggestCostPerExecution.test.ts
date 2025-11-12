@@ -8,9 +8,9 @@ describe('suggestCostPerExecution', () => {
 
     const result = suggestCostPerExecution(duration, storage)
 
-    // Expected: (12538 * 1000) + (1 * 1024) + 2000000000 + 30000000000
-    // = 12538000 + 1024 + 2000000000 + 30000000000 = 32012539024
-    expect(result).toBe('32012539024')
+    // Expected: (1 * 1000) + (1 * 1024) + 2000000000 + 30000000000
+    // = 1000 + 1024 + 2000000000 + 30000000000 = 32000002024
+    expect(result).toBe('32000002024')
   })
 
   test('should calculate cost for zero duration and storage', () => {
@@ -19,7 +19,7 @@ describe('suggestCostPerExecution', () => {
 
     const result = suggestCostPerExecution(duration, storage)
 
-    // Expected: (12538 * 0) + (1 * 0) + 2000000000 + 30000000000
+    // Expected: (1 * 0) + (1 * 0) + 2000000000 + 30000000000
     // = 0 + 0 + 2000000000 + 30000000000 = 32000000000
     expect(result).toBe('32000000000')
   })
@@ -30,9 +30,9 @@ describe('suggestCostPerExecution', () => {
 
     const result = suggestCostPerExecution(duration, storage)
 
-    // Expected: (12538 * 3600000) + (1 * 1048576) + 2000000000 + 30000000000
-    // = 45136800000 + 1048576 + 2000000000 + 30000000000 = 77137848576
-    expect(result).toBe('77137848576')
+    // Expected: (1 * 3600000) + (1 * 1048576) + 2000000000 + 30000000000
+    // = 3600000 + 1048576 + 2000000000 + 30000000000 = 32004648576
+    expect(result).toBe('32004648576')
   })
 
   test('should return human readable format when specified', () => {
@@ -41,8 +41,8 @@ describe('suggestCostPerExecution', () => {
 
     const result = suggestCostPerExecution(duration, storage, true)
 
-    // Expected: 32012539024 / 10^12 = 0.032012539024
-    expect(result).toBe('0.032012539024')
+    // Expected: 32000002024 / 10^12 = 0.032000002024
+    expect(result).toBe('0.032000002024')
   })
 
   test('should handle very small values correctly', () => {
@@ -51,9 +51,9 @@ describe('suggestCostPerExecution', () => {
 
     const result = suggestCostPerExecution(duration, storage)
 
-    // Expected: (12538 * 1) + (1 * 1) + 2000000000 + 30000000000
-    // = 12538 + 1 + 2000000000 + 30000000000 = 32000012539
-    expect(result).toBe('32000012539')
+    // Expected: (1 * 1) + (1 * 1) + 2000000000 + 30000000000
+    // = 1 + 1 + 2000000000 + 30000000000 = 32000000002
+    expect(result).toBe('32000000002')
   })
 
   test('should throw error for null duration', () => {
@@ -71,9 +71,9 @@ describe('suggestCostPerExecution', () => {
 
     const result = suggestCostPerExecution(duration, storage)
 
-    // Expected: (12538 * -1000) + (1 * 1024) + 2000000000 + 30000000000
-    // = -12538000 + 1024 + 2000000000 + 30000000000 = 31987463024
-    expect(result).toBe('31987463024')
+    // Expected: (1 * -1000) + (1 * 1024) + 2000000000 + 30000000000
+    // = -1000 + 1024 + 2000000000 + 30000000000 = 32000000024
+    expect(result).toBe('32000000024')
   })
 
   test('should handle negative storage (edge case)', () => {
@@ -82,9 +82,9 @@ describe('suggestCostPerExecution', () => {
 
     const result = suggestCostPerExecution(duration, storage)
 
-    // Expected: (12538 * 1000) + (1 * -1024) + 2000000000 + 30000000000
-    // = 12538000 + (-1024) + 2000000000 + 30000000000 = 32012536976
-    expect(result).toBe('32012536976')
+    // Expected: (1 * 1000) + (1 * -1024) + 2000000000 + 30000000000
+    // = 1000 + (-1024) + 2000000000 + 30000000000 = 31999999976
+    expect(result).toBe('31999999976')
   })
 
   test('should maintain precision for large numbers', () => {
@@ -93,8 +93,8 @@ describe('suggestCostPerExecution', () => {
 
     const result = suggestCostPerExecution(duration, storage)
 
-    // Expected: (12538 * 86400000) + (1 * 1073741824) + 2000000000 + 30000000000
-    // = 1083283200000 + 1073741824 + 2000000000 + 30000000000 = 1116356941824
-    expect(result).toBe('1116356941824')
+    // Expected: (1 * 86400000) + (1 * 1073741824) + 2000000000 + 30000000000
+    // = 86400000 + 1073741824 + 2000000000 + 30000000000 = 33160141824
+    expect(result).toBe('33160141824')
   })
 })

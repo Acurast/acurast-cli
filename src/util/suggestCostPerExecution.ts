@@ -2,7 +2,7 @@ import { BigNumber } from 'bignumber.js'
 
 const ACURAST_DECIMALS: number = 12
 const DEFAULT_BASE_FEE: BigNumber = new BigNumber('2000000000') // 0.002 cACU
-const DEFAULT_FEE_PER_MILLIS: BigNumber = new BigNumber(12538) // 0.000000012538 cACU
+const DEFAULT_FEE_PER_MILLIS: BigNumber = new BigNumber(1) // 0.000000000001 cACU
 const DEFAULT_FEE_PER_BYTE: BigNumber = new BigNumber(1) // 0.000000000001 cACU
 const DEFAULT_MATCHER_FEE: BigNumber = new BigNumber('30000000000') // 0.03 cACU
 
