@@ -3,8 +3,8 @@ import { loadConfig } from '../acurast/loadConfig.js'
 import {
   getEnv,
   validateDeployEnvVars,
-  RPC,
   getProjectEnvVars,
+  getRpcForNetwork,
 } from '../config.js'
 import { delay, Listr } from 'listr2'
 import { createJob } from '../acurast/createJob.js'
@@ -160,7 +160,8 @@ export const addCommandDeploy = (program: Command) => {
 
         const wallet = await getWallet()
 
-        const wsProvider = new WsProvider(RPC)
+        const rpcEndpoint = getRpcForNetwork(config.network)
+        const wsProvider = new WsProvider(rpcEndpoint)
         const api = await ApiPromise.create({
           provider: wsProvider,
           noInitWarn: true,
@@ -264,7 +265,7 @@ export const addCommandDeploy = (program: Command) => {
         const jobRegistration = createJob(
           config,
           job,
-          RPC,
+          rpcEndpoint,
           envVars,
           options.onlyUpload ?? false,
           async (status: DeploymentStatus, data) => {
