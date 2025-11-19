@@ -243,7 +243,7 @@ export const addCommandInit = (program: Command) => {
       const config: AcurastProjectConfig = {
         projectName,
         fileUrl,
-        network: 'canary',
+        network: 'mainnet',
         onlyAttestedDevices: true,
         assignmentStrategy: {
           type: AssignmentStrategyVariant.Single,

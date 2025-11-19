@@ -20,7 +20,7 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { shortenString } from '../util/shortenString.js'
 import { red, green, yellowBright } from 'ansis'
-import { RPC } from '../config.js'
+import { getRpcForNetwork } from '../config.js'
 import { jobToNumber } from '../util/jobToNumber.js'
 import { convertConfigToJob } from '../acurast/convertConfigToJob.js'
 
@@ -114,7 +114,8 @@ export const addCommandLive = (program: Command) => {
 
           const job = convertConfigToJob(config)
 
-          createJob(config, job, RPC, [], false, (status, data) => {
+          const rpcEndpoint = getRpcForNetwork(config.network)
+          createJob(config, job, rpcEndpoint, [], false, (status, data) => {
             if (status === DeploymentStatus.WaitingForMatch) {
               const jobId = data.jobIds[0]
               resolve(jobId)

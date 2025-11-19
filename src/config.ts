@@ -3,6 +3,7 @@ import type { AcurastProjectConfig } from './types.js'
 import type { EnvVar } from './acurast/env/types.js'
 
 const RPC_CANARY = 'wss://canarynet-ws-1.acurast-h-server-2.papers.tech'
+const RPC_MAINNET = 'wss://archive.mainnet.acurast.com'
 
 const IPFS_PROXY = 'https://ipfs-proxy.acurast.prod.gke.papers.tech'
 
@@ -17,7 +18,7 @@ const defaultValues: Record<EnvKeys, string | undefined> = {
   ACURAST_MNEMONIC: undefined,
   ACURAST_IPFS_URL: IPFS_PROXY,
   ACURAST_IPFS_API_KEY: '', // With the default IPFS Proxy, no API key is required
-  ACURAST_RPC: RPC_CANARY,
+  ACURAST_RPC: RPC_MAINNET,
   DEBUG: 'false',
 }
 
@@ -59,6 +60,15 @@ export const getProjectEnvVars = (config: AcurastProjectConfig): EnvVar[] => {
       value: getProjectEnv(key),
     })) || []
   )
+}
+
+export const getRpcForNetwork = (network: 'mainnet' | 'canary'): string => {
+  const envRpc = process.env.ACURAST_RPC
+  if (envRpc) {
+    return envRpc
+  }
+  
+  return network === 'mainnet' ? RPC_MAINNET : RPC_CANARY
 }
 
 export const RPC = getEnv('ACURAST_RPC')

@@ -20,7 +20,7 @@ export interface AcurastProjectConfig {
   entrypoint?: string
 
   // The network on which the project will be deployed.
-  network: 'canary'
+  network: 'mainnet' | 'canary'
 
   // A boolean to specify if only attested devices are allowed to run the app.
   onlyAttestedDevices: boolean

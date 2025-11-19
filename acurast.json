@@ -3,7 +3,7 @@
     "test-single-onetime": {
       "projectName": "test-single-onetime",
       "fileUrl": "examples/test.js",
-      "network": "canary",
+      "network": "mainnet",
       "onlyAttestedDevices": true,
       "assignmentStrategy": {
         "type": "Single"
@@ -29,7 +29,7 @@
     "test-single-onetime-mutable": {
       "projectName": "test-single-onetime-with-key-reuse",
       "fileUrl": "examples/test.js",
-      "network": "canary",
+      "network": "mainnet",
       "onlyAttestedDevices": true,
       "assignmentStrategy": {
         "type": "Single"
@@ -55,7 +55,7 @@
     "test-single-onetime-with-env": {
       "projectName": "test-single-onetime-with-env",
       "fileUrl": "examples/test.js",
-      "network": "canary",
+      "network": "mainnet",
       "onlyAttestedDevices": true,
       "assignmentStrategy": {
         "type": "Single"
@@ -80,7 +80,7 @@
     "test-ipfs": {
       "projectName": "test-ipfs",
       "fileUrl": "ipfs://QmUCUxqof4MFkvCpsAaangue9njQBudcPaLq7ppp7yvtrL",
-      "network": "canary",
+      "network": "mainnet",
       "onlyAttestedDevices": true,
       "assignmentStrategy": {
         "type": "Single"
@@ -105,7 +105,7 @@
     "test-bundle-file": {
       "projectName": "test-bundle-file",
       "fileUrl": "examples/nested/file/test.js",
-      "network": "canary",
+      "network": "mainnet",
       "onlyAttestedDevices": true,
       "assignmentStrategy": {
         "type": "Single"
@@ -131,7 +131,7 @@
       "projectName": "test-bundle-folder",
       "fileUrl": "examples/folder",
       "entrypoint": "index.js",
-      "network": "canary",
+      "network": "mainnet",
       "onlyAttestedDevices": true,
       "assignmentStrategy": {
         "type": "Single"
@@ -157,7 +157,7 @@
       "projectName": "long-running-deployment",
       "fileUrl": "examples/folder",
       "entrypoint": "index.js",
-      "network": "canary",
+      "network": "mainnet",
       "onlyAttestedDevices": true,
       "assignmentStrategy": {
         "type": "Single"
