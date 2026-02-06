@@ -109,7 +109,7 @@ export const addCommandInit = (program: Command) => {
       console.log('The CLI will use the following address: ' + wallet.address)
       console.log('')
       console.log(
-        `Visit the faucet to get some tokens: ${getFaucetLinkForAddress(wallet.address)}`
+        `Fund your account with ACU tokens to deploy on mainnet, or use the faucet (${getFaucetLinkForAddress(wallet.address)}) for canary network testing.`
       )
       console.log('')
 

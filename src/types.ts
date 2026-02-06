@@ -89,7 +89,7 @@ export interface AcurastProjectConfig {
   requiredModules?: RequiredModules[]
   // The minimum required reputation of the processor.
   minProcessorReputation: number
-  // The maximum cost per execution in the smallest denomination of cACUs.
+  // The maximum cost per execution in the smallest denomination of ACU.
   maxCostPerExecution: number
   // An array of environment variables in the .env file that will be passed to the deployment.
   includeEnvironmentVariables?: string[]

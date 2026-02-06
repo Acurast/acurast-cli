@@ -29,7 +29,7 @@ export const addCommandOpen = (program: Command) => {
           },
           {
             name: 'Faucet',
-            description: 'Get some cACU to get started',
+            description: 'Get some cACU for canary network testing',
             value: faucet,
           },
           {

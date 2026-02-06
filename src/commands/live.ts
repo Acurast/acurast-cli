@@ -86,7 +86,7 @@ export const addCommandLive = (program: Command) => {
           const config: AcurastProjectConfig = {
             projectName: 'report',
             fileUrl: filePath,
-            network: 'canary',
+            network: 'mainnet',
             onlyAttestedDevices: false,
             startAt: {
               msFromNow: 300000,

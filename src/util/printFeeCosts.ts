@@ -4,6 +4,7 @@ import { pluralize } from '../util/pluralize.js'
 import { red } from 'ansis'
 import { acurastColor } from '../util.js'
 import { consoleOutput } from './console-output.js'
+import { getSymbolForNetwork } from '../config.js'
 
 export const printFeeCosts = (
   config: AcurastProjectConfig,
@@ -16,6 +17,8 @@ export const printFeeCosts = (
     }
     return acurastColor(text)
   }
+
+  const symbol = getSymbolForNetwork(config.network)
 
   const feeAnalysis = getFeeAnalysis(config)
 
@@ -35,7 +38,7 @@ export const printFeeCosts = (
 
   const maxTotalCostCACU = feeAnalysis.maxTotalCostCACU
 
-  const suggestedFeeString = `Suggested fee: ${toAcurastColor(toCacu(suggestedCostPerExecution).toFixed())} cACU (${suggestedCostPerExecution.toFixed()}), your max fee: ${toAcurastColor(toCacu(maxCostPerExecution).toFixed())} cACU (${maxCostPerExecution.toFixed()}), excess: ${toAcurastColor(toCacu(excessCostPerExecution).toFixed())} cACU (${excessCostPerExecution.toFixed()})`
+  const suggestedFeeString = `Suggested fee: ${toAcurastColor(toCacu(suggestedCostPerExecution).toFixed())} ${symbol} (${suggestedCostPerExecution.toFixed()}), your max fee: ${toAcurastColor(toCacu(maxCostPerExecution).toFixed())} ${symbol} (${maxCostPerExecution.toFixed()}), excess: ${toAcurastColor(toCacu(excessCostPerExecution).toFixed())} ${symbol} (${excessCostPerExecution.toFixed()})`
 
   if (excessCostPerExecution.lt(0)) {
     log(
@@ -63,13 +66,13 @@ export const printFeeCosts = (
   log(
     `The maximum cost per execution is ${toAcurastColor(
       maxCostPerExecutionCACU.toString()
-    )} cACU, which means each replica will cost ${toAcurastColor(
+    )} ${symbol}, which means each replica will cost ${toAcurastColor(
       maxCostPerExecutionPerReplicaCACU.toString()
-    )} cACU.`
+    )} ${symbol}.`
   )
   log('')
   log(
-    `The total cost will be ${toAcurastColor(maxTotalCostCACU.toString())} cACU.`
+    `The total cost will be ${toAcurastColor(maxTotalCostCACU.toString())} ${symbol}.`
   )
   log('')
 }

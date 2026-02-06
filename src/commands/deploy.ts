@@ -5,6 +5,7 @@ import {
   validateDeployEnvVars,
   getProjectEnvVars,
   getRpcForNetwork,
+  getSymbolForNetwork,
 } from '../config.js'
 import { delay, Listr } from 'listr2'
 import { createJob } from '../acurast/createJob.js'
@@ -169,26 +170,40 @@ export const addCommandDeploy = (program: Command) => {
 
         const balance = await getBalance(wallet.address, api)
 
-        filelogger.debug(`Balance: ${balance} cACU`)
+        const symbol = getSymbolForNetwork(config.network)
+
+        filelogger.debug(`Balance: ${balance} ${symbol}`)
 
         await api.disconnect()
 
         spinner.stop()
 
         if (balance === 0) {
-          log(
-            `Your balance is 0. Visit ${toAcurastColor(
-              getFaucetLinkForAddress(wallet.address)
-            )} to get some tokens.`
-          )
+          if (config.network === 'canary') {
+            log(
+              `Your balance is 0. Visit ${toAcurastColor(
+                getFaucetLinkForAddress(wallet.address)
+              )} to get some tokens.`
+            )
+          } else {
+            log(
+              `Your balance is 0. You need ${symbol} tokens to deploy. Visit ${toAcurastColor('https://acurast.com')} to learn how to acquire ${symbol}.`
+            )
+          }
           log('')
           return
         } else if (balance < 1) {
-          log(
-            `Your balance is low. Visit ${toAcurastColor(
-              getFaucetLinkForAddress(wallet.address)
-            )} to get some tokens.`
-          )
+          if (config.network === 'canary') {
+            log(
+              `Your balance is low. Visit ${toAcurastColor(
+                getFaucetLinkForAddress(wallet.address)
+              )} to get some tokens.`
+            )
+          } else {
+            log(
+              `Your balance is low. You need more ${symbol} tokens to deploy. Visit ${toAcurastColor('https://acurast.com')} to learn how to acquire ${symbol}.`
+            )
+          }
           log('')
         }
 

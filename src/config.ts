@@ -67,8 +67,14 @@ export const getRpcForNetwork = (network: 'mainnet' | 'canary'): string => {
   if (envRpc) {
     return envRpc
   }
-  
+
   return network === 'mainnet' ? RPC_MAINNET : RPC_CANARY
+}
+
+export const getSymbolForNetwork = (
+  network: 'mainnet' | 'canary'
+): string => {
+  return network === 'mainnet' ? 'ACU' : 'cACU'
 }
 
 export const RPC = getEnv('ACURAST_RPC')
