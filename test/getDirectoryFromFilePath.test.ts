@@ -1,3 +1,4 @@
+import path from 'path'
 import { getDirectoryFromFilePath } from '../src/util/getDirectoryFromFilePath.js'
 
 describe('getDirectoryFromFilePath', () => {
@@ -5,23 +6,23 @@ describe('getDirectoryFromFilePath', () => {
     const data = [
       {
         dir: './.acurast',
-        expected: './.acurast',
+        expected: path.normalize('./.acurast'),
       },
       {
         dir: './.acurast/deploy',
-        expected: './.acurast/deploy',
+        expected: path.normalize('./.acurast/deploy'),
       },
       {
         dir: './.acurast/deploy/',
-        expected: './.acurast/deploy/',
+        expected: path.normalize('./.acurast/deploy/'),
       },
       {
         dir: './.acurast/keys.json',
-        expected: './.acurast',
+        expected: path.normalize('./.acurast'),
       },
       {
         dir: './.acurast/deploy/1.json',
-        expected: './.acurast/deploy',
+        expected: path.normalize('./.acurast/deploy'),
       },
     ]
 

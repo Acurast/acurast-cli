@@ -19,7 +19,7 @@ const acurastProjectConfigSchema = z.object({
   projectName: z.string(),
   fileUrl: z.string(),
   entrypoint: z.string().optional(),
-  network: z.literal('canary'),
+  network: z.union([z.literal('mainnet'), z.literal('canary')]),
   onlyAttestedDevices: z.boolean(),
   startAt: z
     .union([
