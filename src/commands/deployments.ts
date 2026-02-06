@@ -1,6 +1,10 @@
 import { Command, Option } from 'commander'
 import { AcurastService } from '../acurast/env/acurastService.js'
-import { getProjectEnvVars, RPC } from '../config.js'
+import {
+  getProjectEnvVars,
+  getRpcForNetwork,
+  getSymbolForNetwork,
+} from '../config.js'
 import fs from 'fs'
 import { readFilesInDeployFolder } from '../util/readFilesInDeployFolder.js'
 import type { EnvVar, Job } from '../acurast/env/types.js'
@@ -105,7 +109,8 @@ export const addCommandDeployments = (program: Command) => {
             spinner.stop()
             console.log(`Found ${filteredJobs.length} deployments to clean up`)
 
-            const wsProvider = new WsProvider(RPC)
+            const rpcEndpoint = getRpcForNetwork('mainnet')
+            const wsProvider = new WsProvider(rpcEndpoint)
             const api = await ApiPromise.create({
               provider: wsProvider,
               noInitWarn: true,
@@ -118,8 +123,9 @@ export const addCommandDeployments = (program: Command) => {
               await acurast.deregisterJob(wallet, job.id[1])
               const balanceNew = await getBalance(wallet.address, api)
               const diff = balanceNew - balanceBefore
+              const symbol = getSymbolForNetwork('mainnet')
               spinner.succeed(
-                `Deployment ${job.id[1]} cleaned up${diff > 0 ? `. cACU regained: ${diff}` : ``}`
+                `Deployment ${job.id[1]} cleaned up${diff > 0 ? `. ${symbol} regained: ${diff}` : ``}`
               )
               balanceBefore = balanceNew
             }

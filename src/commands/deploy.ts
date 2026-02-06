@@ -3,8 +3,9 @@ import { loadConfig } from '../acurast/loadConfig.js'
 import {
   getEnv,
   validateDeployEnvVars,
-  RPC,
   getProjectEnvVars,
+  getRpcForNetwork,
+  getSymbolForNetwork,
 } from '../config.js'
 import { delay, Listr } from 'listr2'
 import { createJob } from '../acurast/createJob.js'
@@ -160,7 +161,8 @@ export const addCommandDeploy = (program: Command) => {
 
         const wallet = await getWallet()
 
-        const wsProvider = new WsProvider(RPC)
+        const rpcEndpoint = getRpcForNetwork(config.network)
+        const wsProvider = new WsProvider(rpcEndpoint)
         const api = await ApiPromise.create({
           provider: wsProvider,
           noInitWarn: true,
@@ -168,26 +170,40 @@ export const addCommandDeploy = (program: Command) => {
 
         const balance = await getBalance(wallet.address, api)
 
-        filelogger.debug(`Balance: ${balance} cACU`)
+        const symbol = getSymbolForNetwork(config.network)
+
+        filelogger.debug(`Balance: ${balance} ${symbol}`)
 
         await api.disconnect()
 
         spinner.stop()
 
         if (balance === 0) {
-          log(
-            `Your balance is 0. Visit ${toAcurastColor(
-              getFaucetLinkForAddress(wallet.address)
-            )} to get some tokens.`
-          )
+          if (config.network === 'canary') {
+            log(
+              `Your balance is 0. Visit ${toAcurastColor(
+                getFaucetLinkForAddress(wallet.address)
+              )} to get some tokens.`
+            )
+          } else {
+            log(
+              `Your balance is 0. You need ${symbol} tokens to deploy. Visit ${toAcurastColor('https://acurast.com')} to learn how to acquire ${symbol}.`
+            )
+          }
           log('')
           return
         } else if (balance < 1) {
-          log(
-            `Your balance is low. Visit ${toAcurastColor(
-              getFaucetLinkForAddress(wallet.address)
-            )} to get some tokens.`
-          )
+          if (config.network === 'canary') {
+            log(
+              `Your balance is low. Visit ${toAcurastColor(
+                getFaucetLinkForAddress(wallet.address)
+              )} to get some tokens.`
+            )
+          } else {
+            log(
+              `Your balance is low. You need more ${symbol} tokens to deploy. Visit ${toAcurastColor('https://acurast.com')} to learn how to acquire ${symbol}.`
+            )
+          }
           log('')
         }
 
@@ -264,7 +280,7 @@ export const addCommandDeploy = (program: Command) => {
         const jobRegistration = createJob(
           config,
           job,
-          RPC,
+          rpcEndpoint,
           envVars,
           options.onlyUpload ?? false,
           async (status: DeploymentStatus, data) => {

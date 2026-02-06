@@ -140,8 +140,9 @@ export class AcurastService {
   private eventSubs: Map<string, EventSub<any>> = new Map()
   private unsubEvents?: VoidFn
 
-  constructor() {
-    this.wsProvider$.next(new WsProvider(RPC))
+  constructor(rpcEndpoint?: string) {
+    const rpc = rpcEndpoint || RPC
+    this.wsProvider$.next(new WsProvider(rpc))
     // private readonly accounts: AccountService // private readonly network: NetworkService, // private readonly http: HttpClient,
     // network.currentNetwork$.subscribe((network) => {
     //   this.wsProvider$.next(new WsProvider(network.acurast.wsUrl))
