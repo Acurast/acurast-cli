@@ -12,6 +12,7 @@ export type EnvKeys =
   | 'ACURAST_IPFS_URL'
   | 'ACURAST_IPFS_API_KEY'
   | 'ACURAST_RPC'
+  | 'ACURAST_CANARY_RPC'
   | 'DEBUG'
 
 const defaultValues: Record<EnvKeys, string | undefined> = {
@@ -19,6 +20,7 @@ const defaultValues: Record<EnvKeys, string | undefined> = {
   ACURAST_IPFS_URL: IPFS_PROXY,
   ACURAST_IPFS_API_KEY: '', // With the default IPFS Proxy, no API key is required
   ACURAST_RPC: RPC_MAINNET,
+  ACURAST_CANARY_RPC: RPC_CANARY,
   DEBUG: 'false',
 }
 
@@ -63,12 +65,9 @@ export const getProjectEnvVars = (config: AcurastProjectConfig): EnvVar[] => {
 }
 
 export const getRpcForNetwork = (network: 'mainnet' | 'canary'): string => {
-  const envRpc = process.env.ACURAST_RPC
-  if (envRpc) {
-    return envRpc
-  }
-
-  return network === 'mainnet' ? RPC_MAINNET : RPC_CANARY
+  return network === 'mainnet'
+    ? getEnv('ACURAST_RPC')
+    : getEnv('ACURAST_CANARY_RPC')
 }
 
 export const getSymbolForNetwork = (
@@ -77,4 +76,5 @@ export const getSymbolForNetwork = (
   return network === 'mainnet' ? 'ACU' : 'cACU'
 }
 
+// Default RPC for backwards compatibility (mainnet)
 export const RPC = getEnv('ACURAST_RPC')

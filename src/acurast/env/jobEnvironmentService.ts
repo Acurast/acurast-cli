@@ -21,7 +21,11 @@ import { LocalStorage } from '../../util/LocalStorage.js'
 const localStorage = new LocalStorage()
 
 export class JobEnvironmentService {
-  constructor() {}
+  private rpcEndpoint?: string
+
+  constructor(rpcEndpoint?: string) {
+    this.rpcEndpoint = rpcEndpoint
+  }
 
   private keyStorageId(
     type: 'publicKey' | 'privateKey',
@@ -246,7 +250,7 @@ export class JobEnvironmentService {
   ): Promise<{ hash: string }> {
     return new Promise(async (resolve, reject) => {
       try {
-        const acurast = new AcurastService()
+        const acurast = new AcurastService(this.rpcEndpoint)
         const hash = await acurast
           .setEnvironment(keyring, jobId, jobEnvironment)
           .then((v) => v.toString())
@@ -311,7 +315,7 @@ export class JobEnvironmentService {
   ): Promise<{ hash: string }> {
     return new Promise(async (resolve, reject) => {
       try {
-        const acurast = new AcurastService()
+        const acurast = new AcurastService(this.rpcEndpoint)
         const hash = await acurast
           .setEnvironments(keyring, jobId, jobEnvironments)
           .then((v) => v.toString())
