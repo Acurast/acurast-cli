@@ -74,36 +74,70 @@ export const addCommandDeployments = (program: Command) => {
         }
 
         if (arg === 'ls' || arg === 'list') {
-          const acurast = new AcurastService(getRpcForNetwork(options.network))
           const spinner = ora.default('Loading deployments...')
           spinner.start()
-          const jobs = await acurast.getAllJobs()
 
-          const filteredJobs = jobs
-            .filter((job) => job.id[0].acurast === wallet.address)
-            .sort((a, b) => b.id[1] - a.id[1])
+          const indexerConfig =
+            options.network === 'mainnet'
+              ? {
+                  url: 'https://dev.indexer.mainnet.acurast.com/api/v1/rpc',
+                  apiKey: 'HbLxqSJoPTnzwa_rkF-tYv',
+                }
+              : {
+                  url: 'https://dev.indexer.canary.acurast.com/api/v1/rpc',
+                  apiKey: 'OXuwySHqNSlwwa_qqB-cBw',
+                }
+
+          const response = await fetch(indexerConfig.url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'API-Key': indexerConfig.apiKey,
+            },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              method: 'getEvents',
+              params: {
+                pallet: 'Acurast',
+                variant: 'JobRegistrationStoredV2',
+                account_id: wallet.address,
+                sort_order: 'desc',
+              },
+              id: 1,
+            }),
+          })
+
+          const data = (await response.json()) as {
+            result?: {
+              items: {
+                data: [{ Acurast: string }, number]
+                block_time: string
+              }[]
+            }
+            error?: { message: string }
+          }
 
           spinner.stop()
 
-          if (filteredJobs.length === 0) {
+          if (data.error) {
+            console.log('Error fetching deployments:', data.error.message)
+            return
+          }
+
+          const items = data.result?.items || []
+
+          if (items.length === 0) {
             console.log('No deployments found')
           } else {
             console.log('You have the following deployments:')
 
-            const now = Date.now()
-
-            filteredJobs.forEach((job) => {
-              const status =
-                job.registration.schedule.startTime > now
-                  ? 'planned'
-                  : job.registration.schedule.endTime < now
-                    ? 'ended'
-                    : 'running'
-              console.log(`${job.id[1]} - ${status}`)
+            items.forEach((item) => {
+              const jobId = item.data[1]
+              const blockTime = new Date(item.block_time).toLocaleDateString()
+              console.log(`${jobId} (registered ${blockTime})`)
             })
           }
 
-          await acurast.disconnect()
           return
         }
 
