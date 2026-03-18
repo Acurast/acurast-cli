@@ -246,23 +246,33 @@ The Acurast CLI provides comprehensive deployment management capabilities, inclu
 ### Basic Deployment Commands
 
 ```bash
-# List all deployments
+# List all deployments (mainnet)
 acurast deployments ls
 
+# List all deployments on canary network
+acurast deployments ls --network canary
+
 # View a specific deployment
-acurast deployments "Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123456"
+acurast deployments 123456
 
 # Update environment variables for a deployment
-acurast deployments "Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123456" --update-env-vars
+acurast deployments 123456 --update-env-vars
 
 # Clean up old deployments
 acurast deployments --cleanup
 
+# Clean up old deployments on canary network
+acurast deployments --cleanup --network canary
+
 # Clean up a specific deployment
-acurast deployments "Acurast:5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL:123456" --cleanup
+acurast deployments 123456 --cleanup
 ```
 
-**Note**: All deployment commands require the full deployment ID format: `"origin:address:number"`
+**Options**:
+
+- `-n, --network <network>`: Network to use (`mainnet` or `canary`). Defaults to `mainnet`. When working with a specific deployment ID, the network is automatically detected from the deployment file if available.
+- `-e, --update-env-vars`: Update environment variables for a deployment.
+- `-c, --cleanup`: Remove old, finished deployments and return unused funds.
 
 ### Updating Mutable Deployments
 
