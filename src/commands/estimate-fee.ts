@@ -2,9 +2,10 @@ import { Command, Option } from 'commander'
 import { loadConfig } from '../acurast/loadConfig.js'
 import { validateConfig } from '../util/validateConfig.js'
 import { consoleOutput } from '../util/console-output.js'
-import { acurastColor } from '../util.js'
 import { filelogger } from '../util/fileLogger.js'
-import { printFeeCosts } from '../util/printFeeCosts.js'
+import { getWallet } from '../util/getWallet.js'
+import * as ora from '../util/ora.js'
+import { fetchAndDisplayPricing } from '../util/fetchPricingAdvice.js'
 
 export const addCommandEstimateFee = (program: Command) => {
   program
@@ -20,12 +21,6 @@ export const addCommandEstimateFee = (program: Command) => {
     )
     .action(async (project: string, options: { output: 'text' | 'json' }) => {
       const log = consoleOutput(options.output)
-      const toAcurastColor = (text: string) => {
-        if (options.output === 'json') {
-          return text
-        }
-        return acurastColor(text)
-      }
 
       let config
       try {
@@ -59,6 +54,9 @@ export const addCommandEstimateFee = (program: Command) => {
         log('')
       }
 
-      printFeeCosts(config, options)
+      const wallet = await getWallet()
+      const spinner = ora.default('Fetching market pricing data...')
+
+      await fetchAndDisplayPricing(config, wallet.address, options, spinner)
     })
 }
