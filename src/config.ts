@@ -5,6 +5,14 @@ import type { EnvVar } from './acurast/env/types.js'
 const RPC_CANARY = 'wss://canarynet-ws-1.acurast-h-server-2.papers.tech'
 const RPC_MAINNET = 'wss://archive.mainnet.acurast.com'
 
+const MATCHER_CANARY = 'https://matcher.canary.acurast.com'
+const MATCHER_MAINNET = 'https://matcher.mainnet.acurast.com'
+
+const INDEXER_CANARY = 'https://dev.indexer.canary.acurast.com/api/v1/rpc'
+const INDEXER_CANARY_API_KEY = 'OXuwySHqNSlwwa_qqB-cBw'
+const INDEXER_MAINNET = 'https://dev.indexer.mainnet.acurast.com/api/v1/rpc'
+const INDEXER_MAINNET_API_KEY = 'HbLxqSJoPTnzwa_rkF-tYv'
+
 const IPFS_PROXY = 'https://ipfs-proxy.acurast.prod.gke.papers.tech'
 
 export type EnvKeys =
@@ -12,6 +20,7 @@ export type EnvKeys =
   | 'ACURAST_IPFS_URL'
   | 'ACURAST_IPFS_API_KEY'
   | 'ACURAST_RPC'
+  | 'ACURAST_CANARY_RPC'
   | 'DEBUG'
 
 const defaultValues: Record<EnvKeys, string | undefined> = {
@@ -19,6 +28,7 @@ const defaultValues: Record<EnvKeys, string | undefined> = {
   ACURAST_IPFS_URL: IPFS_PROXY,
   ACURAST_IPFS_API_KEY: '', // With the default IPFS Proxy, no API key is required
   ACURAST_RPC: RPC_MAINNET,
+  ACURAST_CANARY_RPC: RPC_CANARY,
   DEBUG: 'false',
 }
 
@@ -63,18 +73,28 @@ export const getProjectEnvVars = (config: AcurastProjectConfig): EnvVar[] => {
 }
 
 export const getRpcForNetwork = (network: 'mainnet' | 'canary'): string => {
-  const envRpc = process.env.ACURAST_RPC
-  if (envRpc) {
-    return envRpc
-  }
-
-  return network === 'mainnet' ? RPC_MAINNET : RPC_CANARY
+  return network === 'mainnet'
+    ? getEnv('ACURAST_RPC')
+    : getEnv('ACURAST_CANARY_RPC')
 }
 
-export const getSymbolForNetwork = (
-  network: 'mainnet' | 'canary'
-): string => {
+export const getSymbolForNetwork = (network: 'mainnet' | 'canary'): string => {
   return network === 'mainnet' ? 'ACU' : 'cACU'
 }
 
+export const getMatcherUrlForNetwork = (
+  network: 'mainnet' | 'canary'
+): string | undefined => {
+  return network === 'mainnet' ? MATCHER_MAINNET : MATCHER_CANARY
+}
+
+export const getIndexerConfigForNetwork = (
+  network: 'mainnet' | 'canary'
+): { url: string; apiKey: string } => {
+  return network === 'mainnet'
+    ? { url: INDEXER_MAINNET, apiKey: INDEXER_MAINNET_API_KEY }
+    : { url: INDEXER_CANARY, apiKey: INDEXER_CANARY_API_KEY }
+}
+
+// Default RPC for backwards compatibility (mainnet)
 export const RPC = getEnv('ACURAST_RPC')

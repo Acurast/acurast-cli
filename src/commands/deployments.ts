@@ -1,15 +1,14 @@
 import { Command, Option } from 'commander'
 import { AcurastService } from '../acurast/env/acurastService.js'
 import {
+  getIndexerConfigForNetwork,
   getProjectEnvVars,
   getRpcForNetwork,
   getSymbolForNetwork,
 } from '../config.js'
 import fs from 'fs'
-import { readFilesInDeployFolder } from '../util/readFilesInDeployFolder.js'
 import type { EnvVar, Job } from '../acurast/env/types.js'
 import type { AcurastDeployment } from '../types.js'
-import { toNumber } from '../util/jobToNumber.js'
 import { getWallet } from '../util/getWallet.js'
 import * as ora from '../util/ora.js'
 import { getBalance } from '../util/getBalance.js'
@@ -38,52 +37,118 @@ export const addCommandDeployments = (program: Command) => {
         'Remove old, finished deployments. This will return any unused funds locked in the deployment back to the user.'
       )
     )
+    .addOption(
+      new Option('-n, --network <network>', 'Network to use (mainnet or canary)')
+        .choices(['mainnet', 'canary'])
+        .default('mainnet')
+    )
     .action(
       async (
         arg: string,
         options: {
           updateEnvVars?: boolean
           cleanup?: boolean
+          network: 'mainnet' | 'canary'
         }
       ) => {
-        const acurast = new AcurastService()
         const wallet = await getWallet()
+
+        const readDeploymentFile = (
+          deploymentId: number
+        ): AcurastDeployment | undefined => {
+          try {
+            const deploymentFilename = fs
+              .readdirSync(ACURAST_DEPLOYMENTS_PATH)
+              .find((f) => f.endsWith(`-${deploymentId}.json`))
+            if (deploymentFilename) {
+              return JSON.parse(
+                fs.readFileSync(
+                  `${ACURAST_DEPLOYMENTS_PATH}/${deploymentFilename}`,
+                  'utf8'
+                )
+              )
+            }
+          } catch {
+            // Directory may not exist yet
+          }
+          return undefined
+        }
+
         if (arg === 'ls' || arg === 'list') {
           const spinner = ora.default('Loading deployments...')
           spinner.start()
-          const jobs = await acurast.getAllJobs()
 
-          const filteredJobs = jobs
-            .filter((job) => job.id[0].acurast === wallet.address)
-            .sort((a, b) => b.id[1] - a.id[1])
+          const indexerConfig = getIndexerConfigForNetwork(options.network)
+
+          let data: {
+            result?: {
+              items: {
+                data: [{ Acurast: string }, number]
+                block_time: string
+              }[]
+            }
+            error?: { message: string }
+          }
+
+          try {
+            const response = await fetch(indexerConfig.url, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'API-Key': indexerConfig.apiKey,
+              },
+              body: JSON.stringify({
+                jsonrpc: '2.0',
+                method: 'getEvents',
+                params: {
+                  pallet: 'Acurast',
+                  variant: 'JobRegistrationStoredV2',
+                  account_id: wallet.address,
+                  sort_order: 'desc',
+                },
+                id: 1,
+              }),
+            })
+
+            data = (await response.json()) as typeof data
+          } catch (err: any) {
+            spinner.stop()
+            console.log('Failed to fetch deployments:', err.message)
+            return
+          }
 
           spinner.stop()
 
-          if (filteredJobs.length === 0) {
+          if (data.error) {
+            console.log('Error fetching deployments:', data.error.message)
+            return
+          }
+
+          const items = data.result?.items || []
+
+          if (items.length === 0) {
             console.log('No deployments found')
           } else {
             console.log('You have the following deployments:')
 
-            const now = Date.now()
-
-            filteredJobs.forEach((job) => {
-              const status =
-                job.registration.schedule.startTime > now
-                  ? 'planned'
-                  : job.registration.schedule.endTime < now
-                    ? 'ended'
-                    : 'running'
-              console.log(`${job.id[1]} - ${status}`)
+            items.forEach((item) => {
+              const jobId = item.data[1]
+              const blockTime = new Date(item.block_time).toLocaleDateString()
+              console.log(`${jobId} (registered ${blockTime})`)
             })
           }
 
-          await acurast.disconnect()
           return
         }
 
         const deploymentId = Number(arg)
 
         if (options.cleanup) {
+          const network =
+            (deploymentId && readDeploymentFile(deploymentId)?.config.network) ||
+            options.network
+          const acurast = new AcurastService(getRpcForNetwork(network))
+
           if (deploymentId) {
             const spinner = ora.default(
               `Cleaning up deployment ${deploymentId}...`
@@ -109,7 +174,7 @@ export const addCommandDeployments = (program: Command) => {
             spinner.stop()
             console.log(`Found ${filteredJobs.length} deployments to clean up`)
 
-            const rpcEndpoint = getRpcForNetwork('mainnet')
+            const rpcEndpoint = getRpcForNetwork(network)
             const wsProvider = new WsProvider(rpcEndpoint)
             const api = await ApiPromise.create({
               provider: wsProvider,
@@ -123,7 +188,7 @@ export const addCommandDeployments = (program: Command) => {
               await acurast.deregisterJob(wallet, job.id[1])
               const balanceNew = await getBalance(wallet.address, api)
               const diff = balanceNew - balanceBefore
-              const symbol = getSymbolForNetwork('mainnet')
+              const symbol = getSymbolForNetwork(network)
               spinner.succeed(
                 `Deployment ${job.id[1]} cleaned up${diff > 0 ? `. ${symbol} regained: ${diff}` : ``}`
               )
@@ -140,68 +205,42 @@ export const addCommandDeployments = (program: Command) => {
 
         if (!deploymentId || isNaN(deploymentId)) {
           console.log('Please provide a deployment ID')
-          await acurast.disconnect()
           return
         }
 
-        const deploymentFilename = await readFilesInDeployFolder(
-          `${toNumber(arg)}.json`
-        )
+        const deploymentFileData = readDeploymentFile(deploymentId)
 
-        let job: (Job & { envVars?: EnvVar[] }) | undefined
-
-        if (deploymentFilename) {
-          // File found, we can read details from file
-
-          const deploymentFileData: AcurastDeployment = JSON.parse(
-            fs.readFileSync(
-              `${ACURAST_DEPLOYMENTS_PATH}/${deploymentFilename}`,
-              'utf8'
-            )
-          )
-
-          const envVars = getProjectEnvVars(deploymentFileData.config)
-
-          job = {
-            id: deploymentFileData.deploymentId!,
-            registration: deploymentFileData.registration,
-            // envInfo: deploymentFileData.envInfo,
-            envVars,
-          }
-        } else {
+        if (!deploymentFileData) {
           console.log('Could not find deployment file.')
-          await acurast.disconnect()
           return
-          // const jobs = await acurast.getAllJobs()
-
-          // job = jobs.find((job) => job.id[1] === Number(id))
         }
 
-        if (!job) {
-          console.log('Deployment not found')
-          return
+        const network = deploymentFileData.config.network
+        const rpcEndpoint = getRpcForNetwork(network)
+
+        const job: Job & { envVars?: EnvVar[] } = {
+          id: deploymentFileData.deploymentId!,
+          registration: deploymentFileData.registration,
         }
 
         if (options.updateEnvVars) {
+          const envVars = getProjectEnvVars(deploymentFileData.config)
+          job.envVars = envVars
+
           const spinner = ora.default(
             `Setting environment variables for deployment ${deploymentId}...`
           )
           spinner.start()
 
-          if (!job.envVars) {
+          if (!job.envVars || job.envVars.length === 0) {
             throw new Error('No environment variables found for deployment')
           }
 
-          const { hash } = await setEnvVars(job)
+          const { hash } = await setEnvVars(job, wallet, rpcEndpoint)
 
           spinner.succeed(`${job.envVars?.length} environment variables set`)
-          spinner.stop()
 
           console.log('Transaction ID:', hash)
-
-          await acurast.disconnect()
-
-          // If no file found, have user select the deployment config to be used
 
           // TODO: Introduce a flag in .env to store or not store encryption key.
           // TODO: Setting of .env var flag should be stored in deployment file
@@ -215,6 +254,7 @@ export const addCommandDeployments = (program: Command) => {
 
           console.log('Deployment:', job)
 
+          const acurast = new AcurastService(rpcEndpoint)
           await acurast.connect()
 
           if (!acurast.api) {
