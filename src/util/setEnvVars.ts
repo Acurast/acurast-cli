@@ -8,9 +8,10 @@ import { KeyringPair } from '@polkadot/keyring/types'
 
 export const setEnvVars = async (
   job: Job & { envVars?: EnvVar[] },
-  wallet?: KeyringPair
+  wallet?: KeyringPair,
+  rpcEndpoint?: string
 ): Promise<{ hash?: string }> => {
-  const acurast = new AcurastService()
+  const acurast = new AcurastService(rpcEndpoint)
   // If a wallet is not provided, get the one from the environment configuration
   wallet ||= await getWallet()
 
@@ -41,10 +42,10 @@ export const setEnvVars = async (
     // We wait a little and try again.
     await new Promise((resolve) => setTimeout(resolve, 30_000))
 
-    return setEnvVars(job)
+    return setEnvVars(job, wallet, rpcEndpoint)
   }
 
-  const jobEnvironmentService = new JobEnvironmentService()
+  const jobEnvironmentService = new JobEnvironmentService(rpcEndpoint)
   const res = await jobEnvironmentService.setEnvironmentVariablesMulti(
     wallet,
     jobAssignmentInfos,
