@@ -8,6 +8,11 @@ const RPC_MAINNET = 'wss://archive.mainnet.acurast.com'
 const MATCHER_CANARY = 'https://matcher.canary.acurast.com'
 const MATCHER_MAINNET = 'https://matcher.mainnet.acurast.com'
 
+const INDEXER_CANARY = 'https://dev.indexer.canary.acurast.com/api/v1/rpc'
+const INDEXER_CANARY_API_KEY = 'OXuwySHqNSlwwa_qqB-cBw'
+const INDEXER_MAINNET = 'https://dev.indexer.mainnet.acurast.com/api/v1/rpc'
+const INDEXER_MAINNET_API_KEY = 'HbLxqSJoPTnzwa_rkF-tYv'
+
 const IPFS_PROXY = 'https://ipfs-proxy.acurast.prod.gke.papers.tech'
 
 export type EnvKeys =
@@ -80,14 +85,15 @@ export const getSymbolForNetwork = (network: 'mainnet' | 'canary'): string => {
 export const getMatcherUrlForNetwork = (
   network: 'mainnet' | 'canary'
 ): string | undefined => {
-  const envOverride = process.env.ACURAST_MATCHER_URL
-  if (envOverride) {
-    return envOverride
-  }
+  return network === 'mainnet' ? MATCHER_MAINNET : MATCHER_CANARY
+}
 
-  if (network === 'canary') return MATCHER_CANARY
-  if (network === 'mainnet' && MATCHER_MAINNET) return MATCHER_MAINNET
-  return undefined
+export const getIndexerConfigForNetwork = (
+  network: 'mainnet' | 'canary'
+): { url: string; apiKey: string } => {
+  return network === 'mainnet'
+    ? { url: INDEXER_MAINNET, apiKey: INDEXER_MAINNET_API_KEY }
+    : { url: INDEXER_CANARY, apiKey: INDEXER_CANARY_API_KEY }
 }
 
 // Default RPC for backwards compatibility (mainnet)

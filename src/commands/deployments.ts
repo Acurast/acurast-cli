@@ -1,15 +1,14 @@
 import { Command, Option } from 'commander'
 import { AcurastService } from '../acurast/env/acurastService.js'
 import {
+  getIndexerConfigForNetwork,
   getProjectEnvVars,
   getRpcForNetwork,
   getSymbolForNetwork,
 } from '../config.js'
 import fs from 'fs'
-import { readFilesInDeployFolder } from '../util/readFilesInDeployFolder.js'
 import type { EnvVar, Job } from '../acurast/env/types.js'
 import type { AcurastDeployment } from '../types.js'
-import { toNumber } from '../util/jobToNumber.js'
 import { getWallet } from '../util/getWallet.js'
 import * as ora from '../util/ora.js'
 import { getBalance } from '../util/getBalance.js'
@@ -54,21 +53,23 @@ export const addCommandDeployments = (program: Command) => {
       ) => {
         const wallet = await getWallet()
 
-        // Helper to get network from deployment file if available
-        const getNetworkFromDeploymentFile = (
+        const readDeploymentFile = (
           deploymentId: number
-        ): 'mainnet' | 'canary' | undefined => {
-          const deploymentFilename = fs
-            .readdirSync(ACURAST_DEPLOYMENTS_PATH)
-            .find((f) => f.endsWith(`-${deploymentId}.json`))
-          if (deploymentFilename) {
-            const data: AcurastDeployment = JSON.parse(
-              fs.readFileSync(
-                `${ACURAST_DEPLOYMENTS_PATH}/${deploymentFilename}`,
-                'utf8'
+        ): AcurastDeployment | undefined => {
+          try {
+            const deploymentFilename = fs
+              .readdirSync(ACURAST_DEPLOYMENTS_PATH)
+              .find((f) => f.endsWith(`-${deploymentId}.json`))
+            if (deploymentFilename) {
+              return JSON.parse(
+                fs.readFileSync(
+                  `${ACURAST_DEPLOYMENTS_PATH}/${deploymentFilename}`,
+                  'utf8'
+                )
               )
-            )
-            return data.config.network
+            }
+          } catch {
+            // Directory may not exist yet
           }
           return undefined
         }
@@ -77,37 +78,9 @@ export const addCommandDeployments = (program: Command) => {
           const spinner = ora.default('Loading deployments...')
           spinner.start()
 
-          const indexerConfig =
-            options.network === 'mainnet'
-              ? {
-                  url: 'https://dev.indexer.mainnet.acurast.com/api/v1/rpc',
-                  apiKey: 'HbLxqSJoPTnzwa_rkF-tYv',
-                }
-              : {
-                  url: 'https://dev.indexer.canary.acurast.com/api/v1/rpc',
-                  apiKey: 'OXuwySHqNSlwwa_qqB-cBw',
-                }
+          const indexerConfig = getIndexerConfigForNetwork(options.network)
 
-          const response = await fetch(indexerConfig.url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'API-Key': indexerConfig.apiKey,
-            },
-            body: JSON.stringify({
-              jsonrpc: '2.0',
-              method: 'getEvents',
-              params: {
-                pallet: 'Acurast',
-                variant: 'JobRegistrationStoredV2',
-                account_id: wallet.address,
-                sort_order: 'desc',
-              },
-              id: 1,
-            }),
-          })
-
-          const data = (await response.json()) as {
+          let data: {
             result?: {
               items: {
                 data: [{ Acurast: string }, number]
@@ -115,6 +88,33 @@ export const addCommandDeployments = (program: Command) => {
               }[]
             }
             error?: { message: string }
+          }
+
+          try {
+            const response = await fetch(indexerConfig.url, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'API-Key': indexerConfig.apiKey,
+              },
+              body: JSON.stringify({
+                jsonrpc: '2.0',
+                method: 'getEvents',
+                params: {
+                  pallet: 'Acurast',
+                  variant: 'JobRegistrationStoredV2',
+                  account_id: wallet.address,
+                  sort_order: 'desc',
+                },
+                id: 1,
+              }),
+            })
+
+            data = (await response.json()) as typeof data
+          } catch (err: any) {
+            spinner.stop()
+            console.log('Failed to fetch deployments:', err.message)
+            return
           }
 
           spinner.stop()
@@ -145,7 +145,7 @@ export const addCommandDeployments = (program: Command) => {
 
         if (options.cleanup) {
           const network =
-            (deploymentId && getNetworkFromDeploymentFile(deploymentId)) ||
+            (deploymentId && readDeploymentFile(deploymentId)?.config.network) ||
             options.network
           const acurast = new AcurastService(getRpcForNetwork(network))
 
@@ -208,22 +208,12 @@ export const addCommandDeployments = (program: Command) => {
           return
         }
 
-        const deploymentFilename = await readFilesInDeployFolder(
-          `${toNumber(arg)}.json`
-        )
+        const deploymentFileData = readDeploymentFile(deploymentId)
 
-        if (!deploymentFilename) {
+        if (!deploymentFileData) {
           console.log('Could not find deployment file.')
           return
         }
-
-        // File found, we can read details from file
-        const deploymentFileData: AcurastDeployment = JSON.parse(
-          fs.readFileSync(
-            `${ACURAST_DEPLOYMENTS_PATH}/${deploymentFilename}`,
-            'utf8'
-          )
-        )
 
         const network = deploymentFileData.config.network
         const rpcEndpoint = getRpcForNetwork(network)
@@ -249,7 +239,6 @@ export const addCommandDeployments = (program: Command) => {
           const { hash } = await setEnvVars(job, wallet, rpcEndpoint)
 
           spinner.succeed(`${job.envVars?.length} environment variables set`)
-          spinner.stop()
 
           console.log('Transaction ID:', hash)
 
