@@ -5,6 +5,9 @@ import type { EnvVar } from './acurast/env/types.js'
 const RPC_CANARY = 'wss://canarynet-ws-1.acurast-h-server-2.papers.tech'
 const RPC_MAINNET = 'wss://archive.mainnet.acurast.com'
 
+const MATCHER_CANARY = 'https://matcher.canary.acurast.com'
+const MATCHER_MAINNET = 'https://matcher.mainnet.acurast.com'
+
 const IPFS_PROXY = 'https://ipfs-proxy.acurast.prod.gke.papers.tech'
 
 export type EnvKeys =
@@ -71,10 +74,21 @@ export const getRpcForNetwork = (network: 'mainnet' | 'canary'): string => {
   return network === 'mainnet' ? RPC_MAINNET : RPC_CANARY
 }
 
-export const getSymbolForNetwork = (
-  network: 'mainnet' | 'canary'
-): string => {
+export const getSymbolForNetwork = (network: 'mainnet' | 'canary'): string => {
   return network === 'mainnet' ? 'ACU' : 'cACU'
+}
+
+export const getMatcherUrlForNetwork = (
+  network: 'mainnet' | 'canary'
+): string | undefined => {
+  const envOverride = process.env.ACURAST_MATCHER_URL
+  if (envOverride) {
+    return envOverride
+  }
+
+  if (network === 'canary') return MATCHER_CANARY
+  if (network === 'mainnet' && MATCHER_MAINNET) return MATCHER_MAINNET
+  return undefined
 }
 
 export const RPC = getEnv('ACURAST_RPC')

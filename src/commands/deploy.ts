@@ -6,6 +6,7 @@ import {
   getProjectEnvVars,
   getRpcForNetwork,
   getSymbolForNetwork,
+  getMatcherUrlForNetwork,
 } from '../config.js'
 import { delay, Listr } from 'listr2'
 import { createJob } from '../acurast/createJob.js'
@@ -27,12 +28,171 @@ import { ApiPromise, WsProvider } from '@polkadot/api'
 import { getFaucetLinkForAddress } from '../constants.js'
 import * as ora from '../util/ora.js'
 import type { EnvVar, Job } from '../acurast/env/types.js'
-import type { JobRegistration } from '../types.js'
+import type { JobRegistration, AcurastProjectConfig } from '../types.js'
 import { filelogger } from '../util/fileLogger.js'
 
-import { printFeeCosts } from '../util/printFeeCosts.js'
+import { checkMatchWithReward } from '../services/matcherApi.js'
+import type { PricingAdvice } from '../util/pricingAdvisor.js'
+import { fetchAndDisplayPricing } from '../util/fetchPricingAdvice.js'
+import { BigNumber } from 'bignumber.js'
+import { confirm, select, input } from '@inquirer/prompts'
+import { AssignmentStrategyVariant } from '../types.js'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const ACURAST_DECIMALS = 12
+
+async function promptPricingAdjustment(
+  advice: PricingAdvice,
+  config: AcurastProjectConfig,
+  matcherUrl: string,
+  accountId: string,
+  options: { output: 'text' | 'json' }
+): Promise<string | 'abort' | undefined> {
+  const symbol = getSymbolForNetwork(config.network)
+
+  if (advice.status === 'sufficient') {
+    return undefined // No adjustment needed
+  }
+
+  if (advice.status === 'overpaying') {
+    const suggestedDisplay = advice.suggestedPrice
+      ? new BigNumber(advice.suggestedPrice)
+          .shiftedBy(-ACURAST_DECIMALS)
+          .toFixed()
+      : null
+
+    const choices: { value: string; name: string }[] = []
+    if (suggestedDisplay && advice.suggestedPrice) {
+      choices.push({
+        value: 'suggested',
+        name: `Lower to suggested price (${suggestedDisplay} ${symbol})`,
+      })
+    }
+    choices.push(
+      { value: 'keep', name: 'Keep current price' },
+      { value: 'custom', name: 'Enter a custom price' }
+    )
+
+    const action = await select({
+      message: 'Your price is higher than needed. What would you like to do?',
+      choices,
+    })
+
+    if (action === 'keep') return undefined
+    if (action === 'suggested' && advice.suggestedPrice) {
+      return advice.suggestedPrice.toFixed()
+    }
+    if (action === 'custom') {
+      return promptCustomPrice(config, matcherUrl, accountId, symbol)
+    }
+  }
+
+  if (advice.status === 'insufficient') {
+    const suggestedDisplay = advice.suggestedPrice
+      ? new BigNumber(advice.suggestedPrice)
+          .shiftedBy(-ACURAST_DECIMALS)
+          .toFixed()
+      : null
+
+    const choices: { value: string; name: string }[] = []
+    if (suggestedDisplay && advice.suggestedPrice) {
+      choices.push({
+        value: 'suggested',
+        name: `Use suggested price (${suggestedDisplay} ${symbol} — covers ${advice.requiredProcessors} ${advice.requiredProcessors === 1 ? 'processor' : 'processors'})`,
+      })
+    }
+    choices.push(
+      { value: 'custom', name: 'Enter a custom price' },
+      { value: 'keep', name: 'Continue with current price (may not match)' },
+      { value: 'abort', name: 'Abort deployment' }
+    )
+
+    const action = await select({
+      message:
+        'Not enough processors at your current price. What would you like to do?',
+      choices,
+    })
+
+    if (action === 'abort') return 'abort'
+    if (action === 'keep') return undefined
+    if (action === 'suggested' && advice.suggestedPrice) {
+      return advice.suggestedPrice.toFixed()
+    }
+    if (action === 'custom') {
+      return promptCustomPrice(config, matcherUrl, accountId, symbol)
+    }
+  }
+
+  return undefined
+}
+
+async function promptCustomPrice(
+  config: AcurastProjectConfig,
+  matcherUrl: string,
+  accountId: string,
+  symbol: string,
+  retries: number = 3
+): Promise<string | 'abort' | undefined> {
+  for (let i = 0; i < retries; i++) {
+    const priceStr = await input({
+      message: `Enter price in ${symbol} (e.g., 0.05):`,
+      validate: (val) => {
+        const n = new BigNumber(val)
+        if (n.isNaN() || n.lte(0)) return 'Please enter a valid positive number'
+        return true
+      },
+    })
+
+    const priceSatoshi = new BigNumber(priceStr)
+      .shiftedBy(ACURAST_DECIMALS)
+      .integerValue(BigNumber.ROUND_CEIL)
+
+    // Verify match with the new price
+    const job = convertConfigToJob({
+      ...config,
+      maxCostPerExecution: priceSatoshi.toNumber(),
+    })
+    const result = await checkMatchWithReward(
+      matcherUrl,
+      config,
+      job,
+      accountId,
+      priceSatoshi.toFixed()
+    )
+
+    if (result.ok) {
+      const matched = result.data.matched_processors
+      console.log(
+        `  At ${priceStr} ${symbol}: ${matched} ${matched === 1 ? 'processor' : 'processors'} matched (${config.numberOfReplicas} required)`
+      )
+
+      if (result.data.matched_processors >= config.numberOfReplicas) {
+        const proceed = await confirm({
+          message: `Use ${priceStr} ${symbol} per execution?`,
+          default: true,
+        })
+        if (proceed) return priceSatoshi.toFixed()
+      } else {
+        if (i < retries - 1) {
+          console.log('  Still not enough processors. Try a higher price.')
+        }
+      }
+    } else {
+      console.log(`  Could not verify price: ${result.error}`)
+    }
+  }
+
+  const action = await select({
+    message: 'Could not find a sufficient price. What would you like to do?',
+    choices: [
+      { value: 'keep', name: 'Continue with original price' },
+      { value: 'abort', name: 'Abort deployment' },
+    ],
+  })
+
+  return action === 'abort' ? 'abort' : undefined
+}
 
 export const addCommandDeploy = (program: Command) => {
   program
@@ -258,7 +418,53 @@ export const addCommandDeploy = (program: Command) => {
         const hasEnvironmentVariables: boolean =
           (config.includeEnvironmentVariables?.length ?? 0) > 0
 
-        printFeeCosts(config, options)
+        // --- Pricing check via matcher API ---
+        const matcherUrl = getMatcherUrlForNetwork(config.network)
+        const isInteractive =
+          !options.nonInteractive && options.output === 'text'
+        const hasInstantMatch =
+          config.assignmentStrategy.type === AssignmentStrategyVariant.Single &&
+          config.assignmentStrategy.instantMatch &&
+          config.assignmentStrategy.instantMatch.length > 0
+
+        if (hasInstantMatch) {
+          log(
+            'Instant match processors specified — skipping market pricing check.'
+          )
+          log('')
+        }
+
+        const pricingSpinner = ora.default('Checking processor pricing...')
+        const pricingAdvice = await fetchAndDisplayPricing(
+          config,
+          wallet.address,
+          options,
+          pricingSpinner
+        )
+
+        // Interactive pricing adjustment (deploy-specific)
+        if (pricingAdvice && isInteractive && !options.dryRun && matcherUrl) {
+          const adjustedPrice = await promptPricingAdjustment(
+            pricingAdvice,
+            config,
+            matcherUrl,
+            wallet.address,
+            options
+          )
+          if (adjustedPrice === 'abort') {
+            log('Deployment aborted.')
+            return
+          }
+          if (adjustedPrice !== undefined) {
+            config.maxCostPerExecution = Number(adjustedPrice)
+            log(
+              `Updated max cost per execution to ${toAcurastColor(
+                new BigNumber(adjustedPrice).shiftedBy(-12).toFixed()
+              )} ${symbol}`
+            )
+            log('')
+          }
+        }
 
         if (options.dryRun) {
           filelogger.debug('🧪 Dry run, not deploying.')
