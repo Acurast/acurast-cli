@@ -15,7 +15,13 @@ import { filelogger } from '../util/fileLogger.js'
 import { zipFolder } from '../util/zipFolder.js'
 import { createManifest } from '../util/createManifest.js'
 import { checkIsFolder } from '../util/checkIsFolder.js'
-import { basename } from 'node:path'
+import { basename, dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { injectDevtoolsSnippet } from '../devtools/injectDevtoolsSnippet.js'
+import { getEnv } from '../config.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 const BUNDLE_FOLDER = '.acurast/bundles'
 
@@ -70,6 +76,19 @@ export const createJob = async (
       ),
       config.projectName
     )
+
+    if (config.enableDevtools) {
+      const devtoolsApiUrl = getEnv('ACURAST_DEVTOOLS_API_URL')
+      const snippetDir = join(__dirname, '..', 'devtools')
+      zipPath = await injectDevtoolsSnippet(
+        zipPath,
+        config.entrypoint ?? basename(config.fileUrl),
+        devtoolsApiUrl,
+        wallet.address,
+        snippetDir
+      )
+      filelogger.debug('Devtools snippet injected into bundle')
+    }
 
     filelogger.log(`zipPath ${zipPath}`)
 

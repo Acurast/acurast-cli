@@ -204,6 +204,32 @@
       "maxCostPerExecution": 1000000000,
       "includeEnvironmentVariables": [],
       "processorWhitelist": []
+    },
+    "test-devtools": {
+      "projectName": "test-devtools",
+      "fileUrl": "examples/devtools-test.js",
+      "network": "mainnet",
+      "onlyAttestedDevices": true,
+      "enableDevtools": true,
+      "assignmentStrategy": {
+        "type": "Single"
+      },
+      "execution": {
+        "type": "onetime",
+        "maxExecutionTimeInMs": 60000
+      },
+      "maxAllowedStartDelayInMs": 10000,
+      "usageLimit": {
+        "maxMemory": 0,
+        "maxNetworkRequests": 0,
+        "maxStorage": 0
+      },
+      "numberOfReplicas": 20,
+      "requiredModules": [],
+      "minProcessorReputation": 0,
+      "maxCostPerExecution": 3000000000,
+      "includeEnvironmentVariables": [],
+      "processorWhitelist": []
     }
   }
 }

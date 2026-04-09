@@ -57,6 +57,7 @@ To use the Acurast CLI, type `acurast` followed by any of the available options 
   - `deployments update editor <deployment-id> <new-editor-address> [options]` - Transfer editor permissions for a mutable deployment.
 - `live [options] [project]` - Setup a "live-code-processor" and run your project on the processor in real time.
 - `init` - Create an acurast.json file and .env file.
+- `devtools <deployment-id>` - Request a DevTools view key and print the URL for a deployment.
 - `open` - Open the Acurast resources in your browser.
 - `help [command]` - Display help for command.
 
@@ -238,6 +239,48 @@ const API_KEY = _STD_.env[API_KEY]
 When running `acurast deploy`, the environment variables will now automatically be added to the deployment.
 
 When running interval based deployments with multiple executions, the environment variables can be updated between executions. To do that, update the `.env` file and run `acurast deployments <id> -e`. This will update the environment variables for the deployment with the given ID.
+
+## DevTools
+
+Acurast DevTools lets you see live `console.log`, `console.warn`, `console.error`, `console.info`, and `console.debug` output from your processors in a web dashboard.
+
+### Setup
+
+Add `"enableDevtools": true` to your project config in `acurast.json`:
+
+```json
+{
+  "projects": {
+    "my-project": {
+      "projectName": "my-project",
+      "fileUrl": "dist/bundle.js",
+      "enableDevtools": true,
+      ...
+    }
+  }
+}
+```
+
+Then deploy as usual with `acurast deploy my-project`. After deployment, the CLI prints a DevTools URL with a view key — open it to see your logs.
+
+### Requesting a new view key
+
+View keys are time-limited. If yours has expired, request a new one:
+
+```bash
+acurast devtools <deployment-id>
+```
+
+### Privacy
+
+Logs are only accessible with a valid view key. The key is scoped to the specific deployment and only the deployment owner can request new keys.
+
+### Environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `ACURAST_DEVTOOLS_URL` | `https://devtools.acurast.com` | DevTools frontend URL |
+| `ACURAST_DEVTOOLS_API_URL` | `https://api.devtools.acurast.com` | DevTools API URL |
 
 ## Deployment Management
 
