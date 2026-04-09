@@ -21,6 +21,7 @@ import { dirname, join } from 'path'
 import { addCommandDeployments } from './commands/deployments.js'
 import { addCommandNew } from './commands/new.js'
 import { addCommandEstimateFee } from './commands/estimate-fee.js'
+import { addCommandDevtools } from './commands/devtools.js'
 import { ACURAST_CLI_VERSION_CHECK_URL } from './constants.js'
 import { filelogger } from './util/fileLogger.js'
 
@@ -54,6 +55,7 @@ addCommandOpen(program)
 // addCommandWatch(program)
 addCommandNew(program)
 addCommandEstimateFee(program)
+addCommandDevtools(program)
 
 if (!process.argv.slice(2).length) {
   console.log(acurastColor(textSync('Acurast CLI')))

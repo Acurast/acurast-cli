@@ -37,6 +37,7 @@ import { fetchAndDisplayPricing } from '../util/fetchPricingAdvice.js'
 import { BigNumber } from 'bignumber.js'
 import { confirm, select, input } from '@inquirer/prompts'
 import { AssignmentStrategyVariant } from '../types.js'
+import { getDevtoolsViewKey, buildDevtoolsUrl } from '../devtools/devtoolsApi.js'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -480,6 +481,7 @@ export const addCommandDeploy = (program: Command) => {
 
         const deploymentTime = new Date()
         let jobRegistrationTemp: JobRegistration | undefined = undefined
+        let deployedJobId: string | undefined = undefined
 
         const job = convertConfigToJob(config)
 
@@ -513,6 +515,7 @@ export const addCommandDeploy = (program: Command) => {
               if (!jobRegistrationTemp) {
                 throw new Error('Deployment Registration is null!')
               }
+              deployedJobId = String(data.jobIds[0]?.[1] ?? data.jobIds[0])
               await storeDeployment(
                 deploymentTime,
                 originalConfig,
@@ -789,6 +792,29 @@ export const addCommandDeploy = (program: Command) => {
             })
           try {
             await tasks.run()
+
+            if (config.enableDevtools && deployedJobId) {
+              try {
+                const viewKeyResponse = await getDevtoolsViewKey(deployedJobId)
+                log('')
+                log(
+                  `DevTools: ${toAcurastColor(
+                    buildDevtoolsUrl(deployedJobId, viewKeyResponse.viewKey)
+                  )}`
+                )
+                log(
+                  `View key expires at ${new Date(viewKeyResponse.expiresAt).toLocaleString()}`
+                )
+                log('')
+              } catch (e: any) {
+                filelogger.error(
+                  `Failed to get devtools view key: ${e.message}`
+                )
+                log(
+                  `Warning: Could not retrieve DevTools view key: ${e.message}`
+                )
+              }
+            }
 
             process.exit(0)
           } catch (e) {
