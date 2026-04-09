@@ -10,7 +10,6 @@ export async function injectDevtoolsSnippet(
   zipPath: string,
   entrypoint: string,
   devtoolsApiUrl: string,
-  deployerAddress: string,
   snippetDir: string
 ): Promise<string> {
   const snippetPath = join(snippetDir, 'devtools-snippet.js')
@@ -23,7 +22,6 @@ export async function injectDevtoolsSnippet(
     .trim()
 
   snippet = snippet.replace(/__DEVTOOLS_API_URL__/g, devtoolsApiUrl)
-  snippet = snippet.replace(/__DEVTOOLS_DEPLOYER__/g, deployerAddress)
 
   const zip = new AdmZip(zipPath)
   const entry = zip.getEntry(entrypoint)
