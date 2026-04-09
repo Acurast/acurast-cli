@@ -114,6 +114,9 @@ export interface AcurastProjectConfig {
 
   // The reuseKeysFrom field. Format: [MultiOrigin, string, number] where MultiOrigin is the chain name (e.g., "Acurast"), the second element is the address of the original deployer, and the last element is the deploymentId.
   reuseKeysFrom?: [MultiOrigin, string, number]
+
+  // Enable Acurast DevTools to forward console logs to the developer tools page.
+  enableDevtools?: boolean
 }
 
 export interface AcurastDeployment {

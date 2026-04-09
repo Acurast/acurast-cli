@@ -15,12 +15,17 @@ const INDEXER_MAINNET_API_KEY = 'HbLxqSJoPTnzwa_rkF-tYv'
 
 const IPFS_PROXY = 'https://ipfs-proxy.acurast.prod.gke.papers.tech'
 
+const DEVTOOLS_URL = 'https://devtools.acurast.com'
+const DEVTOOLS_API_URL = 'https://api.devtools.acurast.com'
+
 export type EnvKeys =
   | 'ACURAST_MNEMONIC'
   | 'ACURAST_IPFS_URL'
   | 'ACURAST_IPFS_API_KEY'
   | 'ACURAST_RPC'
   | 'ACURAST_CANARY_RPC'
+  | 'ACURAST_DEVTOOLS_URL'
+  | 'ACURAST_DEVTOOLS_API_URL'
   | 'DEBUG'
 
 const defaultValues: Record<EnvKeys, string | undefined> = {
@@ -29,6 +34,8 @@ const defaultValues: Record<EnvKeys, string | undefined> = {
   ACURAST_IPFS_API_KEY: '', // With the default IPFS Proxy, no API key is required
   ACURAST_RPC: RPC_MAINNET,
   ACURAST_CANARY_RPC: RPC_CANARY,
+  ACURAST_DEVTOOLS_URL: DEVTOOLS_URL,
+  ACURAST_DEVTOOLS_API_URL: DEVTOOLS_API_URL,
   DEBUG: 'false',
 }
 
