@@ -48,7 +48,12 @@ export const createJob = async (
 
   if (config.fileUrl.startsWith('ipfs://')) {
     ipfsHash = config.fileUrl
-    filelogger.debug(`config.fileUrl is an IPFS hash, so we this: ${ipfsHash}`)
+    if (config.enableDevtools) {
+      filelogger.warn(
+        'enableDevtools is ignored when fileUrl is an IPFS hash — the devtools snippet can only be injected into local bundles.'
+      )
+    }
+    filelogger.debug(`config.fileUrl is an IPFS hash, so we use this: ${ipfsHash}`)
   } else {
     filelogger.debug(
       `config.fileUrl is not an IPFS hash, so we zip it: ${config.fileUrl}`
@@ -84,7 +89,6 @@ export const createJob = async (
         zipPath,
         config.entrypoint ?? basename(config.fileUrl),
         devtoolsApiUrl,
-        wallet.address,
         snippetDir
       )
       filelogger.debug('Devtools snippet injected into bundle')
