@@ -117,7 +117,6 @@ describe('devtools snippet injection', () => {
         zipPath,
         'nonexistent.js',
         'https://api.devtools.acurast.com',
-        '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
         SNIPPET_DIR
       )
     ).rejects.toThrow('Could not find entrypoint')
