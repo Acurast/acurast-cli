@@ -77,21 +77,6 @@ describe('devtools snippet injection', () => {
     expect(content).not.toContain('__DEVTOOLS_API_URL__')
   })
 
-  it('should not contain any unreplaced placeholders', async () => {
-    const zipPath = createTestZip('index.js', '// user code')
-    await injectDevtoolsSnippet(
-      zipPath,
-      'index.js',
-      'https://api.devtools.acurast.com',
-      SNIPPET_DIR
-    )
-
-    const zip = new AdmZip(zipPath)
-    const content = zip.getEntry('index.js')!.getData().toString('utf-8')
-
-    expect(content).not.toContain('__DEVTOOLS_API_URL__')
-  })
-
   it('should strip TSC artifacts (export {}, sourcemap comment)', async () => {
     const zipPath = createTestZip('index.js', '// user code')
 
