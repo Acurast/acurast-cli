@@ -236,6 +236,19 @@ const acurastProjectConfigSchemaWithNotes =
       }
     }
 
+    if (
+      data.execution.type === 'interval' &&
+      data.execution.maxExecutionTimeInMs !== undefined &&
+      data.execution.maxExecutionTimeInMs > data.execution.intervalInMs - 10_000
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'Warning: maxExecutionTimeInMs should be at least 10s shorter than intervalInMs to allow enough time between executions.',
+        path: ['execution', 'maxExecutionTimeInMs'],
+      })
+    }
+
     // TODO: Add check for competing strategy and intervals
   })
 

@@ -44,7 +44,6 @@ describe('devtools snippet injection', () => {
       zipPath,
       'index.js',
       'https://api.devtools.acurast.com',
-      '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
       SNIPPET_DIR
     )
 
@@ -68,7 +67,6 @@ describe('devtools snippet injection', () => {
       zipPath,
       'index.js',
       apiUrl,
-      '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
       SNIPPET_DIR
     )
 
@@ -79,25 +77,6 @@ describe('devtools snippet injection', () => {
     expect(content).not.toContain('__DEVTOOLS_API_URL__')
   })
 
-  it('should replace the deployer placeholder', async () => {
-    const zipPath = createTestZip('index.js', '// user code')
-    const deployer = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
-
-    await injectDevtoolsSnippet(
-      zipPath,
-      'index.js',
-      'https://api.devtools.acurast.com',
-      deployer,
-      SNIPPET_DIR
-    )
-
-    const zip = new AdmZip(zipPath)
-    const content = zip.getEntry('index.js')!.getData().toString('utf-8')
-
-    expect(content).toContain(deployer)
-    expect(content).not.toContain('__DEVTOOLS_DEPLOYER__')
-  })
-
   it('should strip TSC artifacts (export {}, sourcemap comment)', async () => {
     const zipPath = createTestZip('index.js', '// user code')
 
@@ -105,7 +84,6 @@ describe('devtools snippet injection', () => {
       zipPath,
       'index.js',
       'https://api.devtools.acurast.com',
-      '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
       SNIPPET_DIR
     )
 
@@ -124,7 +102,6 @@ describe('devtools snippet injection', () => {
         zipPath,
         'nonexistent.js',
         'https://api.devtools.acurast.com',
-        '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
         SNIPPET_DIR
       )
     ).rejects.toThrow('Could not find entrypoint')
@@ -142,7 +119,6 @@ describe('devtools snippet injection', () => {
       zipPath,
       'index.js',
       'https://api.devtools.acurast.com',
-      '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
       SNIPPET_DIR
     )
 
@@ -163,7 +139,6 @@ describe('devtools snippet injection', () => {
       zipPath,
       'index.js',
       'https://api.devtools.acurast.com',
-      '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
       SNIPPET_DIR
     )
 

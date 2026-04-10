@@ -224,7 +224,7 @@
         "maxNetworkRequests": 0,
         "maxStorage": 0
       },
-      "numberOfReplicas": 20,
+      "numberOfReplicas": 1,
       "requiredModules": [],
       "minProcessorReputation": 0,
       "maxCostPerExecution": 3000000000,

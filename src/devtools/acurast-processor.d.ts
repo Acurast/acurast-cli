@@ -8,6 +8,22 @@ declare function httpPOST(
   onError: (error: string) => void
 ): void
 
+declare const _DEVTOOLS_: {
+  uploadFile(
+    filename: string,
+    content: string,
+    mimeType: string,
+    onSuccess: (fileInfo: {
+      id: number
+      filename: string
+      mimeType: string
+      fileSize: number
+      createdAt: string
+    }) => void,
+    onError: (error: string) => void
+  ): void
+}
+
 declare const _STD_: {
   job: {
     getId(): { origin: { kind: string; source: string }; id: string }
