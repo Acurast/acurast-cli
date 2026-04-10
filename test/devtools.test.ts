@@ -63,7 +63,12 @@ describe('devtools snippet injection', () => {
     const zipPath = createTestZip('index.js', '// user code')
     const apiUrl = 'https://custom-api.example.com'
 
-    await injectDevtoolsSnippet(zipPath, 'index.js', apiUrl, SNIPPET_DIR)
+    await injectDevtoolsSnippet(
+      zipPath,
+      'index.js',
+      apiUrl,
+      SNIPPET_DIR
+    )
 
     const zip = new AdmZip(zipPath)
     const content = zip.getEntry('index.js')!.getData().toString('utf-8')
