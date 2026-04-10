@@ -84,7 +84,6 @@ export const createJob = async (
         zipPath,
         config.entrypoint ?? basename(config.fileUrl),
         devtoolsApiUrl,
-        wallet.address,
         snippetDir
       )
       filelogger.debug('Devtools snippet injected into bundle')

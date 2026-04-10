@@ -2,12 +2,10 @@
 // of user scripts when enableDevtools is true. It overrides console methods to
 // forward logs to the Acurast DevTools API.
 //
-// Placeholders __DEVTOOLS_API_URL__ and __DEVTOOLS_DEPLOYER__ are replaced at
-// injection time by the CLI.
+// Placeholder __DEVTOOLS_API_URL__ is replaced at injection time by the CLI.
 
 ;(() => {
   const DEVTOOLS_API_URL = '__DEVTOOLS_API_URL__'
-  const DEVTOOLS_DEPLOYER = '__DEVTOOLS_DEPLOYER__'
 
   const originalConsole = {
     log: console.log,
@@ -132,6 +130,52 @@
       pendingLogs.push(body)
     }
   }
+
+  // --- File upload via /v1/files ---
+  const uploadFile = (
+    filename: string,
+    content: string,
+    mimeType: string,
+    onSuccess: (fileInfo: { id: number; filename: string; mimeType: string; fileSize: number; createdAt: string }) => void,
+    onError: (error: string) => void
+  ) => {
+    if (!apiKey) {
+      onError('[devtools] file upload failed: not authenticated yet')
+      return
+    }
+
+    // The processor's httpPOST JSON-parses the body regardless of Content-Type,
+    // so we cannot send multipart/form-data through it. Use fetch + FormData
+    // instead — fetch sets the Content-Type header (with boundary) automatically.
+    const formData = new FormData()
+    formData.append('file', new Blob([content], { type: mimeType }), filename)
+
+    fetch(`${DEVTOOLS_API_URL}/v1/files`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + apiKey },
+      body: formData,
+    })
+      .then((res: Response) =>
+        res.text().then((text: string) => ({ ok: res.ok, status: res.status, text }))
+      )
+      .then(({ ok, status, text }: { ok: boolean; status: number; text: string }) => {
+        if (!ok) {
+          onError('[devtools] file upload failed: HTTP ' + status + ' ' + text)
+          return
+        }
+        try {
+          onSuccess(JSON.parse(text))
+        } catch (_e) {
+          onError('[devtools] failed to parse upload response: ' + text)
+        }
+      })
+      .catch((err: any) => {
+        onError('[devtools] file upload failed: ' + (err?.message ?? String(err)))
+      })
+  }
+
+  // Expose _DEVTOOLS_ global
+  ;(globalThis as any)._DEVTOOLS_ = { uploadFile }
 
   for (const level of Object.keys(originalConsole) as Array<
     keyof typeof originalConsole
