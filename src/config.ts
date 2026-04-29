@@ -1,6 +1,5 @@
 import 'dotenv/config'
-import type { AcurastProjectConfig } from './types.js'
-import type { EnvVar } from './acurast/env/types.js'
+import type { AcurastProjectConfig, EnvVar } from '@acurast/sdk/types'
 
 const RPC_CANARY = 'wss://canarynet-ws-1.acurast-h-server-2.papers.tech'
 const RPC_MAINNET = 'wss://archive.mainnet.acurast.com'
@@ -31,7 +30,7 @@ export type EnvKeys =
 const defaultValues: Record<EnvKeys, string | undefined> = {
   ACURAST_MNEMONIC: undefined,
   ACURAST_IPFS_URL: IPFS_PROXY,
-  ACURAST_IPFS_API_KEY: '', // With the default IPFS Proxy, no API key is required
+  ACURAST_IPFS_API_KEY: '', // Default IPFS Proxy needs no API key
   ACURAST_RPC: RPC_MAINNET,
   ACURAST_CANARY_RPC: RPC_CANARY,
   ACURAST_DEVTOOLS_URL: DEVTOOLS_URL,
@@ -102,6 +101,12 @@ export const getIndexerConfigForNetwork = (
     ? { url: INDEXER_MAINNET, apiKey: INDEXER_MAINNET_API_KEY }
     : { url: INDEXER_CANARY, apiKey: INDEXER_CANARY_API_KEY }
 }
+
+/** IPFS config for `@acurast/sdk/ipfs` `uploadScript` calls. */
+export const getIpfsConfig = (): { endpoint: string; apiKey: string } => ({
+  endpoint: getEnv('ACURAST_IPFS_URL'),
+  apiKey: getEnv('ACURAST_IPFS_API_KEY'),
+})
 
 // Default RPC for backwards compatibility (mainnet)
 export const RPC = getEnv('ACURAST_RPC')

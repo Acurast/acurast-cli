@@ -1,28 +1,34 @@
 import { Command, Option } from 'commander'
+import { readFileSync, statSync } from 'fs'
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
+import { input } from '@inquirer/prompts'
+import { red, green, yellowBright } from 'ansis'
+
+import { loadAcurastConfig, deployProject } from '@acurast/sdk/deploy'
+import {
+  walletFromMnemonic,
+  convertConfigToJob,
+  jobToNumber,
+} from '@acurast/sdk/chain'
+import {
+  AssignmentStrategyVariant,
+  DeploymentStatus,
+  type AcurastProjectConfig,
+} from '@acurast/sdk/types'
+
 import { acurastColor } from '../util.js'
 import * as ora from '../util/ora.js'
 import { sendCode } from '../live-code.js'
-import { readFileSync, statSync } from 'fs'
 import {
   addLiveCodeProcessor,
   readLiveCodeProcessors,
 } from '../services/storage.js'
-import { loadConfig } from '../acurast/loadConfig.js'
 import { parse } from '../util/parse-duration.js'
-import { input } from '@inquirer/prompts'
-import { createJob } from '../acurast/createJob.js'
-import { DeploymentStatus } from '../acurast/types.js'
-import {
-  AssignmentStrategyVariant,
-  type AcurastProjectConfig,
-} from '../types.js'
-import { fileURLToPath } from 'url'
-import { dirname, join } from 'path'
 import { shortenString } from '../util/shortenString.js'
-import { red, green, yellowBright } from 'ansis'
-import { getRpcForNetwork } from '../config.js'
-import { jobToNumber } from '../util/jobToNumber.js'
-import { convertConfigToJob } from '../acurast/convertConfigToJob.js'
+import { getEnv, getIpfsConfig, getRpcForNetwork } from '../config.js'
+import { filelogger } from '../util/fileLogger.js'
+import { LocalStorage } from '../util/LocalStorage.js'
 
 export const addCommandLive = (program: Command) => {
   program
@@ -115,13 +121,27 @@ export const addCommandLive = (program: Command) => {
           const job = convertConfigToJob(config)
 
           const rpcEndpoint = getRpcForNetwork(config.network)
-          createJob(config, job, rpcEndpoint, [], false, (status, data) => {
-            if (status === DeploymentStatus.WaitingForMatch) {
-              const jobId = data.jobIds[0]
-              resolve(jobId)
-              spinner.succeed('Live code environment scheduled')
-            }
-          })
+
+          ;(async () => {
+            const wallet = await walletFromMnemonic(getEnv('ACURAST_MNEMONIC'), {
+              name: 'AcurastCli',
+            })
+            deployProject(config, job, {
+              wallet,
+              rpcEndpoint,
+              ipfs: getIpfsConfig(),
+              envVars: [],
+              keyStore: new LocalStorage(),
+              logger: filelogger,
+              statusCallback: (status, data) => {
+                if (status === DeploymentStatus.WaitingForMatch) {
+                  const jobId = data.jobIds[0]
+                  resolve(jobId)
+                  spinner.succeed('Live code environment scheduled')
+                }
+              },
+            })
+          })()
         })
 
         console.log(
@@ -166,7 +186,7 @@ export const addCommandLive = (program: Command) => {
 
       let config
       try {
-        config = loadConfig(project)
+        config = loadAcurastConfig({ project })
       } catch (e: any) {
         console.log(e.message)
         return
