@@ -205,6 +205,38 @@
       "includeEnvironmentVariables": [],
       "processorWhitelist": []
     },
+    "test-shell": {
+      "projectName": "test-shell",
+      "fileUrl": "examples/shell",
+      "entrypoint": "acurast.sh",
+      "network": "canary",
+      "onlyAttestedDevices": true,
+      "runtime": "Shell",
+      "image": {
+        "url": "https://github.com/termux/proot-distro/releases/download/v4.30.1/ubuntu-questing-aarch64-pd-v4.30.1.tar.xz",
+        "sha256": "5ab35b90cd9a9f180656261ba400a135c4c01c2da4b74522118342f985c2d328"
+      },
+      "restartPolicy": "no",
+      "assignmentStrategy": {
+        "type": "Single"
+      },
+      "execution": {
+        "type": "onetime",
+        "maxExecutionTimeInMs": 60000
+      },
+      "maxAllowedStartDelayInMs": 10000,
+      "usageLimit": {
+        "maxMemory": 0,
+        "maxNetworkRequests": 0,
+        "maxStorage": 0
+      },
+      "numberOfReplicas": 1,
+      "requiredModules": [],
+      "minProcessorReputation": 0,
+      "maxCostPerExecution": 5000000000,
+      "includeEnvironmentVariables": [],
+      "processorWhitelist": []
+    },
     "test-devtools": {
       "projectName": "test-devtools",
       "fileUrl": "examples/devtools-test.js",
