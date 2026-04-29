@@ -1,11 +1,11 @@
 import { existsSync, mkdirSync, readdir, readFileSync, writeFileSync } from 'fs'
-import {
+import type {
   AcurastDeployment,
   AcurastProjectConfig,
   JobRegistration,
-} from '../types.js'
-import type { JobId } from './env/types.js'
-import { jobToNumber } from '../util/jobToNumber.js'
+  JobId,
+} from '@acurast/sdk/types'
+import { jobToNumber } from '@acurast/sdk/chain'
 import { ACURAST_DEPLOYMENTS_PATH } from '../constants.js'
 import { getDirectoryFromFilePath } from '../util/getDirectoryFromFilePath.js'
 

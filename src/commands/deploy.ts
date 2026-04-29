@@ -1,5 +1,40 @@
 import { Command, Option } from 'commander'
-import { loadConfig } from '../acurast/loadConfig.js'
+import { ApiPromise, WsProvider } from '@polkadot/api'
+import { Listr } from 'listr2'
+import { BigNumber } from 'bignumber.js'
+import { confirm, select, input } from '@inquirer/prompts'
+
+import {
+  loadAcurastConfig,
+  deployProject,
+  NOOP_LOGGER,
+} from '@acurast/sdk/deploy'
+import {
+  walletFromMnemonic,
+  getBalance,
+  convertConfigToJob,
+  DEFAULT_START_DELAY,
+  isStartAtMsFromNow,
+  isStartAtTimestamp,
+} from '@acurast/sdk/chain'
+import {
+  validateConfig,
+  DeploymentStatus,
+  AssignmentStrategyVariant,
+} from '@acurast/sdk/types'
+import type {
+  JobRegistration,
+  AcurastProjectConfig,
+  EnvVar,
+} from '@acurast/sdk/types'
+import { checkMatchWithReward } from '@acurast/sdk/matcher'
+import type { PricingAdvice } from '@acurast/sdk/matcher'
+import {
+  getDevtoolsViewKey,
+  buildDevtoolsUrl,
+  injectDevtoolsSnippet,
+} from '@acurast/devtools'
+
 import {
   getEnv,
   validateDeployEnvVars,
@@ -7,37 +42,17 @@ import {
   getRpcForNetwork,
   getSymbolForNetwork,
   getMatcherUrlForNetwork,
+  getIpfsConfig,
 } from '../config.js'
-import { delay, Listr } from 'listr2'
-import { createJob } from '../acurast/createJob.js'
 import { storeDeployment } from '../acurast/storeDeployment.js'
 import { acurastColor } from '../util.js'
 import { humanTime } from '../util/humanTime.js'
-import {
-  convertConfigToJob,
-  DEFAULT_START_DELAY,
-  isStartAtMsFromNow,
-  isStartAtTimestamp,
-} from '../acurast/convertConfigToJob.js'
-import { validateConfig } from '../util/validateConfig.js'
-import { DeploymentStatus } from '../acurast/types.js'
 import { consoleOutput } from '../util/console-output.js'
-import { getWallet } from '../util/getWallet.js'
-import { getBalance } from '../util/getBalance.js'
-import { ApiPromise, WsProvider } from '@polkadot/api'
 import { getFaucetLinkForAddress } from '../constants.js'
 import * as ora from '../util/ora.js'
-import type { EnvVar, Job } from '../acurast/env/types.js'
-import type { JobRegistration, AcurastProjectConfig } from '../types.js'
 import { filelogger } from '../util/fileLogger.js'
-
-import { checkMatchWithReward } from '../services/matcherApi.js'
-import type { PricingAdvice } from '../util/pricingAdvisor.js'
-import { fetchAndDisplayPricing } from '../util/fetchPricingAdvice.js'
-import { BigNumber } from 'bignumber.js'
-import { confirm, select, input } from '@inquirer/prompts'
-import { AssignmentStrategyVariant } from '../types.js'
-import { getDevtoolsViewKey, buildDevtoolsUrl } from '../devtools/devtoolsApi.js'
+import { fetchAndDisplayPricing } from '../util/fetchAndDisplayPricing.js'
+import { LocalStorage } from '../util/LocalStorage.js'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -252,7 +267,7 @@ export const addCommandDeploy = (program: Command) => {
 
         let config
         try {
-          config = loadConfig(project)
+          config = loadAcurastConfig({ project })
         } catch (e: any) {
           log(e.message)
           return
@@ -320,7 +335,9 @@ export const addCommandDeploy = (program: Command) => {
         const spinner = ora.default('Fetching account balance...')
         spinner.start()
 
-        const wallet = await getWallet()
+        const wallet = await walletFromMnemonic(getEnv('ACURAST_MNEMONIC'), {
+          name: 'AcurastCli',
+        })
 
         const rpcEndpoint = getRpcForNetwork(config.network)
         const wsProvider = new WsProvider(rpcEndpoint)
@@ -329,7 +346,7 @@ export const addCommandDeploy = (program: Command) => {
           noInitWarn: true,
         })
 
-        const balance = await getBalance(wallet.address, api)
+        const balance = await getBalance(api, wallet.address)
 
         const symbol = getSymbolForNetwork(config.network)
 
@@ -485,13 +502,21 @@ export const addCommandDeploy = (program: Command) => {
 
         const job = convertConfigToJob(config)
 
-        const jobRegistration = createJob(
-          config,
-          job,
+        const devtoolsApiUrl = getEnv('ACURAST_DEVTOOLS_API_URL')
+
+        const jobRegistration = deployProject(config, job, {
+          wallet,
           rpcEndpoint,
+          ipfs: getIpfsConfig(),
           envVars,
-          options.onlyUpload ?? false,
-          async (status: DeploymentStatus, data) => {
+          onlyUpload: options.onlyUpload ?? false,
+          keyStore: new LocalStorage(),
+          logger: filelogger,
+          transformBundle: config.enableDevtools
+            ? async ({ zipPath, entrypoint }) =>
+                injectDevtoolsSnippet(zipPath, entrypoint, devtoolsApiUrl)
+            : undefined,
+          statusCallback: async (status: DeploymentStatus, data) => {
             // console.log(status, data)
             if (options.output === 'json') {
               log('', JSON.stringify({ status, data }))
@@ -560,8 +585,8 @@ export const addCommandDeploy = (program: Command) => {
             if (statusPromises[status]) {
               statusPromises[status].resolve(data)
             }
-          }
-        )
+          },
+        })
 
         type StatusPromises = {
           [key in DeploymentStatus]: {
@@ -795,11 +820,22 @@ export const addCommandDeploy = (program: Command) => {
 
             if (config.enableDevtools && deployedJobId) {
               try {
-                const viewKeyResponse = await getDevtoolsViewKey(deployedJobId)
+                const viewKeyResponse = await getDevtoolsViewKey(
+                  deployedJobId,
+                  {
+                    apiUrl: getEnv('ACURAST_DEVTOOLS_API_URL'),
+                    mnemonic: getEnv('ACURAST_MNEMONIC'),
+                    logger: filelogger,
+                  }
+                )
                 log('')
                 log(
                   `DevTools: ${toAcurastColor(
-                    buildDevtoolsUrl(deployedJobId, viewKeyResponse.viewKey)
+                    buildDevtoolsUrl(
+                      getEnv('ACURAST_DEVTOOLS_URL'),
+                      deployedJobId,
+                      viewKeyResponse.viewKey
+                    )
                   )}`
                 )
                 log(

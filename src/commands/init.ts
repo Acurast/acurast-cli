@@ -7,15 +7,16 @@ import { ENV_HELP_LINK, getFaucetLinkForAddress } from '../constants.js'
 import {
   DEFAULT_MAX_ALLOWED_START_DELAY_MS,
   DEFAULT_REWARD,
-} from '../acurast/convertConfigToJob.js'
+  walletFromMnemonic,
+} from '@acurast/sdk/chain'
 import {
-  AcurastCliConfig,
-  AcurastProjectConfig,
+  type AcurastCliConfig,
+  type AcurastProjectConfig,
   AssignmentStrategyVariant,
-} from '../types.js'
+} from '@acurast/sdk/types'
 import { parse } from '../util/parse-duration.js'
 import { generateMnemonic } from 'bip39'
-import { getWallet } from '../util/getWallet.js'
+import { getEnv } from '../config.js'
 
 const setupEnvFile = () => {
   const requiredEnvVariables = [
@@ -104,7 +105,9 @@ export const addCommandInit = (program: Command) => {
 
       setupEnvFile()
 
-      const wallet = await getWallet()
+      const wallet = await walletFromMnemonic(getEnv('ACURAST_MNEMONIC'), {
+        name: 'AcurastCli',
+      })
       console.log('')
       console.log('The CLI will use the following address: ' + wallet.address)
       console.log('')

@@ -143,7 +143,14 @@ ACURAST_MNEMONIC=abandon abandon about ...
   - `maxNetworkRequests`: Maximum number of network requests.
   - `maxStorage`: Maximum storage usage in bytes.
 - `numberOfReplicas`: The number of replicas, specifying how many processors will run the deployment in parallel.
-- `requiredModules`: Modules that the processor needs to support to run the deployment (e.g., `['DataEncryption']` or `[]`).
+- `requiredModules`: Modules that the processor needs to support to run the deployment. Supported values: `"DataEncryption"`, `"LLM"`, `"Shell"`. Defaults to `[]`. When `runtime` is `"Shell"`, `"Shell"` is auto-injected.
+- `runtime`: The runtime environment used to execute the deployment.
+  - `"NodeJSWithBundle"` (default): Node.js, bundled file deployment.
+  - `"NodeJS"`: Node.js, single-file deployment.
+  - `"Shell"`: Native binary inside a Linux distro image, isolated via PRoot. See [Shell Runtime](#shell-runtime).
+- `image`: Linux distro image used by the Shell runtime. Required when `runtime` is `"Shell"`. Ignored otherwise.
+  - `url`: HTTPS URL of a `.tar.xz` distro image (see [Termux proot-distro](https://github.com/termux/proot-distro) for supported images).
+  - `sha256`: SHA256 hash of the image, used by the processor to verify the download.
 - `minProcessorReputation`: The minimum required reputation of the processor.
 - `maxCostPerExecution`: The maximum cost per execution in the smallest denomination of ACU.
 - `includeEnvironmentVariables`: An array of environment variables in the .env file that will be passed to the deployment.
@@ -477,6 +484,44 @@ The `reuseKeysFrom` field allows you to reuse keys from a previous deployment. T
   ]
 }
 ```
+
+### Shell Runtime
+
+The Shell runtime runs your deployment as a native binary inside a Linux distro image on the processor (PRoot-isolated). This unlocks shell scripts, native tooling, and any language you can ship as a Linux binary.
+
+To use it, set `runtime` to `"Shell"` and provide an `image` (URL + SHA256). The CLI embeds the image reference in `manifest.json` and auto-adds the `"Shell"` required module on-chain.
+
+```json
+{
+  "projects": {
+    "my-shell-project": {
+      "projectName": "my-shell-project",
+      "fileUrl": "./shell-app",
+      "entrypoint": "acurast.sh",
+      "runtime": "Shell",
+      "image": {
+        "url": "https://github.com/termux/proot-distro/releases/download/v4.30.1/ubuntu-questing-aarch64-pd-v4.30.1.tar.xz",
+        "sha256": "5ab35b90cd9a9f180656261ba400a135c4c01c2da4b74522118342f985c2d328"
+      },
+      "restartPolicy": "no",
+      "network": "canary",
+      "onlyAttestedDevices": true,
+      "assignmentStrategy": { "type": "Single" },
+      "execution": { "type": "onetime", "maxExecutionTimeInMs": 60000 },
+      "maxAllowedStartDelayInMs": 10000,
+      "usageLimit": { "maxMemory": 0, "maxNetworkRequests": 0, "maxStorage": 0 },
+      "numberOfReplicas": 1,
+      "requiredModules": [],
+      "minProcessorReputation": 0,
+      "maxCostPerExecution": 5000000000,
+      "includeEnvironmentVariables": [],
+      "processorWhitelist": []
+    }
+  }
+}
+```
+
+The `entrypoint` is the script or binary the processor runs after extracting the image. Environment variables declared in `includeEnvironmentVariables` are injected as standard system env vars (no `_STD_` API). Host services (deployment metadata, signing, browser control) are exposed via a JSON-RPC API on an abstract Unix socket whose name is in the `BRIDGE_SOCKET` env var.
 
 ## Development
 
