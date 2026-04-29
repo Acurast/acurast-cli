@@ -1,11 +1,11 @@
-import type { AcurastProjectConfig } from '../types.js'
-import { getFeeAnalysis, toCacu } from '../util/getFeeAnalysis.js'
+import type { AcurastProjectConfig } from '@acurast/sdk/types'
+import { getFeeAnalysis, toCacu } from '@acurast/sdk/matcher'
+import type { PricingAdvice } from '@acurast/sdk/matcher'
 import { pluralize } from '../util/pluralize.js'
 import { red, green, yellow } from 'ansis'
 import { acurastColor } from '../util.js'
 import { consoleOutput } from './console-output.js'
 import { getSymbolForNetwork } from '../config.js'
-import type { PricingAdvice } from './pricingAdvisor.js'
 import { BigNumber } from 'bignumber.js'
 
 export const printFeeCosts = (

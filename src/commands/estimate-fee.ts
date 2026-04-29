@@ -1,11 +1,13 @@
 import { Command, Option } from 'commander'
-import { loadConfig } from '../acurast/loadConfig.js'
-import { validateConfig } from '../util/validateConfig.js'
+import { loadAcurastConfig } from '@acurast/sdk/deploy'
+import { walletFromMnemonic } from '@acurast/sdk/chain'
+import { validateConfig } from '@acurast/sdk/types'
+
 import { consoleOutput } from '../util/console-output.js'
 import { filelogger } from '../util/fileLogger.js'
-import { getWallet } from '../util/getWallet.js'
 import * as ora from '../util/ora.js'
-import { fetchAndDisplayPricing } from '../util/fetchPricingAdvice.js'
+import { fetchAndDisplayPricing } from '../util/fetchAndDisplayPricing.js'
+import { getEnv } from '../config.js'
 
 export const addCommandEstimateFee = (program: Command) => {
   program
@@ -24,7 +26,7 @@ export const addCommandEstimateFee = (program: Command) => {
 
       let config
       try {
-        config = loadConfig(project)
+        config = loadAcurastConfig({ project })
       } catch (e: any) {
         log(e.message)
         return
@@ -54,7 +56,9 @@ export const addCommandEstimateFee = (program: Command) => {
         log('')
       }
 
-      const wallet = await getWallet()
+      const wallet = await walletFromMnemonic(getEnv('ACURAST_MNEMONIC'), {
+        name: 'AcurastCli',
+      })
       const spinner = ora.default('Fetching market pricing data...')
 
       await fetchAndDisplayPricing(config, wallet.address, options, spinner)

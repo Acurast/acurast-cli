@@ -1,6 +1,6 @@
 import { appendFileSync } from 'fs'
-import type { JobId } from '../acurast/env/types.js'
-import { jobToNumber } from './jobToNumber.js'
+import type { JobId } from '@acurast/sdk/types'
+import { jobToNumber } from '@acurast/sdk/chain'
 
 class FileLogger {
   private jobId?: JobId
