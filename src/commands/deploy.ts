@@ -365,8 +365,12 @@ export const addCommandDeploy = (program: Command) => {
             )
           } else {
             log(
-              `Your balance is 0. You need ${symbol} tokens to deploy. Visit ${toAcurastColor('https://acurast.com')} to learn how to acquire ${symbol}.`
+              `Your balance is 0. You need ${symbol} tokens to deploy.`
             )
+            log(
+              `Acquire ${symbol} (see ${toAcurastColor('https://docs.acurast.com/token-holders/how-to-get-acu/')}) and send it to your address:`
+            )
+            log(`  ${toAcurastColor(wallet.address)}`)
           }
           log('')
           return
@@ -379,8 +383,12 @@ export const addCommandDeploy = (program: Command) => {
             )
           } else {
             log(
-              `Your balance is low. You need more ${symbol} tokens to deploy. Visit ${toAcurastColor('https://acurast.com')} to learn how to acquire ${symbol}.`
+              `Your balance is low. You need more ${symbol} tokens to deploy.`
             )
+            log(
+              `Acquire ${symbol} (see ${toAcurastColor('https://docs.acurast.com/token-holders/how-to-get-acu/')}) and send it to your address:`
+            )
+            log(`  ${toAcurastColor(wallet.address)}`)
           }
           log('')
         }
