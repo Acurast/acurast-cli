@@ -17,6 +17,7 @@ import {
 import { parse } from '../util/parse-duration.js'
 import { generateMnemonic } from 'bip39'
 import { getEnv } from '../config.js'
+import { acurastColor } from '../util.js'
 
 const setupEnvFile = () => {
   const requiredEnvVariables = [
@@ -111,9 +112,20 @@ export const addCommandInit = (program: Command) => {
       console.log('')
       console.log('The CLI will use the following address: ' + wallet.address)
       console.log('')
+      const usesCanary = acurastConfig
+        ? Object.values(acurastConfig.projects ?? {}).some(
+            (p) => p?.network === 'canary'
+          )
+        : false
+
       console.log(
-        `Fund your account with ACU tokens to deploy on mainnet, or use the faucet (${getFaucetLinkForAddress(wallet.address)}) for canary network testing.`
+        `To deploy on mainnet, acquire ACU tokens (see ${acurastColor('https://docs.acurast.com/token-holders/how-to-get-acu/')}) and send them to the address above.`
       )
+      if (usesCanary) {
+        console.log(
+          `For canary network testing, use the faucet: ${getFaucetLinkForAddress(wallet.address)}`
+        )
+      }
       console.log('')
 
       const packagePath = path.resolve('package.json')
