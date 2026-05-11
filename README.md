@@ -129,6 +129,7 @@ ACURAST_MNEMONIC=abandon abandon about ...
   - `type`: `AssignmentStrategyVariant.Single`: Assigns one set of processors for a deployment. If instantMatch is provided, specifies processors and maximum allowed start delay:
     - `processor`: Processor address.
     - `maxAllowedStartDelayInMs`: Maximum allowed start delay in milliseconds.
+    - See [Instant match](#instant-match) for a full example; the repository’s `acurast.json` also defines a `test-instant-match` project you can copy from.
   - `type`: `AssignmentStrategyVariant.Competing`: Assigns a new set of processors for each execution.
 - `execution`: Specifies the execution details, which can be:
   - `type`: 'onetime'`: Run the deployment only once.
@@ -482,6 +483,47 @@ The `reuseKeysFrom` field allows you to reuse keys from a previous deployment. T
     "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
     123456
   ]
+}
+```
+
+### Instant match
+
+When `assignmentStrategy.type` is `Single`, you can set `assignmentStrategy.instantMatch` to pin planned executions to specific processors (each entry maps to a processor account and a per-entry maximum start delay). Replace the `processor` value with your processor’s SS58 address on the network you deploy to. The example address below is only a placeholder for the correct format.
+
+If `instantMatch` is non-empty, `acurast deploy` skips the market pricing check for that project, since matching is explicit.
+
+If you use `startAt.msFromNow` together with `instantMatch`, avoid scheduling less than about two minutes ahead: the SDK warns that very short lead times can still prevent the deployment from running.
+
+The example script [`examples/instant-match.js`](examples/instant-match.js) logs `jobId`, `deviceAddress`, and a short hint via `print` so you can confirm the processor that ran the job matches the SS58 you configured under `instantMatch` (no DevTools or outbound HTTP required).
+
+```json
+{
+  "projects": {
+    "my-instant-match": {
+      "projectName": "my-instant-match",
+      "fileUrl": "examples/instant-match.js",
+      "network": "canary",
+      "onlyAttestedDevices": true,
+      "assignmentStrategy": {
+        "type": "Single",
+        "instantMatch": [
+          {
+            "processor": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
+            "maxAllowedStartDelayInMs": 10000
+          }
+        ]
+      },
+      "execution": { "type": "onetime", "maxExecutionTimeInMs": 60000 },
+      "maxAllowedStartDelayInMs": 10000,
+      "usageLimit": { "maxMemory": 0, "maxNetworkRequests": 0, "maxStorage": 0 },
+      "numberOfReplicas": 1,
+      "requiredModules": [],
+      "minProcessorReputation": 0,
+      "maxCostPerExecution": 1000000000,
+      "includeEnvironmentVariables": [],
+      "processorWhitelist": []
+    }
+  }
 }
 ```
 
