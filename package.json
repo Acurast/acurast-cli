@@ -35,6 +35,7 @@
     "@acurast/devtools": "^1.0.1",
     "@acurast/sdk": "^1.1.0",
     "@inquirer/prompts": "^5.0.5",
+    "adm-zip": "^0.5.16",
     "@polkadot/api": "^16.1.2",
     "@polkadot/api-augment": "^16.1.2",
     "@polkadot/keyring": "^14.0.0",
