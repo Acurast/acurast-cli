@@ -262,6 +262,39 @@
       "maxCostPerExecution": 3000000000,
       "includeEnvironmentVariables": [],
       "processorWhitelist": []
+    },
+    "cargo-hello": {
+      "projectName": "cargo-hello",
+      "fileUrl": "examples/app",
+      "entrypoint": "start.sh",
+      "runtime": "Shell",
+      "image": {
+        "url": "https://github.com/termux/proot-distro/releases/download/v4.30.1/ubuntu-questing-aarch64-pd-v4.30.1.tar.xz",
+        "sha256": "5ab35b90cd9a9f180656261ba400a135c4c01c2da4b74522118342f985c2d328"
+      },
+      "restartPolicy": "no",
+      "network": "canary",
+      "onlyAttestedDevices": true,
+      "assignmentStrategy": {
+        "type": "Single"
+      },
+      "execution": {
+        "type": "interval",
+        "intervalInMs": 3600000,
+        "numberOfExecutions": 1
+      },
+      "maxAllowedStartDelayInMs": 10000,
+      "usageLimit": {
+        "maxMemory": 0,
+        "maxNetworkRequests": 0,
+        "maxStorage": 0
+      },
+      "numberOfReplicas": 2,
+      "requiredModules": [],
+      "minProcessorReputation": 0,
+      "maxCostPerExecution": 200000000000,
+      "includeEnvironmentVariables": ["WEBHOOK_URL"],
+      "processorWhitelist": []
     }
   }
 }
