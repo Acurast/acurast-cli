@@ -18,10 +18,10 @@ import {
   isStartAtTimestamp,
 } from '@acurast/sdk/chain'
 import {
-  validateConfig,
   DeploymentStatus,
   AssignmentStrategyVariant,
 } from '@acurast/sdk/types'
+import { validateCliConfig } from '../util/validateCliConfig.js'
 import type {
   JobRegistration,
   AcurastProjectConfig,
@@ -279,7 +279,7 @@ export const addCommandDeploy = (program: Command) => {
           throw new Error('No project found')
         }
 
-        const configResult = validateConfig(config)
+        const configResult = validateCliConfig(config)
 
         if (!configResult.success) {
           log('')
@@ -341,6 +341,9 @@ export const addCommandDeploy = (program: Command) => {
         })
 
         const rpcEndpoint = getRpcForNetwork(config.network)
+        filelogger.info(
+          `Connecting to ${config.network} RPC: ${rpcEndpoint}`
+        )
         const wsProvider = new WsProvider(rpcEndpoint)
         const api = await ApiPromise.create({
           provider: wsProvider,
