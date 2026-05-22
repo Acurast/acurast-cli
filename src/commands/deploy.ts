@@ -16,7 +16,14 @@ import {
   DEFAULT_START_DELAY,
   isStartAtMsFromNow,
   isStartAtTimestamp,
+  jobIdFromChainJson,
+  listAssignedProcessorAddressesForJob,
 } from '@acurast/sdk/chain'
+import {
+  parseByteSize,
+  hasBenchmarkFilters,
+} from '@acurast/sdk/chain'
+import { checkMatch } from '@acurast/sdk/matcher'
 import {
   validateConfig,
   DeploymentStatus,
@@ -241,6 +248,42 @@ export const addCommandDeploy = (program: Command) => {
       )
     )
     .addOption(new Option('-u, --only-upload', 'Only upload to IPFS and quit.'))
+    .addOption(
+      new Option(
+        '--min-memory <size>',
+        'Minimum total RAM (e.g. 4GB, 512MiB). Merges with benchmarkFilters in acurast.json.'
+      )
+    )
+    .addOption(
+      new Option(
+        '--min-cpu-score <n>',
+        'Minimum CPU single-core benchmark score'
+      ).argParser((v) => {
+        const n = Number.parseInt(v, 10)
+        if (Number.isNaN(n) || n < 0) {
+          throw new Error(`Invalid --min-cpu-score: ${v}`)
+        }
+        return n
+      })
+    )
+    .addOption(
+      new Option(
+        '--min-storage <size>',
+        'Minimum total storage capacity (e.g. 64GB)'
+      )
+    )
+    .addOption(
+      new Option(
+        '--min-io-score <n>',
+        'Minimum storage I/O benchmark score'
+      ).argParser((v) => {
+        const n = Number.parseInt(v, 10)
+        if (Number.isNaN(n) || n < 0) {
+          throw new Error(`Invalid --min-io-score: ${v}`)
+        }
+        return n
+      })
+    )
     .action(
       async (
         project: string,
@@ -251,6 +294,10 @@ export const addCommandDeploy = (program: Command) => {
           // Currently this command has no interactive parts, so this option is not used
           nonInteractive?: boolean
           onlyUpload?: boolean
+          minMemory?: string
+          minCpuScore?: number
+          minStorage?: string
+          minIoScore?: number
         }
       ) => {
         const log = consoleOutput(options.output)
@@ -292,6 +339,45 @@ export const addCommandDeploy = (program: Command) => {
 
           return
         }
+
+        config = configResult.data
+
+        try {
+          const bf = { ...config.benchmarkFilters }
+          if (options.minMemory !== undefined) {
+            bf.minMemoryBytes = Number(parseByteSize(options.minMemory))
+          }
+          if (options.minCpuScore !== undefined) {
+            bf.minCpuSingleCoreScore = options.minCpuScore
+          }
+          if (options.minStorage !== undefined) {
+            bf.minStorageBytes = Number(parseByteSize(options.minStorage))
+          }
+          if (options.minIoScore !== undefined) {
+            bf.minStorageIoScore = options.minIoScore
+          }
+          if (
+            options.minMemory !== undefined ||
+            options.minCpuScore !== undefined ||
+            options.minStorage !== undefined ||
+            options.minIoScore !== undefined
+          ) {
+            config.benchmarkFilters = bf
+          }
+        } catch (e: any) {
+          log(`Invalid benchmark deploy option: ${e.message}`)
+          return
+        }
+
+        const benchValidation = validateConfig(config)
+        if (!benchValidation.success) {
+          log('')
+          log('⚠️ Project config is invalid after benchmark options:')
+          log('')
+          log(benchValidation.error)
+          return
+        }
+        config = benchValidation.data
 
         try {
           validateDeployEnvVars()
@@ -489,6 +575,55 @@ export const addCommandDeploy = (program: Command) => {
               )} ${symbol}`
             )
             log('')
+          }
+        }
+
+        if (
+          hasBenchmarkFilters(config) &&
+          matcherUrl &&
+          !hasInstantMatch
+        ) {
+          const previewJob = convertConfigToJob(config)
+          const matchRes = await checkMatch(
+            matcherUrl,
+            config,
+            previewJob,
+            wallet.address
+          )
+
+          if (options.output === 'text') {
+            if (matchRes.ok) {
+              log(
+                `Processors matching benchmark filters at current reward: ${matchRes.data.matched_processors} (${config.numberOfReplicas} required)`
+              )
+            } else {
+              log(`Could not verify benchmark filter match: ${matchRes.error}`)
+            }
+            log(
+              'Assigned processor addresses are listed from chain storage after the deployment is matched.'
+            )
+            log('')
+          }
+
+          if (options.nonInteractive) {
+            if (
+              !matchRes.ok ||
+              matchRes.data.matched_processors < config.numberOfReplicas
+            ) {
+              log(
+                'Deploy aborted: benchmark filters do not yield enough processors at the current price (non-interactive mode).'
+              )
+              return
+            }
+          } else if (isInteractive && !options.dryRun) {
+            const go = await confirm({
+              message: 'Deploy with these benchmark filters?',
+              default: true,
+            })
+            if (!go) {
+              log('Deployment cancelled.')
+              return
+            }
           }
         }
 
@@ -708,8 +843,55 @@ export const addCommandDeploy = (program: Command) => {
                         !options.exitEarly ||
                         (options.exitEarly && hasEnvironmentVariables),
                       task: async (ctx, task): Promise<void> => {
-                        await awaitStatus(DeploymentStatus.Matched)
+                        const matchData = await awaitStatus(
+                          DeploymentStatus.Matched
+                        )
                         task.title = 'Matched'
+                        if (
+                          options.output !== 'text' ||
+                          !matchData?.jobIds?.length
+                        ) {
+                          return
+                        }
+                        const provider = new WsProvider(rpcEndpoint)
+                        const api = await ApiPromise.create({
+                          provider,
+                          noInitWarn: true,
+                        })
+                        try {
+                          log('')
+                          log('Assigned processors:')
+                          for (const rawJobId of matchData.jobIds as unknown[]) {
+                            try {
+                              const jobId = jobIdFromChainJson(rawJobId)
+                              const addresses =
+                                await listAssignedProcessorAddressesForJob(
+                                  api,
+                                  jobId
+                                )
+                              if (addresses.length === 0) {
+                                log(
+                                  `  Job ${jobId[1]}: no rows yet (storage may update shortly)`
+                                )
+                              } else {
+                                log(`  Job ${jobId[1]}:`)
+                                for (const a of addresses) {
+                                  log(`    ${a}`)
+                                }
+                              }
+                            } catch (e: unknown) {
+                              const msg =
+                                e instanceof Error ? e.message : String(e)
+                              filelogger.debug(
+                                `assignedProcessors list failed: ${msg}`
+                              )
+                              log(`  (Could not list assigned processors: ${msg})`)
+                            }
+                          }
+                          log('')
+                        } finally {
+                          await api.disconnect()
+                        }
                       },
                     },
                     {
