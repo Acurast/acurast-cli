@@ -263,6 +263,37 @@
       "includeEnvironmentVariables": [],
       "processorWhitelist": []
     },
+    "test-instant-match": {
+      "projectName": "test-instant-match",
+      "fileUrl": "examples/canary-test.js",
+      "network": "canary",
+      "onlyAttestedDevices": true,
+      "assignmentStrategy": {
+        "type": "Single",
+        "instantMatch": [
+          {
+            "processor": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
+            "maxAllowedStartDelayInMs": 10000
+          }
+        ]
+      },
+      "execution": {
+        "type": "onetime",
+        "maxExecutionTimeInMs": 60000
+      },
+      "maxAllowedStartDelayInMs": 10000,
+      "usageLimit": {
+        "maxMemory": 0,
+        "maxNetworkRequests": 0,
+        "maxStorage": 0
+      },
+      "numberOfReplicas": 1,
+      "requiredModules": [],
+      "minProcessorReputation": 0,
+      "maxCostPerExecution": 1000000000,
+      "includeEnvironmentVariables": [],
+      "processorWhitelist": []
+    },
     "cargo-hello": {
       "projectName": "cargo-hello",
       "fileUrl": "examples/app",

@@ -129,6 +129,7 @@ ACURAST_MNEMONIC=abandon abandon about ...
   - `type`: `AssignmentStrategyVariant.Single`: Assigns one set of processors for a deployment. If instantMatch is provided, specifies processors and maximum allowed start delay:
     - `processor`: Processor address.
     - `maxAllowedStartDelayInMs`: Maximum allowed start delay in milliseconds.
+    - See [Instant match](#instant-match) for a full example; the repository’s `acurast.json` also defines a `test-instant-match` project you can copy from.
   - `type`: `AssignmentStrategyVariant.Competing`: Assigns a new set of processors for each execution.
 - `execution`: Specifies the execution details, which can be:
   - `type`: 'onetime'`: Run the deployment only once.
@@ -526,6 +527,12 @@ The `reuseKeysFrom` field allows you to reuse keys from a previous deployment. T
 }
 ```
 
+### Instant match
+
+When `assignmentStrategy.type` is `Single`, you can set `assignmentStrategy.instantMatch` to pin planned executions to specific processors (each entry maps to a processor account and a per-entry maximum start delay). Replace the `processor` value with your processor’s SS58 address on the network you deploy to. The example address below is only a placeholder for the correct format.
+
+If `instantMatch` is non-empty, `acurast deploy` skips the market pricing check for that project, since matching is explicit.
+
 ### Shell Runtime
 
 The Shell runtime runs your deployment as a native binary inside a Linux distro image on the processor (PRoot-isolated). This unlocks shell scripts, native tooling, and any language you can ship as a Linux binary.
@@ -550,7 +557,11 @@ To use it, set `runtime` to `"Shell"` and provide an `image` (URL + SHA256). The
       "assignmentStrategy": { "type": "Single" },
       "execution": { "type": "onetime", "maxExecutionTimeInMs": 60000 },
       "maxAllowedStartDelayInMs": 10000,
-      "usageLimit": { "maxMemory": 0, "maxNetworkRequests": 0, "maxStorage": 0 },
+      "usageLimit": {
+        "maxMemory": 0,
+        "maxNetworkRequests": 0,
+        "maxStorage": 0
+      },
       "numberOfReplicas": 1,
       "requiredModules": [],
       "minProcessorReputation": 0,
