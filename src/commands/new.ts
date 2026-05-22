@@ -74,38 +74,52 @@ export const addCommandNew = (program: Command) => {
           `\nProject "${projectName}" created successfully using the "${selectedTemplate}" template.`
         )
 
-        spinner.start('Updating package.json...')
-        try {
-          const packageJsonPath = path.join(projectPath, 'package.json')
-          const packageJson = JSON.parse(
-            fs.readFileSync(packageJsonPath, 'utf8')
-          )
-          packageJson.name = projectName
-          fs.writeFileSync(
-            packageJsonPath,
-            JSON.stringify(packageJson, null, 2)
-          )
-          spinner.succeed('package.json updated successfully')
-        } catch (error) {
-          spinner.fail('Failed to update package.json')
-          console.error(`Error updating package.json:`, error)
+        const packageJsonPath = path.join(projectPath, 'package.json')
+        const cargoTomlPath = path.join(projectPath, 'Cargo.toml')
+        const hasPackageJson = fs.existsSync(packageJsonPath)
+        const hasCargoToml = fs.existsSync(cargoTomlPath)
+
+        if (hasPackageJson) {
+          spinner.start('Updating package.json...')
+          try {
+            const packageJson = JSON.parse(
+              fs.readFileSync(packageJsonPath, 'utf8')
+            )
+            packageJson.name = projectName
+            fs.writeFileSync(
+              packageJsonPath,
+              JSON.stringify(packageJson, null, 2)
+            )
+            spinner.succeed('package.json updated successfully')
+          } catch (error) {
+            spinner.fail('Failed to update package.json')
+            console.error(`Error updating package.json:`, error)
+          }
         }
 
         spinner.start('Initializing git repository...')
-
         try {
           process.chdir(projectPath)
           execSync('git init', { stdio: 'ignore' })
           spinner.succeed('Git repository initialized')
-
-          spinner.start('Installing dependencies...')
-          execSync('npm install', { stdio: 'ignore' })
-          spinner.succeed('Dependencies installed')
         } catch (error) {
-          spinner.fail(
-            'Failed to initialize git repository or install dependencies'
-          )
+          spinner.fail('Failed to initialize git repository')
           console.error(`Error:`, error)
+        }
+
+        if (hasPackageJson) {
+          spinner.start('Installing dependencies...')
+          try {
+            execSync('npm install', { stdio: 'ignore' })
+            spinner.succeed('Dependencies installed')
+          } catch (error) {
+            spinner.fail('Failed to install dependencies')
+            console.error(`Error:`, error)
+          }
+        } else if (hasCargoToml) {
+          console.log(
+            `\nCargo project detected. Run \`cargo build\` to compile.`
+          )
         }
 
         console.log(`\nNext steps:`)
