@@ -55,6 +55,7 @@ import { storeDeployment } from '../acurast/storeDeployment.js'
 import { acurastColor } from '../util.js'
 import { humanTime } from '../util/humanTime.js'
 import { consoleOutput } from '../util/console-output.js'
+import { printBundleContents } from '../util/printBundleContents.js'
 import { getFaucetLinkForAddress } from '../constants.js'
 import * as ora from '../util/ora.js'
 import { filelogger } from '../util/fileLogger.js'
@@ -655,10 +656,19 @@ export const addCommandDeploy = (program: Command) => {
           onlyUpload: options.onlyUpload ?? false,
           keyStore: new LocalStorage(),
           logger: filelogger,
-          transformBundle: config.enableDevtools
-            ? async ({ zipPath, entrypoint }) =>
-                injectDevtoolsSnippet(zipPath, entrypoint, devtoolsApiUrl)
-            : undefined,
+          transformBundle: async ({ zipPath, entrypoint }) => {
+            const finalPath = config.enableDevtools
+              ? await injectDevtoolsSnippet(
+                  zipPath,
+                  entrypoint,
+                  devtoolsApiUrl
+                )
+              : zipPath
+            if (options.output === 'text') {
+              printBundleContents(finalPath, config.projectName, log)
+            }
+            return finalPath
+          },
           statusCallback: async (status: DeploymentStatus, data) => {
             // console.log(status, data)
             if (options.output === 'json') {
