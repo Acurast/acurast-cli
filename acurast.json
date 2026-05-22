@@ -265,7 +265,7 @@
     },
     "test-instant-match": {
       "projectName": "test-instant-match",
-      "fileUrl": "examples/instant-match.js",
+      "fileUrl": "examples/canary-test.js",
       "network": "canary",
       "onlyAttestedDevices": true,
       "assignmentStrategy": {

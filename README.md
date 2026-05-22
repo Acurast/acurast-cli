@@ -492,41 +492,6 @@ When `assignmentStrategy.type` is `Single`, you can set `assignmentStrategy.inst
 
 If `instantMatch` is non-empty, `acurast deploy` skips the market pricing check for that project, since matching is explicit.
 
-If you use `startAt.msFromNow` together with `instantMatch`, avoid scheduling less than about two minutes ahead: the SDK warns that very short lead times can still prevent the deployment from running.
-
-The example script [`examples/instant-match.js`](examples/instant-match.js) logs `jobId`, `deviceAddress`, and a short hint via `print` so you can confirm the processor that ran the job matches the SS58 you configured under `instantMatch` (no DevTools or outbound HTTP required).
-
-```json
-{
-  "projects": {
-    "my-instant-match": {
-      "projectName": "my-instant-match",
-      "fileUrl": "examples/instant-match.js",
-      "network": "canary",
-      "onlyAttestedDevices": true,
-      "assignmentStrategy": {
-        "type": "Single",
-        "instantMatch": [
-          {
-            "processor": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
-            "maxAllowedStartDelayInMs": 10000
-          }
-        ]
-      },
-      "execution": { "type": "onetime", "maxExecutionTimeInMs": 60000 },
-      "maxAllowedStartDelayInMs": 10000,
-      "usageLimit": { "maxMemory": 0, "maxNetworkRequests": 0, "maxStorage": 0 },
-      "numberOfReplicas": 1,
-      "requiredModules": [],
-      "minProcessorReputation": 0,
-      "maxCostPerExecution": 1000000000,
-      "includeEnvironmentVariables": [],
-      "processorWhitelist": []
-    }
-  }
-}
-```
-
 ### Shell Runtime
 
 The Shell runtime runs your deployment as a native binary inside a Linux distro image on the processor (PRoot-isolated). This unlocks shell scripts, native tooling, and any language you can ship as a Linux binary.
@@ -551,7 +516,11 @@ To use it, set `runtime` to `"Shell"` and provide an `image` (URL + SHA256). The
       "assignmentStrategy": { "type": "Single" },
       "execution": { "type": "onetime", "maxExecutionTimeInMs": 60000 },
       "maxAllowedStartDelayInMs": 10000,
-      "usageLimit": { "maxMemory": 0, "maxNetworkRequests": 0, "maxStorage": 0 },
+      "usageLimit": {
+        "maxMemory": 0,
+        "maxNetworkRequests": 0,
+        "maxStorage": 0
+      },
       "numberOfReplicas": 1,
       "requiredModules": [],
       "minProcessorReputation": 0,
