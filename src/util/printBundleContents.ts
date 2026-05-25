@@ -8,11 +8,10 @@ const formatSize = (bytes: number): string => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export const printBundleContents = (
+export const formatBundleContents = (
   zipPath: string,
-  projectName: string,
-  log: (message: string) => void
-) => {
+  projectName: string
+): string => {
   const zip = new AdmZip(zipPath)
   const entries = zip.getEntries().filter((e) => !e.isDirectory)
 
@@ -25,17 +24,27 @@ export const printBundleContents = (
   }))
   const sizeColWidth = rows.reduce((w, r) => Math.max(w, r.size.length), 0)
 
-  log('')
-  log(`📦  ${projectName}`)
-  log('=== Bundle Contents ===')
+  const lines: string[] = []
+  lines.push(`📦  ${projectName}`)
+  lines.push('=== Bundle Contents ===')
   for (const row of rows) {
-    log(`  ${row.size.padStart(sizeColWidth)}  ${row.name}`)
+    lines.push(`  ${row.size.padStart(sizeColWidth)}  ${row.name}`)
   }
-  log('=== Bundle Details ===')
-  log(`  name:          ${projectName}`)
-  log(`  filename:      ${basename(zipPath)}`)
-  log(`  package size:  ${formatSize(packageSize)}`)
-  log(`  unpacked size: ${formatSize(unpackedSize)}`)
-  log(`  total files:   ${entries.length}`)
+  lines.push('=== Bundle Details ===')
+  lines.push(`  name:          ${projectName}`)
+  lines.push(`  filename:      ${basename(zipPath)}`)
+  lines.push(`  package size:  ${formatSize(packageSize)}`)
+  lines.push(`  unpacked size: ${formatSize(unpackedSize)}`)
+  lines.push(`  total files:   ${entries.length}`)
+  return lines.join('\n')
+}
+
+export const printBundleContents = (
+  zipPath: string,
+  projectName: string,
+  log: (message: string) => void
+) => {
+  log('')
+  log(formatBundleContents(zipPath, projectName))
   log('')
 }

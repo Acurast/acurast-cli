@@ -55,7 +55,7 @@ import { storeDeployment } from '../acurast/storeDeployment.js'
 import { acurastColor } from '../util.js'
 import { humanTime } from '../util/humanTime.js'
 import { consoleOutput } from '../util/console-output.js'
-import { printBundleContents } from '../util/printBundleContents.js'
+import { formatBundleContents } from '../util/printBundleContents.js'
 import { getFaucetLinkForAddress } from '../constants.js'
 import * as ora from '../util/ora.js'
 import { filelogger } from '../util/fileLogger.js'
@@ -651,6 +651,9 @@ export const addCommandDeploy = (program: Command) => {
 
         const devtoolsApiUrl = getEnv('ACURAST_DEVTOOLS_API_URL')
 
+        let bundleOutputText: string | undefined
+        let submitTaskRef: { output: string } | undefined
+
         const jobRegistration = deployProject(config, job, {
           wallet,
           rpcEndpoint,
@@ -668,7 +671,14 @@ export const addCommandDeploy = (program: Command) => {
                 )
               : zipPath
             if (options.output === 'text') {
-              printBundleContents(finalPath, config.projectName, log)
+              const content = formatBundleContents(
+                finalPath,
+                config.projectName
+              )
+              bundleOutputText = content
+              if (submitTaskRef) {
+                submitTaskRef.output = content
+              }
             }
             return finalPath
           },
@@ -819,7 +829,12 @@ export const addCommandDeploy = (program: Command) => {
                   deployTask.newListr([
                     {
                       title: 'Submit to Acurast',
+                      rendererOptions: { persistentOutput: true },
                       task: async (ctx, task): Promise<void> => {
+                        submitTaskRef = task
+                        if (bundleOutputText) {
+                          task.output = bundleOutputText
+                        }
                         const { job } = await awaitStatus(
                           DeploymentStatus.Prepared
                         )
@@ -855,6 +870,7 @@ export const addCommandDeploy = (program: Command) => {
                       enabled: () =>
                         !options.exitEarly ||
                         (options.exitEarly && hasEnvironmentVariables),
+                      rendererOptions: { persistentOutput: true },
                       task: async (ctx, task): Promise<void> => {
                         const matchData = await awaitStatus(
                           DeploymentStatus.Matched
@@ -872,8 +888,7 @@ export const addCommandDeploy = (program: Command) => {
                           noInitWarn: true,
                         })
                         try {
-                          log('')
-                          log('Assigned processors:')
+                          const lines: string[] = ['Assigned processors:']
                           for (const rawJobId of matchData.jobIds as unknown[]) {
                             try {
                               const jobId = jobIdFromChainJson(rawJobId)
@@ -883,13 +898,13 @@ export const addCommandDeploy = (program: Command) => {
                                   jobId
                                 )
                               if (addresses.length === 0) {
-                                log(
+                                lines.push(
                                   `  Job ${jobId[1]}: no rows yet (storage may update shortly)`
                                 )
                               } else {
-                                log(`  Job ${jobId[1]}:`)
+                                lines.push(`  Job ${jobId[1]}:`)
                                 for (const a of addresses) {
-                                  log(`    ${a}`)
+                                  lines.push(`    ${a}`)
                                 }
                               }
                             } catch (e: unknown) {
@@ -898,10 +913,12 @@ export const addCommandDeploy = (program: Command) => {
                               filelogger.debug(
                                 `assignedProcessors list failed: ${msg}`
                               )
-                              log(`  (Could not list assigned processors: ${msg})`)
+                              lines.push(
+                                `  (Could not list assigned processors: ${msg})`
+                              )
                             }
+                            task.output = lines.join('\n')
                           }
-                          log('')
                         } finally {
                           await api.disconnect()
                         }
