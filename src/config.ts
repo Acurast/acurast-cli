@@ -3,26 +3,49 @@ import type { AcurastProjectConfig, EnvVar } from '@acurast/sdk/types'
 
 const RPC_CANARY = 'wss://canarynet-ws-1.acurast-h-server-2.papers.tech'
 const RPC_MAINNET = 'wss://archive.mainnet.acurast.com'
+const RPC_DEVNET = 'wss://acurast-devnet-ws.prod.gke.papers.tech'
 
 const MATCHER_CANARY = 'https://matcher.canary.acurast.com'
 const MATCHER_MAINNET = 'https://matcher.mainnet.acurast.com'
+const MATCHER_DEVNET = '' // No public matcher on devnet by default
 
 const INDEXER_CANARY = 'https://dev.indexer.canary.acurast.com/api/v1/rpc'
 const INDEXER_CANARY_API_KEY = 'OXuwySHqNSlwwa_qqB-cBw'
 const INDEXER_MAINNET = 'https://dev.indexer.mainnet.acurast.com/api/v1/rpc'
 const INDEXER_MAINNET_API_KEY = 'HbLxqSJoPTnzwa_rkF-tYv'
+const INDEXER_DEVNET = '' // No public indexer on devnet by default
+const INDEXER_DEVNET_API_KEY = ''
 
 const IPFS_PROXY = 'https://ipfs-proxy.acurast.prod.gke.papers.tech'
 
 const DEVTOOLS_URL = 'https://devtools.acurast.com'
 const DEVTOOLS_API_URL = 'https://api.devtools.acurast.com'
 
+export type CliNetwork = 'mainnet' | 'canary' | 'devnet'
+
+export const CLI_NETWORKS: readonly CliNetwork[] = [
+  'mainnet',
+  'canary',
+  'devnet',
+] as const
+
 export type EnvKeys =
   | 'ACURAST_MNEMONIC'
   | 'ACURAST_IPFS_URL'
   | 'ACURAST_IPFS_API_KEY'
   | 'ACURAST_RPC'
+  | 'ACURAST_MAINNET_RPC'
   | 'ACURAST_CANARY_RPC'
+  | 'ACURAST_DEVNET_RPC'
+  | 'ACURAST_MAINNET_MATCHER'
+  | 'ACURAST_CANARY_MATCHER'
+  | 'ACURAST_DEVNET_MATCHER'
+  | 'ACURAST_MAINNET_INDEXER'
+  | 'ACURAST_MAINNET_INDEXER_API_KEY'
+  | 'ACURAST_CANARY_INDEXER'
+  | 'ACURAST_CANARY_INDEXER_API_KEY'
+  | 'ACURAST_DEVNET_INDEXER'
+  | 'ACURAST_DEVNET_INDEXER_API_KEY'
   | 'ACURAST_DEVTOOLS_URL'
   | 'ACURAST_DEVTOOLS_API_URL'
   | 'DEBUG'
@@ -31,8 +54,19 @@ const defaultValues: Record<EnvKeys, string | undefined> = {
   ACURAST_MNEMONIC: undefined,
   ACURAST_IPFS_URL: IPFS_PROXY,
   ACURAST_IPFS_API_KEY: '', // Default IPFS Proxy needs no API key
-  ACURAST_RPC: RPC_MAINNET,
+  ACURAST_RPC: RPC_MAINNET, // deprecated alias for ACURAST_MAINNET_RPC
+  ACURAST_MAINNET_RPC: RPC_MAINNET,
   ACURAST_CANARY_RPC: RPC_CANARY,
+  ACURAST_DEVNET_RPC: RPC_DEVNET,
+  ACURAST_MAINNET_MATCHER: MATCHER_MAINNET,
+  ACURAST_CANARY_MATCHER: MATCHER_CANARY,
+  ACURAST_DEVNET_MATCHER: MATCHER_DEVNET,
+  ACURAST_MAINNET_INDEXER: INDEXER_MAINNET,
+  ACURAST_MAINNET_INDEXER_API_KEY: INDEXER_MAINNET_API_KEY,
+  ACURAST_CANARY_INDEXER: INDEXER_CANARY,
+  ACURAST_CANARY_INDEXER_API_KEY: INDEXER_CANARY_API_KEY,
+  ACURAST_DEVNET_INDEXER: INDEXER_DEVNET,
+  ACURAST_DEVNET_INDEXER_API_KEY: INDEXER_DEVNET_API_KEY,
   ACURAST_DEVTOOLS_URL: DEVTOOLS_URL,
   ACURAST_DEVTOOLS_API_URL: DEVTOOLS_API_URL,
   DEBUG: 'false',
@@ -78,28 +112,76 @@ export const getProjectEnvVars = (config: AcurastProjectConfig): EnvVar[] => {
   )
 }
 
-export const getRpcForNetwork = (network: 'mainnet' | 'canary'): string => {
-  return network === 'mainnet'
-    ? getEnv('ACURAST_RPC')
-    : getEnv('ACURAST_CANARY_RPC')
+export const getRpcForNetwork = (network: CliNetwork): string => {
+  switch (network) {
+    case 'mainnet':
+      // Honour the legacy ACURAST_RPC override if present.
+      return process.env.ACURAST_MAINNET_RPC ?? getEnv('ACURAST_RPC')
+    case 'canary':
+      return getEnv('ACURAST_CANARY_RPC')
+    case 'devnet': {
+      const rpc = getEnv('ACURAST_DEVNET_RPC')
+      if (!rpc) {
+        throw new Error(
+          'Devnet RPC is not configured. Set ACURAST_DEVNET_RPC in your environment.'
+        )
+      }
+      return rpc
+    }
+  }
 }
 
-export const getSymbolForNetwork = (network: 'mainnet' | 'canary'): string => {
-  return network === 'mainnet' ? 'ACU' : 'cACU'
+export const getSymbolForNetwork = (network: CliNetwork): string => {
+  switch (network) {
+    case 'mainnet':
+      return 'ACU'
+    case 'canary':
+      return 'cACU'
+    case 'devnet':
+      return 'dACU'
+  }
 }
 
 export const getMatcherUrlForNetwork = (
-  network: 'mainnet' | 'canary'
+  network: CliNetwork
 ): string | undefined => {
-  return network === 'mainnet' ? MATCHER_MAINNET : MATCHER_CANARY
+  switch (network) {
+    case 'mainnet':
+      return getEnv('ACURAST_MAINNET_MATCHER') || undefined
+    case 'canary':
+      return getEnv('ACURAST_CANARY_MATCHER') || undefined
+    case 'devnet':
+      return process.env.ACURAST_DEVNET_MATCHER || undefined
+  }
 }
 
 export const getIndexerConfigForNetwork = (
-  network: 'mainnet' | 'canary'
+  network: CliNetwork
 ): { url: string; apiKey: string } => {
-  return network === 'mainnet'
-    ? { url: INDEXER_MAINNET, apiKey: INDEXER_MAINNET_API_KEY }
-    : { url: INDEXER_CANARY, apiKey: INDEXER_CANARY_API_KEY }
+  switch (network) {
+    case 'mainnet':
+      return {
+        url: getEnv('ACURAST_MAINNET_INDEXER'),
+        apiKey: getEnv('ACURAST_MAINNET_INDEXER_API_KEY'),
+      }
+    case 'canary':
+      return {
+        url: getEnv('ACURAST_CANARY_INDEXER'),
+        apiKey: getEnv('ACURAST_CANARY_INDEXER_API_KEY'),
+      }
+    case 'devnet': {
+      const url = process.env.ACURAST_DEVNET_INDEXER || ''
+      if (!url) {
+        throw new Error(
+          'Devnet indexer is not configured. Set ACURAST_DEVNET_INDEXER (and optionally ACURAST_DEVNET_INDEXER_API_KEY) in your environment.'
+        )
+      }
+      return {
+        url,
+        apiKey: process.env.ACURAST_DEVNET_INDEXER_API_KEY ?? '',
+      }
+    }
+  }
 }
 
 /** IPFS config for `@acurast/sdk/ipfs` `uploadScript` calls. */

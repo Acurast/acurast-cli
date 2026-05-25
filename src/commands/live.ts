@@ -121,6 +121,9 @@ export const addCommandLive = (program: Command) => {
           const job = convertConfigToJob(config)
 
           const rpcEndpoint = getRpcForNetwork(config.network)
+          filelogger.info(
+            `Connecting to ${config.network} RPC: ${rpcEndpoint}`
+          )
 
           ;(async () => {
             const wallet = await walletFromMnemonic(getEnv('ACURAST_MNEMONIC'), {

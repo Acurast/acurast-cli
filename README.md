@@ -120,7 +120,7 @@ ACURAST_MNEMONIC=abandon abandon about ...
 
 - `projectName`: The name of the project.
 - `fileUrl`: The path to the bundled file, including all dependencies (e.g., `dist/bundle.js`).
-- `network`: The network on which the project will be deployed. (e.g. `mainnet`)
+- `network`: The network on which the project will be deployed. One of `mainnet`, `canary`, or `devnet`. See [Networks](#networks) for endpoint defaults and how to override them via env vars.
 - `onlyAttestedDevices`: A boolean to specify if only attested devices are allowed to run the app.
 - `enableDevtools`: A boolean to enable [DevTools](#devtools) for the deployment. When enabled, console logs from processor executions are forwarded to the DevTools dashboard. Defaults to `false`.
 - `startAt`: The start time of the deployment.
@@ -130,6 +130,7 @@ ACURAST_MNEMONIC=abandon abandon about ...
   - `type`: `AssignmentStrategyVariant.Single`: Assigns one set of processors for a deployment. If instantMatch is provided, specifies processors and maximum allowed start delay:
     - `processor`: Processor address.
     - `maxAllowedStartDelayInMs`: Maximum allowed start delay in milliseconds.
+    - See [Instant match](#instant-match) for a full example; the repository’s `acurast.json` also defines a `test-instant-match` project you can copy from.
   - `type`: `AssignmentStrategyVariant.Competing`: Assigns a new set of processors for each execution.
 - `execution`: Specifies the execution details, which can be:
   - `type`: 'onetime'`: Run the deployment only once.
@@ -167,13 +168,112 @@ ACURAST_MNEMONIC=abandon abandon about ...
   - Second element: The address of the original deployer
   - Third element: The deployment ID
   - Example: `["Acurast", "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL", 123456]`
+- `benchmarkFilters` (optional): Minimum benchmark requirements used to filter eligible processors.
+  - `minMemoryBytes`: Minimum total RAM in bytes.
+  - `minCpuSingleCoreScore`: Minimum single-core CPU score.
+  - `minStorageBytes`: Minimum total storage in bytes.
+  - `minStorageIoScore`: Minimum storage I/O score.
+  - `poolIds` (advanced): Override compute-pallet benchmark pool IDs.
+
+### Benchmark Filters
+
+You can constrain deployments to processors that satisfy minimum benchmark values.
+Benchmark filters can be configured in `acurast.json` and/or passed via deploy flags.
+
+Config example:
+
+```json
+{
+  "projects": {
+    "example": {
+      "benchmarkFilters": {
+        "minMemoryBytes": 4000000000,
+        "minCpuSingleCoreScore": 1000,
+        "minStorageBytes": 64000000000,
+        "minStorageIoScore": 500
+      }
+    }
+  }
+}
+```
+
+Deploy flag examples (can be combined):
+
+```bash
+acurast deploy --min-memory 4GB --min-cpu-score 1000 --min-storage 64GB --min-io-score 500
+```
+
+Notes:
+
+- CLI flags merge with `benchmarkFilters` from `acurast.json`.
+- `--min-memory` and `--min-storage` accept human-readable byte sizes (for example `4GB`, `512MiB`).
+- During deploy, matcher `check` validates whether enough processors match at the current reward.
+- Per-processor address lists are shown from on-chain `acurastMarketplace.assignedProcessors` after match.
 
 #### .env
 
 `ACURAST_MNEMONIC`: The mnemonic used to deploy the app. Make sure the account has some ACU (or cACU for canary network)! You can claim cACU on the [faucet](https://faucet.acurast.com) for canary testing.
 `ACURAST_IPFS_URL` (optional): The URL of the IPFS gateway, eg. `https://api.pinata.cloud`.
 `ACURAST_IPFS_API_KEY` (optional): The API key to access the IPFS gateway. You can [register here](https://pinata.cloud/) to get an API key.
-`ACURAST_RPC` (optional): Set an RPC URL to connect to.
+`ACURAST_RPC` (optional, deprecated): Set an RPC URL to connect to. Kept for backward compatibility — prefer `ACURAST_MAINNET_RPC`.
+
+#### Networks
+
+The CLI supports three networks: `mainnet` (default), `canary`, and `devnet`. Set `"network"` in your `acurast.json` project entry, or pass `--network` to commands that accept it (`acurast deployments ...`).
+
+Each network resolves an RPC endpoint, a matcher URL, and an indexer (with API key). The defaults below ship with the CLI; set the matching env var to override.
+
+| Network | Purpose                          | RPC default                                           | Faucet                       |
+| ------- | -------------------------------- | ----------------------------------------------------- | ---------------------------- |
+| mainnet | Production, real ACU             | `wss://archive.mainnet.acurast.com`                   | n/a (see docs to get ACU)    |
+| canary  | Public test network              | `wss://canarynet-ws-1.acurast-h-server-2.papers.tech` | `https://faucet.acurast.com` |
+| devnet  | Internal/staging dev environment | `wss://acurast-devnet-ws.prod.gke.papers.tech`        | n/a (request from Acurast)   |
+
+##### RPC overrides
+
+| Env var               | Network applied to | Default                                                  |
+| --------------------- | ------------------ | -------------------------------------------------------- |
+| `ACURAST_MAINNET_RPC` | mainnet            | `wss://archive.mainnet.acurast.com`                      |
+| `ACURAST_RPC`         | mainnet (legacy)   | same as above; honoured when `ACURAST_MAINNET_RPC` unset |
+| `ACURAST_CANARY_RPC`  | canary             | `wss://canarynet-ws-1.acurast-h-server-2.papers.tech`    |
+| `ACURAST_DEVNET_RPC`  | devnet             | `wss://acurast-devnet-ws.prod.gke.papers.tech`           |
+
+The connected RPC URL is written to `.acurast/acurast.log` (file log) on every connection — useful when debugging which endpoint a command actually used.
+
+##### Matcher overrides
+
+The matcher API provides live processor pricing. If unset (or unreachable), the CLI falls back to a static fee estimate.
+
+| Env var                   | Network | Default                                             |
+| ------------------------- | ------- | --------------------------------------------------- |
+| `ACURAST_MAINNET_MATCHER` | mainnet | `https://matcher.mainnet.acurast.com`               |
+| `ACURAST_CANARY_MATCHER`  | canary  | `https://matcher.canary.acurast.com`                |
+| `ACURAST_DEVNET_MATCHER`  | devnet  | _unset_ — set this if a devnet matcher is available |
+
+##### Indexer overrides
+
+The indexer powers `acurast deployments ls`. Devnet has no public default — set the env vars below if you need to list deployments on devnet.
+
+| Env var                           | Network | Default                                                  |
+| --------------------------------- | ------- | -------------------------------------------------------- |
+| `ACURAST_MAINNET_INDEXER`         | mainnet | `https://dev.indexer.mainnet.acurast.com/api/v1/rpc`     |
+| `ACURAST_MAINNET_INDEXER_API_KEY` | mainnet | _shipped default_                                        |
+| `ACURAST_CANARY_INDEXER`          | canary  | `https://dev.indexer.canary.acurast.com/api/v1/rpc`      |
+| `ACURAST_CANARY_INDEXER_API_KEY`  | canary  | _shipped default_                                        |
+| `ACURAST_DEVNET_INDEXER`          | devnet  | _unset — required for `deployments ls --network devnet`_ |
+| `ACURAST_DEVNET_INDEXER_API_KEY`  | devnet  | _unset_                                                  |
+
+##### Example `.env` for devnet
+
+```
+ACURAST_MNEMONIC=abandon abandon about ...
+ACURAST_DEVNET_RPC=wss://acurast-devnet-ws.prod.gke.papers.tech
+ACURAST_DEVNET_MATCHER=https://matcher.devnet.acurast.com
+ACURAST_DEVNET_INDEXER=https://dev.indexer.devnet.acurast.com/api/v1/rpc
+ACURAST_DEVNET_INDEXER_API_KEY=<your-key>
+```
+
+Then in `acurast.json` set `"network": "devnet"` on the project entry.
 
 ## Live Code Feature
 
@@ -330,7 +430,7 @@ acurast cancel 123456 --network canary
 
 **Options**:
 
-- `-n, --network <network>`: Network to use (`mainnet` or `canary`). Defaults to `mainnet`. When working with a specific deployment ID, the network is automatically detected from the deployment file if available.
+- `-n, --network <network>`: Network to use (`mainnet`, `canary`, or `devnet`). Defaults to `mainnet`. When working with a specific deployment ID, the network is automatically detected from the deployment file if available. Devnet requires `ACURAST_DEVNET_INDEXER` (and optional API key) for `ls`/`cleanup` flows.
 - `-e, --update-env-vars`: Update environment variables for a deployment.
 - `-c, --cleanup`: Remove old, finished deployments and return unused funds.
 
@@ -492,6 +592,12 @@ The `reuseKeysFrom` field allows you to reuse keys from a previous deployment. T
 }
 ```
 
+### Instant match
+
+When `assignmentStrategy.type` is `Single`, you can set `assignmentStrategy.instantMatch` to pin planned executions to specific processors (each entry maps to a processor account and a per-entry maximum start delay). Replace the `processor` value with your processor’s SS58 address on the network you deploy to. The example address below is only a placeholder for the correct format.
+
+If `instantMatch` is non-empty, `acurast deploy` skips the market pricing check for that project, since matching is explicit.
+
 ### Shell Runtime
 
 The Shell runtime runs your deployment as a native binary inside a Linux distro image on the processor (PRoot-isolated). This unlocks shell scripts, native tooling, and any language you can ship as a Linux binary.
@@ -516,7 +622,11 @@ To use it, set `runtime` to `"Shell"` and provide an `image` (URL + SHA256). The
       "assignmentStrategy": { "type": "Single" },
       "execution": { "type": "onetime", "maxExecutionTimeInMs": 60000 },
       "maxAllowedStartDelayInMs": 10000,
-      "usageLimit": { "maxMemory": 0, "maxNetworkRequests": 0, "maxStorage": 0 },
+      "usageLimit": {
+        "maxMemory": 0,
+        "maxNetworkRequests": 0,
+        "maxStorage": 0
+      },
       "numberOfReplicas": 1,
       "requiredModules": [],
       "minProcessorReputation": 0,

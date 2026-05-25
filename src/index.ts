@@ -25,6 +25,7 @@ import { addCommandEstimateFee } from './commands/estimate-fee.js'
 import { addCommandDevtools } from './commands/devtools.js'
 import { ACURAST_CLI_VERSION_CHECK_URL } from './constants.js'
 import { filelogger } from './util/fileLogger.js'
+import { fetchDeviceVersions } from '@acurast/sdk/chain'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -76,7 +77,7 @@ if (!process.argv.slice(2).length) {
 }
 
 // Check if there's a newer version available
-fetch(ACURAST_CLI_VERSION_CHECK_URL)
+const cliVersionCheck = fetch(ACURAST_CLI_VERSION_CHECK_URL)
   .then((response) => response.json())
   .then((remotePackage) => {
     const localVersion = packageJson.version
@@ -97,6 +98,14 @@ fetch(ACURAST_CLI_VERSION_CHECK_URL)
   .catch(() => {
     // Silently fail if unable to check version
   })
-  .finally(() => {
-    program.parse(process.argv)
-  })
+
+// Refresh processor build-number → human-version map so `minProcessorVersions`
+// in acurast.json can be resolved against the latest releases (SDK ships a
+// stale bundled list).
+const deviceVersionsRefresh = fetchDeviceVersions().catch((err) => {
+  filelogger.debug(`Failed to refresh device versions: ${err}`)
+})
+
+Promise.allSettled([cliVersionCheck, deviceVersionsRefresh]).finally(() => {
+  program.parse(process.argv)
+})
