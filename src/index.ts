@@ -19,6 +19,7 @@ import { acurastColor } from './util.js'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { addCommandDeployments } from './commands/deployments.js'
+import { addCommandCancel } from './commands/cancel.js'
 import { addCommandNew } from './commands/new.js'
 import { addCommandEstimateFee } from './commands/estimate-fee.js'
 import { addCommandDevtools } from './commands/devtools.js'
@@ -47,6 +48,7 @@ program
 addCommandDeploy(program)
 addCommandInit(program)
 addCommandDeployments(program)
+addCommandCancel(program)
 addCommandLive(program)
 // addCommandLogin(program)
 // addCommandLogout(program)

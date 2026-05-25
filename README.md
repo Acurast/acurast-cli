@@ -46,6 +46,7 @@ To use the Acurast CLI, type `acurast` followed by any of the available options 
 
 - `new <project-name>` - Create a new Acurast project from a template.
 - `deploy [options] [project]` - Deploy the current project to the Acurast platform.
+- `cancel <deployment-id> [options]` - Cancel (deregister) a deployment on-chain and return any unused locked funds.
 - `estimate-fee [options] [project]` - Estimate the fee for the current project.
 - `deployments [arg] [options]` - List, view, and manage deployments.
   - `deployments ls` or `deployments list` - List all your deployments.
@@ -168,10 +169,10 @@ ACURAST_MNEMONIC=abandon abandon about ...
   - Third element: The deployment ID
   - Example: `["Acurast", "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL", 123456]`
 - `benchmarkFilters` (optional): Minimum benchmark requirements used to filter eligible processors.
-  - `minMemoryBytes`: Minimum total RAM in bytes.
+  - `minRamTotalBytes`: Minimum total RAM in bytes.
   - `minCpuSingleCoreScore`: Minimum single-core CPU score.
-  - `minStorageBytes`: Minimum total storage in bytes.
-  - `minStorageIoScore`: Minimum storage I/O score.
+  - `minCpuMultiCoreScore`: Minimum multi-core CPU score.
+  - `minStorageAvailBytes`: Minimum available storage in bytes.
   - `poolIds` (advanced): Override compute-pallet benchmark pool IDs.
 
 ### Benchmark Filters
@@ -186,10 +187,10 @@ Config example:
   "projects": {
     "example": {
       "benchmarkFilters": {
-        "minMemoryBytes": 4000000000,
+        "minRamTotalBytes": 4000000000,
         "minCpuSingleCoreScore": 1000,
-        "minStorageBytes": 64000000000,
-        "minStorageIoScore": 500
+        "minCpuMultiCoreScore": 3000,
+        "minStorageAvailBytes": 64000000000
       }
     }
   }
@@ -199,7 +200,7 @@ Config example:
 Deploy flag examples (can be combined):
 
 ```bash
-acurast deploy --min-memory 4GB --min-cpu-score 1000 --min-storage 64GB --min-io-score 500
+acurast deploy --min-memory 4GB --min-cpu-score 1000 --min-storage 64GB --min-cpu-multi-score 3000
 ```
 
 Notes:
@@ -419,6 +420,12 @@ acurast deployments --cleanup --network canary
 
 # Clean up a specific deployment
 acurast deployments 123456 --cleanup
+
+# Cancel a deployment (deregister on-chain; same extrinsic as cleanup for a single job)
+acurast cancel 123456
+
+# Cancel on canary when no local deployment file exists
+acurast cancel 123456 --network canary
 ```
 
 **Options**:
