@@ -46,6 +46,7 @@ To use the Acurast CLI, type `acurast` followed by any of the available options 
 
 - `new <project-name>` - Create a new Acurast project from a template.
 - `deploy [options] [project]` - Deploy the current project to the Acurast platform.
+- `cancel <deployment-id> [options]` - Cancel (deregister) a deployment on-chain and return any unused locked funds.
 - `estimate-fee [options] [project]` - Estimate the fee for the current project.
 - `deployments [arg] [options]` - List, view, and manage deployments.
   - `deployments ls` or `deployments list` - List all your deployments.
@@ -319,6 +320,12 @@ acurast deployments --cleanup --network canary
 
 # Clean up a specific deployment
 acurast deployments 123456 --cleanup
+
+# Cancel a deployment (deregister on-chain; same extrinsic as cleanup for a single job)
+acurast cancel 123456
+
+# Cancel on canary when no local deployment file exists
+acurast cancel 123456 --network canary
 ```
 
 **Options**:
