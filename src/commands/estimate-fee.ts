@@ -1,8 +1,8 @@
 import { Command, Option } from 'commander'
 import { loadAcurastConfig } from '@acurast/sdk/deploy'
 import { walletFromMnemonic } from '@acurast/sdk/chain'
-import { validateConfig } from '@acurast/sdk/types'
 
+import { validateCliConfig } from '../util/validateCliConfig.js'
 import { consoleOutput } from '../util/console-output.js'
 import { filelogger } from '../util/fileLogger.js'
 import * as ora from '../util/ora.js'
@@ -36,7 +36,7 @@ export const addCommandEstimateFee = (program: Command) => {
         throw new Error('No project found')
       }
 
-      const configResult = validateConfig(config)
+      const configResult = validateCliConfig(config)
 
       if (!configResult.success) {
         log('')

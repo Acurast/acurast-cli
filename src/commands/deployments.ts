@@ -20,7 +20,9 @@ import {
   getProjectEnvVars,
   getRpcForNetwork,
   getSymbolForNetwork,
+  type CliNetwork,
 } from '../config.js'
+import { filelogger } from '../util/fileLogger.js'
 import * as ora from '../util/ora.js'
 import { ACURAST_DEPLOYMENTS_PATH } from '../constants.js'
 import { LocalStorage } from '../util/LocalStorage.js'
@@ -43,8 +45,11 @@ export const addCommandDeployments = (program: Command) => {
       )
     )
     .addOption(
-      new Option('-n, --network <network>', 'Network to use (mainnet or canary)')
-        .choices(['mainnet', 'canary'])
+      new Option(
+        '-n, --network <network>',
+        'Network to use (mainnet, canary, or devnet)'
+      )
+        .choices(['mainnet', 'canary', 'devnet'])
         .default('mainnet')
     )
     .action(
@@ -53,7 +58,7 @@ export const addCommandDeployments = (program: Command) => {
         options: {
           updateEnvVars?: boolean
           cleanup?: boolean
-          network: 'mainnet' | 'canary'
+          network: CliNetwork
         }
       ) => {
         const wallet = await walletFromMnemonic(getEnv('ACURAST_MNEMONIC'), {
@@ -151,10 +156,14 @@ export const addCommandDeployments = (program: Command) => {
         const deploymentId = Number(arg)
 
         if (options.cleanup) {
-          const network =
-            (deploymentId && readDeploymentFile(deploymentId)?.config.network) ||
-            options.network
-          const acurast = new AcurastService(getRpcForNetwork(network))
+          const network = ((deploymentId &&
+            readDeploymentFile(deploymentId)?.config.network) ||
+            options.network) as CliNetwork
+          const rpcForCleanup = getRpcForNetwork(network)
+          filelogger.info(
+            `Connecting to ${network} RPC: ${rpcForCleanup}`
+          )
+          const acurast = new AcurastService(rpcForCleanup)
 
           if (deploymentId) {
             const spinner = ora.default(
@@ -182,6 +191,9 @@ export const addCommandDeployments = (program: Command) => {
             console.log(`Found ${filteredJobs.length} deployments to clean up`)
 
             const rpcEndpoint = getRpcForNetwork(network)
+            filelogger.info(
+              `Connecting to ${network} RPC: ${rpcEndpoint}`
+            )
             const wsProvider = new WsProvider(rpcEndpoint)
             const api = await ApiPromise.create({
               provider: wsProvider,
@@ -222,8 +234,9 @@ export const addCommandDeployments = (program: Command) => {
           return
         }
 
-        const network = deploymentFileData.config.network
+        const network = deploymentFileData.config.network as CliNetwork
         const rpcEndpoint = getRpcForNetwork(network)
+        filelogger.info(`Connecting to ${network} RPC: ${rpcEndpoint}`)
 
         const job: Job & { envVars?: EnvVar[] } = {
           id: deploymentFileData.deploymentId!,
@@ -381,8 +394,11 @@ export const addCommandDeployments = (program: Command) => {
       'IPFS hash of the new script (e.g., "ipfs://QmNewScriptHash")'
     )
     .addOption(
-      new Option('-n, --network <network>', 'Network to use (mainnet or canary)')
-        .choices(['mainnet', 'canary'])
+      new Option(
+        '-n, --network <network>',
+        'Network to use (mainnet, canary, or devnet)'
+      )
+        .choices(['mainnet', 'canary', 'devnet'])
         .default('mainnet')
     )
     .addOption(new Option('--dry-run', 'Preview the update without applying'))
@@ -390,7 +406,7 @@ export const addCommandDeployments = (program: Command) => {
       async (
         deploymentId: string,
         scriptIpfs: string,
-        options: { dryRun?: boolean; network: 'mainnet' | 'canary' }
+        options: { dryRun?: boolean; network: CliNetwork }
       ) => {
         const parsed = parseDeploymentId(deploymentId)
         if (!parsed) return
@@ -413,7 +429,9 @@ export const addCommandDeployments = (program: Command) => {
           name: 'AcurastCli',
         })
 
-        const acurast = new AcurastService(getRpcForNetwork(options.network))
+        const rpcForUpdate = getRpcForNetwork(options.network)
+        filelogger.info(`Connecting to ${options.network} RPC: ${rpcForUpdate}`)
+        const acurast = new AcurastService(rpcForUpdate)
         const spinner = ora.default(
           `Updating script for deployment [${parsed.origin}, ${parsed.address}, ${parsed.number}]...`
         )
@@ -452,8 +470,11 @@ export const addCommandDeployments = (program: Command) => {
       'The AccountId32 address of the new editor'
     )
     .addOption(
-      new Option('-n, --network <network>', 'Network to use (mainnet or canary)')
-        .choices(['mainnet', 'canary'])
+      new Option(
+        '-n, --network <network>',
+        'Network to use (mainnet, canary, or devnet)'
+      )
+        .choices(['mainnet', 'canary', 'devnet'])
         .default('mainnet')
     )
     .addOption(
@@ -463,7 +484,7 @@ export const addCommandDeployments = (program: Command) => {
       async (
         deploymentId: string,
         newEditorAddress: string,
-        options: { dryRun?: boolean; network: 'mainnet' | 'canary' }
+        options: { dryRun?: boolean; network: CliNetwork }
       ) => {
         const parsed = parseDeploymentId(deploymentId)
         if (!parsed) return
@@ -486,7 +507,9 @@ export const addCommandDeployments = (program: Command) => {
           name: 'AcurastCli',
         })
 
-        const acurast = new AcurastService(getRpcForNetwork(options.network))
+        const rpcForUpdate = getRpcForNetwork(options.network)
+        filelogger.info(`Connecting to ${options.network} RPC: ${rpcForUpdate}`)
+        const acurast = new AcurastService(rpcForUpdate)
         const spinner = ora.default(
           `Transferring editor permissions for deployment [${parsed.origin}, ${parsed.address}, ${parsed.number}]...`
         )

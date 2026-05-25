@@ -25,10 +25,10 @@ import {
 } from '@acurast/sdk/chain'
 import { checkMatch } from '@acurast/sdk/matcher'
 import {
-  validateConfig,
   DeploymentStatus,
   AssignmentStrategyVariant,
 } from '@acurast/sdk/types'
+import { validateCliConfig } from '../util/validateCliConfig.js'
 import type {
   JobRegistration,
   AcurastProjectConfig,
@@ -326,7 +326,7 @@ export const addCommandDeploy = (program: Command) => {
           throw new Error('No project found')
         }
 
-        const configResult = validateConfig(config)
+        const configResult = validateCliConfig(config)
 
         if (!configResult.success) {
           log('')
@@ -370,7 +370,7 @@ export const addCommandDeploy = (program: Command) => {
           return
         }
 
-        const benchValidation = validateConfig(config)
+        const benchValidation = validateCliConfig(config)
         if (!benchValidation.success) {
           log('')
           log('⚠️ Project config is invalid after benchmark options:')
@@ -427,6 +427,9 @@ export const addCommandDeploy = (program: Command) => {
         })
 
         const rpcEndpoint = getRpcForNetwork(config.network)
+        filelogger.info(
+          `Connecting to ${config.network} RPC: ${rpcEndpoint}`
+        )
         const wsProvider = new WsProvider(rpcEndpoint)
         const api = await ApiPromise.create({
           provider: wsProvider,
