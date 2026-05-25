@@ -168,10 +168,10 @@ ACURAST_MNEMONIC=abandon abandon about ...
   - Third element: The deployment ID
   - Example: `["Acurast", "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL", 123456]`
 - `benchmarkFilters` (optional): Minimum benchmark requirements used to filter eligible processors.
-  - `minMemoryBytes`: Minimum total RAM in bytes.
+  - `minRamTotalBytes`: Minimum total RAM in bytes.
   - `minCpuSingleCoreScore`: Minimum single-core CPU score.
-  - `minStorageBytes`: Minimum total storage in bytes.
-  - `minStorageIoScore`: Minimum storage I/O score.
+  - `minCpuMultiCoreScore`: Minimum multi-core CPU score.
+  - `minStorageAvailBytes`: Minimum available storage in bytes.
   - `poolIds` (advanced): Override compute-pallet benchmark pool IDs.
 
 ### Benchmark Filters
@@ -186,10 +186,10 @@ Config example:
   "projects": {
     "example": {
       "benchmarkFilters": {
-        "minMemoryBytes": 4000000000,
+        "minRamTotalBytes": 4000000000,
         "minCpuSingleCoreScore": 1000,
-        "minStorageBytes": 64000000000,
-        "minStorageIoScore": 500
+        "minCpuMultiCoreScore": 3000,
+        "minStorageAvailBytes": 64000000000
       }
     }
   }
@@ -199,7 +199,7 @@ Config example:
 Deploy flag examples (can be combined):
 
 ```bash
-acurast deploy --min-memory 4GB --min-cpu-score 1000 --min-storage 64GB --min-io-score 500
+acurast deploy --min-memory 4GB --min-cpu-score 1000 --min-storage 64GB --min-cpu-multi-score 3000
 ```
 
 Notes:

@@ -270,17 +270,17 @@ export const addCommandDeploy = (program: Command) => {
     .addOption(
       new Option(
         '--min-storage <size>',
-        'Minimum total storage capacity (e.g. 64GB)'
+        'Minimum available storage capacity (e.g. 64GB)'
       )
     )
     .addOption(
       new Option(
-        '--min-io-score <n>',
-        'Minimum storage I/O benchmark score'
+        '--min-cpu-multi-score <n>',
+        'Minimum CPU multi-core benchmark score'
       ).argParser((v) => {
         const n = Number.parseInt(v, 10)
         if (Number.isNaN(n) || n < 0) {
-          throw new Error(`Invalid --min-io-score: ${v}`)
+          throw new Error(`Invalid --min-cpu-multi-score: ${v}`)
         }
         return n
       })
@@ -298,7 +298,7 @@ export const addCommandDeploy = (program: Command) => {
           minMemory?: string
           minCpuScore?: number
           minStorage?: string
-          minIoScore?: number
+          minCpuMultiScore?: number
         }
       ) => {
         const log = consoleOutput(options.output)
@@ -346,22 +346,22 @@ export const addCommandDeploy = (program: Command) => {
         try {
           const bf = { ...config.benchmarkFilters }
           if (options.minMemory !== undefined) {
-            bf.minMemoryBytes = Number(parseByteSize(options.minMemory))
+            bf.minRamTotalBytes = Number(parseByteSize(options.minMemory))
           }
           if (options.minCpuScore !== undefined) {
             bf.minCpuSingleCoreScore = options.minCpuScore
           }
           if (options.minStorage !== undefined) {
-            bf.minStorageBytes = Number(parseByteSize(options.minStorage))
+            bf.minStorageAvailBytes = Number(parseByteSize(options.minStorage))
           }
-          if (options.minIoScore !== undefined) {
-            bf.minStorageIoScore = options.minIoScore
+          if (options.minCpuMultiScore !== undefined) {
+            bf.minCpuMultiCoreScore = options.minCpuMultiScore
           }
           if (
             options.minMemory !== undefined ||
             options.minCpuScore !== undefined ||
             options.minStorage !== undefined ||
-            options.minIoScore !== undefined
+            options.minCpuMultiScore !== undefined
           ) {
             config.benchmarkFilters = bf
           }

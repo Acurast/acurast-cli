@@ -33,9 +33,8 @@
   "dependencies": {
     "@acurast/dapp": "^1.0.1",
     "@acurast/devtools": "^1.0.1",
-    "@acurast/sdk": "^1.2.0",
+    "@acurast/sdk": "^1.2.2",
     "@inquirer/prompts": "^5.0.5",
-    "adm-zip": "^0.5.16",
     "@polkadot/api": "^16.1.2",
     "@polkadot/api-augment": "^16.1.2",
     "@polkadot/keyring": "^14.0.0",
@@ -44,6 +43,7 @@
     "@polkadot/util": "^14.0.0",
     "@polkadot/util-crypto": "^14.0.0",
     "@polkadot/wasm-crypto": "^7.3.2",
+    "adm-zip": "^0.5.16",
     "ansis": "^4.1.0",
     "bignumber.js": "^9.3.0",
     "bip39": "^3.1.0",
