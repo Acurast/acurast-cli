@@ -129,6 +129,7 @@ ACURAST_MNEMONIC=abandon abandon about ...
   - `type`: `AssignmentStrategyVariant.Single`: Assigns one set of processors for a deployment. If instantMatch is provided, specifies processors and maximum allowed start delay:
     - `processor`: Processor address.
     - `maxAllowedStartDelayInMs`: Maximum allowed start delay in milliseconds.
+    - See [Instant match](#instant-match) for a full example; the repository’s `acurast.json` also defines a `test-instant-match` project you can copy from.
   - `type`: `AssignmentStrategyVariant.Competing`: Assigns a new set of processors for each execution.
 - `execution`: Specifies the execution details, which can be:
   - `type`: 'onetime'`: Run the deployment only once.
@@ -166,6 +167,47 @@ ACURAST_MNEMONIC=abandon abandon about ...
   - Second element: The address of the original deployer
   - Third element: The deployment ID
   - Example: `["Acurast", "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL", 123456]`
+- `benchmarkFilters` (optional): Minimum benchmark requirements used to filter eligible processors.
+  - `minMemoryBytes`: Minimum total RAM in bytes.
+  - `minCpuSingleCoreScore`: Minimum single-core CPU score.
+  - `minStorageBytes`: Minimum total storage in bytes.
+  - `minStorageIoScore`: Minimum storage I/O score.
+  - `poolIds` (advanced): Override compute-pallet benchmark pool IDs.
+
+### Benchmark Filters
+
+You can constrain deployments to processors that satisfy minimum benchmark values.
+Benchmark filters can be configured in `acurast.json` and/or passed via deploy flags.
+
+Config example:
+
+```json
+{
+  "projects": {
+    "example": {
+      "benchmarkFilters": {
+        "minMemoryBytes": 4000000000,
+        "minCpuSingleCoreScore": 1000,
+        "minStorageBytes": 64000000000,
+        "minStorageIoScore": 500
+      }
+    }
+  }
+}
+```
+
+Deploy flag examples (can be combined):
+
+```bash
+acurast deploy --min-memory 4GB --min-cpu-score 1000 --min-storage 64GB --min-io-score 500
+```
+
+Notes:
+
+- CLI flags merge with `benchmarkFilters` from `acurast.json`.
+- `--min-memory` and `--min-storage` accept human-readable byte sizes (for example `4GB`, `512MiB`).
+- During deploy, matcher `check` validates whether enough processors match at the current reward.
+- Per-processor address lists are shown from on-chain `acurastMarketplace.assignedProcessors` after match.
 
 #### .env
 
@@ -542,6 +584,12 @@ The `reuseKeysFrom` field allows you to reuse keys from a previous deployment. T
   ]
 }
 ```
+
+### Instant match
+
+When `assignmentStrategy.type` is `Single`, you can set `assignmentStrategy.instantMatch` to pin planned executions to specific processors (each entry maps to a processor account and a per-entry maximum start delay). Replace the `processor` value with your processor’s SS58 address on the network you deploy to. The example address below is only a placeholder for the correct format.
+
+If `instantMatch` is non-empty, `acurast deploy` skips the market pricing check for that project, since matching is explicit.
 
 ### Shell Runtime
 
