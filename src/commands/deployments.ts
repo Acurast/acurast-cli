@@ -256,59 +256,18 @@ export const addCommandDeployments = (program: Command) => {
             throw new Error('No environment variables found for deployment')
           }
 
-          // TODO: drop this precheck once @acurast/sdk setEnvVars exposes
-          // maxRetries / abortIfPastStartMs options. Today the SDK recurses
-          // every 30s with no bail, so we gate the call here instead.
-          const MAX_ATTEMPTS = 20
-          const RETRY_MS = 30_000
           const startTime =
             deploymentFileData.registration?.schedule?.startTime
-          const abortAtMs =
+          const abortIfPastStartMs =
             startTime && startTime > Date.now()
               ? startTime - 60_000
               : undefined
-
-          const precheckService = new AcurastService(rpcEndpoint)
-          await precheckService.connect()
-          if (!precheckService.api) {
-            throw new Error('API not connected')
-          }
-
-          let ready = false
-          let lastError: string | undefined
-          for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-            if (abortAtMs !== undefined && Date.now() >= abortAtMs) {
-              lastError = `deployment start time is within 60s (or has passed) — env vars cannot reach processors in time.`
-              break
-            }
-            const assignments = await getAcknowledgedProcessors(
-              precheckService.api,
-              job.id
-            )
-            if (
-              assignments.some((a) => a.assignment.pubKeys.length > 0)
-            ) {
-              ready = true
-              break
-            }
-            spinner.text = `Waiting for processor encryption keys (attempt ${attempt}/${MAX_ATTEMPTS})...`
-            if (attempt < MAX_ATTEMPTS) {
-              await new Promise((r) => setTimeout(r, RETRY_MS))
-            } else {
-              lastError = `no assigned processor has published encryption keys after ${MAX_ATTEMPTS} attempts.`
-            }
-          }
-          await precheckService.disconnect()
-
-          if (!ready) {
-            spinner.fail(`Env vars not set: ${lastError}`)
-            throw new Error(`setEnvVars aborted: ${lastError}`)
-          }
 
           const { hash } = await setEnvVars(job, {
             wallet,
             rpcEndpoint,
             keyStore: new LocalStorage(),
+            abortIfPastStartMs,
           })
 
           spinner.succeed(`${job.envVars?.length} environment variables set`)
