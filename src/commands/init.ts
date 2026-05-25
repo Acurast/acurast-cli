@@ -1,9 +1,14 @@
 import fs, { appendFileSync } from 'fs'
 import path from 'path'
-import { Command } from 'commander'
+import { Command, Option } from 'commander'
+import type { CliNetwork } from '../config.js'
 import { existsSync, writeFileSync } from 'fs'
 import { confirm, input, select } from '@inquirer/prompts'
-import { ENV_HELP_LINK, getFaucetLinkForAddress } from '../constants.js'
+import {
+  ENV_HELP_LINK,
+  E2E_CANARY_INSTANT_MATCH_PROCESSOR,
+  getFaucetLinkForAddress,
+} from '../constants.js'
 import {
   DEFAULT_MAX_ALLOWED_START_DELAY_MS,
   DEFAULT_REWARD,
@@ -78,11 +83,85 @@ const setupEnvFile = () => {
   }
 }
 
+const appendGitignoreEntries = () => {
+  const hasGitignore = existsSync('./.gitignore')
+  if (!hasGitignore) {
+    return
+  }
+
+  const gitignoreContent = fs.readFileSync('./.gitignore', {
+    encoding: 'utf-8',
+  })
+
+  const hasAcurastFolderInGitignore = gitignoreContent
+    .split('\n')
+    .some((line) => line.startsWith('.acurast'))
+
+  const hasEnvFileInGitignore = gitignoreContent
+    .split('\n')
+    .some((line) => line.startsWith('.env'))
+
+  let toAdd = ''
+
+  if (!hasAcurastFolderInGitignore) {
+    toAdd += '\n.acurast'
+  }
+
+  if (!hasEnvFileInGitignore) {
+    toAdd += '\n.env'
+  }
+
+  if (toAdd.length > 0) {
+    appendFileSync('./.gitignore', `\n\n# Acurast CLI${toAdd}`)
+  }
+}
+
+const writeAcurastConfig = (
+  projectName: string,
+  config: AcurastProjectConfig,
+  acurastConfig: AcurastCliConfig | undefined
+) => {
+  if (acurastConfig) {
+    acurastConfig.projects[projectName] = config
+    fs.writeFileSync('./acurast.json', JSON.stringify(acurastConfig, null, 2))
+  } else {
+    fs.writeFileSync(
+      './acurast.json',
+      JSON.stringify({ projects: { [projectName]: config } }, null, 2)
+    )
+  }
+}
+
 export const addCommandInit = (program: Command) => {
   program
     .command('init')
     .description('Create an acurast.json and .env file')
-    .action(async () => {
+    .addOption(
+      new Option(
+        '--defaults',
+        'Use package.json name/main, onetime 5s execution, without prompts (for CI/e2e).'
+      )
+    )
+    .addOption(
+      new Option(
+        '--network <network>',
+        'Network when using --defaults (mainnet, canary, or devnet).'
+      )
+        .choices(['mainnet', 'canary', 'devnet'])
+        .default('mainnet')
+    )
+    .addOption(
+      new Option(
+        '--instant-match',
+        'Pin a known canary processor in acurast.json (requires --defaults; for e2e).'
+      )
+    )
+    .action(
+      async (options: {
+        defaults?: boolean
+        network: CliNetwork
+        instantMatch?: boolean
+      }) => {
       console.log('Initializing Acurast CLI')
 
       if (existsSync('./acurast.json')) {
@@ -106,6 +185,81 @@ export const addCommandInit = (program: Command) => {
 
       setupEnvFile()
 
+      const packagePath = path.resolve('package.json')
+      let projectNameFromPackageJson: string | undefined
+      let mainFileLocationFromPackageJson: string | undefined
+
+      if (existsSync(packagePath)) {
+        try {
+          const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf-8'))
+          projectNameFromPackageJson = packageJson.name
+          mainFileLocationFromPackageJson = packageJson.main
+        } catch {}
+      }
+
+      if (options.instantMatch && !options.defaults) {
+        throw new Error('--instant-match requires --defaults')
+      }
+
+      if (options.defaults) {
+        const projectName = projectNameFromPackageJson
+        if (!projectName) {
+          throw new Error(
+            '--defaults requires package.json with a "name" field'
+          )
+        }
+        const fileUrl = mainFileLocationFromPackageJson ?? 'dist/bundle.js'
+        const durationMs = Number(parse('5s') ?? 5000)
+
+        const assignmentStrategy = options.instantMatch
+          ? {
+              type: AssignmentStrategyVariant.Single,
+              instantMatch: [
+                {
+                  processor: E2E_CANARY_INSTANT_MATCH_PROCESSOR,
+                  maxAllowedStartDelayInMs: 10000,
+                },
+              ],
+            }
+          : {
+              type: AssignmentStrategyVariant.Single,
+            }
+
+        const config = {
+          projectName,
+          fileUrl,
+          network: options.network,
+          onlyAttestedDevices: true,
+          assignmentStrategy,
+          execution: {
+            type: 'onetime',
+            maxExecutionTimeInMs: durationMs,
+          },
+          maxAllowedStartDelayInMs: DEFAULT_MAX_ALLOWED_START_DELAY_MS,
+          usageLimit: {
+            maxMemory: 0,
+            maxNetworkRequests: 0,
+            maxStorage: 0,
+          },
+          numberOfReplicas: 1,
+          requiredModules: [],
+          minProcessorReputation: 0,
+          maxCostPerExecution: DEFAULT_REWARD,
+          includeEnvironmentVariables: [],
+          processorWhitelist: [],
+        } as AcurastProjectConfig
+
+        writeAcurastConfig(projectName, config, acurastConfig)
+        appendGitignoreEntries()
+
+        console.log()
+        console.log('🎉 Successfully created "acurast.json" and ".env" files')
+        console.log()
+        console.log("You can deploy your app using 'acurast deploy'")
+        console.log()
+        return
+      }
+
       const wallet = await walletFromMnemonic(getEnv('ACURAST_MNEMONIC'), {
         name: 'AcurastCli',
       })
@@ -128,22 +282,11 @@ export const addCommandInit = (program: Command) => {
       }
       console.log('')
 
-      const packagePath = path.resolve('package.json')
       if (!existsSync(packagePath)) {
         console.log(
           'No package.json file found. This is unusual. Are you sure you are in the right directory?'
         )
       }
-
-      let projectNameFromPackageJson = undefined
-      let mainFileLocationFromPackageJson = undefined
-
-      try {
-        const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf-8'))
-
-        projectNameFromPackageJson = packageJson.name
-        mainFileLocationFromPackageJson = packageJson.main
-      } catch {}
 
       const projectName = await input({
         message: 'Enter the name of the project:',
@@ -278,53 +421,14 @@ export const addCommandInit = (program: Command) => {
         processorWhitelist: [],
       }
 
-      if (acurastConfig) {
-        acurastConfig.projects[projectName] = config
-
-        fs.writeFileSync(
-          './acurast.json',
-          JSON.stringify(acurastConfig, null, 2)
-        )
-      } else {
-        fs.writeFileSync(
-          './acurast.json',
-          JSON.stringify({ projects: { [projectName]: config } }, null, 2)
-        )
-      }
-
-      const hasGitignore = existsSync('./.gitignore')
-      if (hasGitignore) {
-        const gitignoreContent = fs.readFileSync('./.gitignore', {
-          encoding: 'utf-8',
-        })
-
-        const hasAcurastFolderInGitignore = gitignoreContent
-          .split('\n')
-          .some((line) => line.startsWith('.acurast'))
-
-        const hasEnvFileInGitignore = gitignoreContent
-          .split('\n')
-          .some((line) => line.startsWith('.env'))
-
-        let toAdd = ''
-
-        if (!hasAcurastFolderInGitignore) {
-          toAdd += '\n.acurast'
-        }
-
-        if (!hasEnvFileInGitignore) {
-          toAdd += '\n.env'
-        }
-
-        if (toAdd.length > 0) {
-          appendFileSync('./.gitignore', `\n\n# Acurast CLI${toAdd}`)
-        }
-      }
+      writeAcurastConfig(projectName, config, acurastConfig)
+      appendGitignoreEntries()
 
       console.log()
       console.log('🎉 Successfully created "acurast.json" and ".env" files')
       console.log()
       console.log("You can deploy your app using 'acurast deploy'")
       console.log()
-    })
+    }
+    )
 }
