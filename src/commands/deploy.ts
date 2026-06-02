@@ -50,7 +50,13 @@ import {
   getSymbolForNetwork,
   getMatcherUrlForNetwork,
   getIpfsConfig,
+  getHubUrl,
 } from '../config.js'
+import type { AcurastSigner } from '@acurast/sdk/chain'
+import { getSigningMode, getLoggedInAddress, touchAuth } from '../util/authStore.js'
+import { startSignServer } from '../util/cliServer.js'
+import { RemoteSigner } from '../acurast/remoteSigner.js'
+import { buildDeploySummary } from '../acurast/deploySummary.js'
 import { storeDeployment } from '../acurast/storeDeployment.js'
 import { acurastColor } from '../util.js'
 import { humanTime } from '../util/humanTime.js'
@@ -65,6 +71,71 @@ import { LocalStorage } from '../util/LocalStorage.js'
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const ACURAST_DECIMALS = 12
+
+/**
+ * Build the signer for a deploy. In `local` mode this is the mnemonic-derived
+ * `KeyringPair` (default/fallback). In `remote` mode the browser wallet signs:
+ * we start a local bridge server and return an injected {@link RemoteSigner}
+ * bound to the address persisted by `acurast login`.
+ */
+async function resolveSigner(
+  mode: 'local' | 'remote',
+  config: AcurastProjectConfig,
+  ipfsRef: { value: string | null }
+): Promise<{ wallet: AcurastSigner; cleanup: () => void }> {
+  if (mode === 'remote') {
+    const address = getLoggedInAddress()
+    if (!address) {
+      throw new Error(
+        'Remote signing requires a logged-in address. Run `acurast login` first, or set ACURAST_MNEMONIC.'
+      )
+    }
+    const signServer = await startSignServer(getHubUrl())
+    let closed = false
+    const cleanup = (): void => {
+      if (closed) return
+      closed = true
+      try {
+        signServer.close()
+      } catch {
+        // ignore
+      }
+    }
+    // `process.exit()` bypasses try/finally, so guarantee the server is closed
+    // on normal exit and on Ctrl-C / termination.
+    process.once('exit', cleanup)
+    process.once('SIGINT', () => {
+      cleanup()
+      process.exit(130)
+    })
+    process.once('SIGTERM', () => {
+      cleanup()
+      process.exit(143)
+    })
+
+    const signer = new RemoteSigner({
+      bridgeUrl: signServer.bridgeUrl,
+      requestSignature: signServer.requestSignature,
+      getSummary: (_payload, callIndex) =>
+        buildDeploySummary(config, {
+          kind: callIndex === 0 ? 'deploy' : 'setEnvironments',
+          ipfsRef: ipfsRef.value,
+        }),
+      onOpen: (_id, url) => {
+        console.log(
+          '\nOpening your browser to sign the transaction with your wallet...'
+        )
+        console.log(`If it does not open automatically, visit:\n  ${url}\n`)
+      },
+    })
+    touchAuth()
+    return { wallet: { address, signer }, cleanup }
+  }
+  return {
+    wallet: await walletFromMnemonic(getEnv('ACURAST_MNEMONIC'), { name: 'AcurastCli' }),
+    cleanup: () => {},
+  }
+}
 
 async function promptPricingAdjustment(
   advice: PricingAdvice,
@@ -380,8 +451,11 @@ export const addCommandDeploy = (program: Command) => {
         }
         config = benchValidation.data
 
+        const signingMode = getSigningMode()
+        filelogger.info(`Signing mode: ${signingMode}`)
+
         try {
-          validateDeployEnvVars()
+          validateDeployEnvVars({ requireMnemonic: signingMode === 'local' })
         } catch (e: any) {
           filelogger.error(
             `Deploy env vars are invalid ${JSON.stringify(e.message)}`
@@ -422,9 +496,10 @@ export const addCommandDeploy = (program: Command) => {
         const spinner = ora.default('Fetching account balance...')
         spinner.start()
 
-        const wallet = await walletFromMnemonic(getEnv('ACURAST_MNEMONIC'), {
-          name: 'AcurastCli',
-        })
+        // Primed from the `Uploaded` status callback so the remote-signing
+        // summary shown on the hub can include the IPFS reference.
+        const ipfsRef = { value: null as string | null }
+        const { wallet } = await resolveSigner(signingMode, config, ipfsRef)
 
         const rpcEndpoint = getRpcForNetwork(config.network)
         filelogger.info(
@@ -678,8 +753,8 @@ export const addCommandDeploy = (program: Command) => {
               log('', JSON.stringify({ status, data }))
             }
             if (status === DeploymentStatus.Uploaded) {
-              // ipfsHash
-              // console.log(status, data);
+              // Make the IPFS reference available to the remote-signing summary.
+              if (data?.ipfsHash) ipfsRef.value = data.ipfsHash as string
             } else if (status === DeploymentStatus.Prepared) {
               // console.log(status, data);
               jobRegistrationTemp = data.job as JobRegistration

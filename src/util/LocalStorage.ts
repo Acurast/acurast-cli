@@ -4,16 +4,26 @@ import { ACURAST_BASE_PATH } from '../constants.js'
 
 export class LocalStorage {
   private filePath: string
+  private mode?: number
 
-  constructor(fileName = 'keys.json') {
+  constructor(fileName = 'keys.json', mode?: number) {
     this.filePath = `${ACURAST_BASE_PATH}/${fileName}`
+    this.mode = mode
     this.ensureFile()
   }
 
   private ensureFile() {
     ensureDirectoryExistence(this.filePath)
     if (!fs.existsSync(this.filePath)) {
-      fs.writeFileSync(this.filePath, '{}', 'utf8')
+      fs.writeFileSync(this.filePath, '{}', { encoding: 'utf8', ...(this.mode ? { mode: this.mode } : {}) })
+    } else if (this.mode !== undefined) {
+      // Best-effort tighten permissions on an existing file (no-op on
+      // filesystems that ignore Unix modes, e.g. WSL DrvFs / Windows).
+      try {
+        fs.chmodSync(this.filePath, this.mode)
+      } catch {
+        // ignore
+      }
     }
   }
 

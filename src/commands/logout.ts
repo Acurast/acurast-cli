@@ -1,11 +1,17 @@
 import { Command } from 'commander'
+import { clearAuth, getLoggedInAddress } from '../util/authStore.js'
 
 export const addCommandLogout = (program: Command) => {
   program
     .command('logout')
-    .description('(v2) Log out of the Acurast CLI')
+    .description('Log out of the Acurast CLI (forget the stored browser-wallet address)')
     .action(async () => {
-      console.log('Not implemented yet!')
-      // console.log("Logging out of the Acurast CLI");
+      const address = getLoggedInAddress()
+      if (!address) {
+        console.log('You are not logged in.')
+        return
+      }
+      clearAuth()
+      console.log(`Logged out (${address}).`)
     })
 }

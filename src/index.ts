@@ -10,6 +10,7 @@ import { addCommandInit } from './commands/init.js'
 import { addCommandDeploy } from './commands/deploy.js'
 import { addCommandLogin } from './commands/login.js'
 import { addCommandLogout } from './commands/logout.js'
+import { addCommandWhoami } from './commands/whoami.js'
 import { addCommandOpen } from './commands/open.js'
 import { addCommandRun } from './commands/run.js'
 import { addCommandTest } from './commands/test.js'
@@ -50,8 +51,9 @@ addCommandInit(program)
 addCommandDeployments(program)
 addCommandCancel(program)
 addCommandLive(program)
-// addCommandLogin(program)
-// addCommandLogout(program)
+addCommandLogin(program)
+addCommandLogout(program)
+addCommandWhoami(program)
 addCommandOpen(program)
 // addCommandRun(program)
 // addCommandTest(program)
