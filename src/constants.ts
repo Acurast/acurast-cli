@@ -13,7 +13,3 @@ ensureDirectoryExistence(ACURAST_DEPLOYMENTS_PATH)
 
 export const ACURAST_CLI_VERSION_CHECK_URL =
   'https://raw.githubusercontent.com/Acurast/acurast-cli/refs/heads/main/package.json'
-
-/** Stable canary processor for e2e dry-run deploys (`init --instant-match`). */
-export const E2E_CANARY_INSTANT_MATCH_PROCESSOR =
-  '5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL'

@@ -16,17 +16,22 @@ mkdir -p "$SCENARIO_DIR"
 cp -a "$E2E_ROOT/fixtures/blank-template/." "$SCENARIO_DIR/"
 cd "$SCENARIO_DIR"
 
-# Interactive prompts do not work without a TTY in Docker; use --defaults (same as CI).
-OUT="$(run_acurast init --defaults --network canary 2>&1)"
+# Drive the real interactive wizard:
+#   1. project name        -> e2e-blank-template
+#   2. one time / interval -> One Time (first choice)
+#   3. duration            -> 5s
+#   4. bundled js file     -> default (package.json main: dist/bundle.js)
+OUT="$(run_init_interactive e2e-blank-template 5s 2>&1)"
 CODE=$?
-assert_exit "$CODE" 0 "acurast init --defaults"
+assert_exit "$CODE" 0 "acurast init (interactive)"
 assert_stdout_contains "$OUT" "Successfully created"
 
 assert_file "acurast.json"
 assert_json_key "acurast.json" "projects.e2e-blank-template"
+assert_json_key "acurast.json" "projects.e2e-blank-template.execution.maxExecutionTimeInMs"
 assert_file ".env"
 assert_file_contains ".env" "ACURAST_MNEMONIC="
 assert_file_contains ".gitignore" ".acurast"
 assert_file_contains ".gitignore" ".env"
 
-echo "OK: init greenfield"
+echo "OK: init greenfield (interactive)"

@@ -1,4 +1,4 @@
-import { Command, Option } from 'commander'
+import { Command } from 'commander'
 import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
@@ -74,13 +74,7 @@ export const addCommandNew = (program: Command) => {
   program
     .command('new <project-name>')
     .description('Create a new Acurast project from a template')
-    .addOption(
-      new Option(
-        '--template <name>',
-        'Template name (e.g. blank). Skips interactive template selection.'
-      )
-    )
-    .action(async (projectName: string, options: { template?: string }) => {
+    .action(async (projectName: string) => {
       const spinner = ora.default('Cloning templates repository...')
       spinner.start()
 
@@ -118,23 +112,13 @@ export const addCommandNew = (program: Command) => {
           fs.statSync(path.join(templatesPath, file)).isDirectory()
         )
 
-      let selectedTemplate = options.template
-      if (selectedTemplate) {
-        if (!templates.includes(selectedTemplate)) {
-          spinner.fail(`Unknown template "${selectedTemplate}"`)
-          console.error(`Available templates: ${templates.join(', ')}`)
-          fs.rmSync(localRepoPath, { recursive: true, force: true })
-          return
-        }
-      } else {
-        selectedTemplate = await select({
-          message: 'Choose a template:',
-          choices: templates.map((template) => ({
-            value: template,
-            name: template,
-          })),
-        })
-      }
+      const selectedTemplate = await select({
+        message: 'Choose a template:',
+        choices: templates.map((template) => ({
+          value: template,
+          name: template,
+        })),
+      })
 
       spinner.start('Copying template files...')
       const templatePath = path.join(templatesPath, selectedTemplate)
