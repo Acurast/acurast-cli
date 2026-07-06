@@ -1,0 +1,22 @@
+{
+  "name": "e2e-blank-template",
+  "version": "0.0.1",
+  "description": "E2E fixture: blank Acurast starter template",
+  "main": "dist/bundle.js",
+  "scripts": {
+    "start": "npm run build && node ./dist/bundle.js",
+    "build": "webpack",
+    "bundle": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "file-loader": "^6.2.0",
+    "prettier": "^3.3.2",
+    "ts-loader": "^9.5.1",
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4",
+    "typescript": "^5.4.5"
+  }
+}

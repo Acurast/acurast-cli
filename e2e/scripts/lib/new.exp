@@ -1,0 +1,31 @@
+#!/usr/bin/env expect
+# Drive the interactive `acurast new` template picker.
+# Usage: expect new.exp <project-name>
+# The templates repo is expected to expose a single template (see
+# setup_template_repo), so accepting the first choice is deterministic.
+# npm install runs before the success message, hence the generous timeout.
+
+# A real terminal size and TERM are required, otherwise the CLI's ora spinner
+# re-renders in a tight loop and floods the pty.
+set stty_init "rows 40 cols 120"
+set env(TERM) "xterm-256color"
+
+set timeout 300
+set project [lindex $argv 0]
+
+spawn acurast new $project
+
+expect {
+  timeout { puts "\nTIMEOUT: template picker"; exit 2 }
+  "Choose a template"
+}
+send "\r"
+
+expect {
+  timeout { puts "\nTIMEOUT: completion"; exit 2 }
+  "created successfully"
+}
+
+expect eof
+catch wait result
+exit [lindex $result 3]

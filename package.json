@@ -15,6 +15,8 @@
     "build": "npx tsc && node -e \"require('fs').copyFileSync('./src/util/live-code-processor.js', './dist/util/live-code-processor.js')\"",
     "setup": "npm run build && npm i -g .",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:e2e": "sh -c 'if command -v docker-compose >/dev/null 2>&1; then docker-compose -f e2e/docker-compose.yml run --rm e2e; else docker compose -f e2e/docker-compose.yml run --rm e2e; fi'",
+    "test:e2e:local": "bash e2e/scripts/run-all.sh",
     "test-live": "npm run build && node ./dist/index.js live",
     "prettier": "npx prettier . --write"
   },
