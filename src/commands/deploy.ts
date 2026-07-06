@@ -54,6 +54,7 @@ import {
 } from '../config.js'
 import type { AcurastSigner } from '@acurast/sdk/chain'
 import { getSigningMode, getLoggedInAddress, touchAuth } from '../util/authStore.js'
+import { signingNoticeLine } from '../util/signingNotice.js'
 import { startSignServer } from '../util/cliServer.js'
 import { RemoteSigner } from '../acurast/remoteSigner.js'
 import { buildDeploySummary } from '../acurast/deploySummary.js'
@@ -500,6 +501,9 @@ export const addCommandDeploy = (program: Command) => {
         // summary shown on the hub can include the IPFS reference.
         const ipfsRef = { value: null as string | null }
         const { wallet } = await resolveSigner(signingMode, config, ipfsRef)
+
+        log(signingNoticeLine(signingMode, wallet.address))
+        log('')
 
         const rpcEndpoint = getRpcForNetwork(config.network)
         filelogger.info(

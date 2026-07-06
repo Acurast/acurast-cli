@@ -1,4 +1,5 @@
 import { LocalStorage } from './LocalStorage.js'
+import { ACURAST_GLOBAL_BASE_PATH } from '../constants.js'
 import type { CliNetwork } from '../config.js'
 
 /**
@@ -18,6 +19,14 @@ export interface AuthRecord {
   lastUsedAt?: string
 }
 
+/**
+ * Where a login is stored:
+ *   - `global`  — `~/.acurast/auth.json`, shared across every project.
+ *   - `project` — `./.acurast/auth.json`, pins an account for this directory
+ *                 (overrides the global login).
+ */
+export type AuthScope = 'global' | 'project'
+
 // Kept separate from `keys.json` (which the SDK KeyStore uses for ECDH keys).
 const AUTH_FILE = 'auth.json'
 const AUTH_KEY = 'auth'
@@ -28,7 +37,11 @@ const AUTH_KEY = 'auth'
 const SESSION_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000 // 14 days
 
 // auth.json holds identity metadata — keep it readable only by the owner.
-const store = (): LocalStorage => new LocalStorage(AUTH_FILE, 0o600)
+// The project store uses LocalStorage's default (cwd) base path.
+const store = (scope: AuthScope): LocalStorage =>
+  scope === 'global'
+    ? new LocalStorage(AUTH_FILE, 0o600, ACURAST_GLOBAL_BASE_PATH)
+    : new LocalStorage(AUTH_FILE, 0o600)
 
 const isExpired = (record: AuthRecord): boolean => {
   const at = Date.parse(record.loggedInAt)
@@ -36,8 +49,8 @@ const isExpired = (record: AuthRecord): boolean => {
   return Date.now() - at > SESSION_MAX_AGE_MS
 }
 
-export const getAuth = (): AuthRecord | null => {
-  const raw = store().getItem(AUTH_KEY)
+const read = (scope: AuthScope): AuthRecord | null => {
+  const raw = store(scope).getItem(AUTH_KEY)
   if (!raw) return null
   try {
     const record = JSON.parse(raw) as AuthRecord
@@ -48,44 +61,71 @@ export const getAuth = (): AuthRecord | null => {
   }
 }
 
-export const getLoggedInAddress = (): string | undefined => getAuth()?.address
+export const getGlobalAuth = (): AuthRecord | null => read('global')
+export const getProjectAuth = (): AuthRecord | null => read('project')
+
+/** The account that will actually be used: a project pin wins over the global login. */
+export const getActiveAuth = (): AuthRecord | null => getProjectAuth() ?? getGlobalAuth()
+
+export const getLoggedInAddress = (): string | undefined => getActiveAuth()?.address
 
 export const isLoggedIn = (): boolean => getLoggedInAddress() !== undefined
 
-export const setAuth = (record: AuthRecord): void => {
-  store().setItem(AUTH_KEY, JSON.stringify(record))
+export const setAuth = (record: AuthRecord, scope: AuthScope = 'global'): void => {
+  store(scope).setItem(AUTH_KEY, JSON.stringify(record))
 }
 
-/** Update `lastUsedAt` after a successful remote signature (best-effort). */
+export const clearAuth = (scope: AuthScope): void => {
+  store(scope).removeItem(AUTH_KEY)
+}
+
+/** Update `lastUsedAt` on whichever scope provided the active account (best-effort). */
 export const touchAuth = (): void => {
-  const record = getAuth()
-  if (!record) return
-  setAuth({ ...record, lastUsedAt: new Date().toISOString() })
-}
-
-export const clearAuth = (): void => {
-  store().removeItem(AUTH_KEY)
+  const now = new Date().toISOString()
+  const project = getProjectAuth()
+  if (project) {
+    setAuth({ ...project, lastUsedAt: now }, 'project')
+    return
+  }
+  const global = getGlobalAuth()
+  if (global) {
+    setAuth({ ...global, lastUsedAt: now }, 'global')
+  }
 }
 
 export type SigningMode = 'local' | 'remote'
 
 /**
- * Resolve the signing mode:
- *   - explicit `ACURAST_SIGNING_MODE=local|remote` always wins;
- *   - otherwise auto: `remote` when logged in via `acurast login` AND no
- *     `ACURAST_MNEMONIC` is set; `local` (mnemonic) in every other case.
+ * Resolve the signing mode, highest priority first:
+ *   1. explicit `ACURAST_SIGNING_MODE=local|remote`;
+ *   2. a project pin (`./.acurast/auth.json`) → `remote`;
+ *   3. `ACURAST_MNEMONIC` present → `local`;
+ *   4. a global login (`~/.acurast/auth.json`) → `remote`;
+ *   5. otherwise `local`.
  *
- * This keeps the mnemonic the default/fallback for CI and existing users.
- * An expired session counts as logged-out (see `getAuth`).
+ * An ambient global login never silently changes how an existing mnemonic
+ * project signs (step 3 beats step 4). A deliberate project pin does (step 2).
+ * Expired sessions count as logged-out (see `read`).
  */
 export const getSigningMode = (): SigningMode => {
   const explicit = process.env.ACURAST_SIGNING_MODE
   if (explicit === 'remote' || explicit === 'local') {
     return explicit
   }
-  const hasMnemonic = !!process.env.ACURAST_MNEMONIC
-  if (isLoggedIn() && !hasMnemonic) {
-    return 'remote'
-  }
+  if (getProjectAuth()) return 'remote'
+  if (process.env.ACURAST_MNEMONIC) return 'local'
+  if (getGlobalAuth()) return 'remote'
   return 'local'
+}
+
+export type AuthSource = 'project' | 'global' | 'mnemonic' | 'none'
+
+/** Where the account/key that will be used comes from — for `whoami` and deploy output. */
+export const getAuthSource = (): AuthSource => {
+  if (getSigningMode() === 'remote') {
+    if (getProjectAuth()) return 'project'
+    if (getGlobalAuth()) return 'global'
+    return 'none'
+  }
+  return process.env.ACURAST_MNEMONIC ? 'mnemonic' : 'none'
 }

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdir, readFileSync, writeFileSync } from 'fs'
+import { readdir, readFileSync, writeFileSync } from 'fs'
 import type {
   AcurastDeployment,
   AcurastProjectConfig,
@@ -7,14 +7,11 @@ import type {
 } from '@acurast/sdk/types'
 import { jobToNumber } from '@acurast/sdk/chain'
 import { ACURAST_DEPLOYMENTS_PATH } from '../constants.js'
-import { getDirectoryFromFilePath } from '../util/getDirectoryFromFilePath.js'
+import { ensureDirectoryExistence } from '../util/ensureDirectoryExistence.js'
 
-export const ensureDirectoryExistence = (filePath: string) => {
-  const dir = getDirectoryFromFilePath(filePath)
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true })
-  }
-}
+// Re-exported for existing importers; the implementation lives in util so
+// `constants.js` can use it without an import cycle.
+export { ensureDirectoryExistence }
 
 const getFileByDeploymentTime = async (
   deploymentTime: string

@@ -1,4 +1,5 @@
-import { ensureDirectoryExistence } from './acurast/storeDeployment.js'
+import { homedir } from 'os'
+import { ensureDirectoryExistence } from './util/ensureDirectoryExistence.js'
 
 export const ENV_HELP_LINK = 'https://github.com/Acurast/acurast-cli' // TODO: Remove
 export const getFaucetLinkForAddress = (address: string) => {
@@ -7,6 +8,11 @@ export const getFaucetLinkForAddress = (address: string) => {
 
 export const ACURAST_BASE_PATH = './.acurast'
 ensureDirectoryExistence(ACURAST_BASE_PATH)
+
+// Machine-wide (per-user) directory for state shared across projects, most
+// importantly the global `acurast login` session. Project-local `.acurast`
+// still holds deployments and keys.
+export const ACURAST_GLOBAL_BASE_PATH = `${homedir()}/.acurast`
 
 export const ACURAST_DEPLOYMENTS_PATH = `${ACURAST_BASE_PATH}/deploy`
 ensureDirectoryExistence(ACURAST_DEPLOYMENTS_PATH)

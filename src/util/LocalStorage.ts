@@ -1,13 +1,13 @@
 import * as fs from 'fs'
-import { ensureDirectoryExistence } from '../acurast/storeDeployment.js'
+import { ensureDirectoryExistence } from './ensureDirectoryExistence.js'
 import { ACURAST_BASE_PATH } from '../constants.js'
 
 export class LocalStorage {
   private filePath: string
   private mode?: number
 
-  constructor(fileName = 'keys.json', mode?: number) {
-    this.filePath = `${ACURAST_BASE_PATH}/${fileName}`
+  constructor(fileName = 'keys.json', mode?: number, basePath: string = ACURAST_BASE_PATH) {
+    this.filePath = `${basePath}/${fileName}`
     this.mode = mode
     this.ensureFile()
   }
