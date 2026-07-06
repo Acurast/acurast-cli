@@ -39,6 +39,26 @@ describe('startLoginServer', () => {
     })
   })
 
+  test('accepts the hub cross-site top-level navigation to /callback', async () => {
+    // The hub redirects the browser (https -> http://localhost) as a top-level
+    // navigation; Chromium sends Sec-Fetch-Site: cross-site for it. That is the
+    // legitimate login redirect and must be allowed (the token is the defense).
+    const pending = server.waitForCallback(2000)
+    const res = await fetch(
+      `${base(server.port)}/callback?token=${server.token}` +
+        `&address=5Alice&signature=0xabc&signatureType=sr25519`,
+      {
+        headers: {
+          'sec-fetch-site': 'cross-site',
+          'sec-fetch-mode': 'navigate',
+          'sec-fetch-dest': 'document',
+        },
+      }
+    )
+    expect(res.status).toBe(200)
+    await expect(pending).resolves.toMatchObject({ address: '5Alice' })
+  })
+
   test('400 + rejects when address/signature are missing', async () => {
     // Attach the rejection handler *before* triggering the reject.
     const assertion = expect(server.waitForCallback(2000)).rejects.toThrow(/missing/i)
@@ -64,6 +84,14 @@ describe('startSignServer', () => {
 
   test('rejects /payload without the token (403)', async () => {
     const res = await fetch(`${base(server.port)}/payload?id=req-1`)
+    expect(res.status).toBe(403)
+  })
+
+  test('rejects a cross-site fetch to /payload (403)', async () => {
+    // A cross-site *fetch* (not a navigation) from another page must stay blocked.
+    const res = await fetch(`${base(server.port)}/payload?id=req-1&token=${server.token}`, {
+      headers: { 'sec-fetch-site': 'cross-site', 'sec-fetch-mode': 'cors' },
+    })
     expect(res.status).toBe(403)
   })
 

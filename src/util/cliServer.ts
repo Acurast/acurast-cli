@@ -49,6 +49,18 @@ const timingEqual = (a: string, b: string): boolean => {
  * `/payload` and `/result` endpoints from being driven by another local page.
  */
 const assertSameOriginLocalhost = (req: http.IncomingMessage, port: number): boolean => {
+  // Top-level navigations — the hub's https->http redirect to `/callback` and
+  // the browser opening `/sign` — are legitimately cross-site. Chromium reports
+  // them as `Sec-Fetch-Site: cross-site` with `Sec-Fetch-Mode: navigate`, so we
+  // must NOT reject on cross-site alone. The per-session token guards these.
+  const secFetchMode = req.headers['sec-fetch-mode']
+  const secFetchDest = req.headers['sec-fetch-dest']
+  if (secFetchMode === 'navigate' || secFetchDest === 'document') {
+    return true
+  }
+
+  // For everything else (the fetch-based `/payload` and `/result`), block
+  // requests driven by another site/page.
   const secFetchSite = req.headers['sec-fetch-site']
   if (secFetchSite === 'cross-site' || secFetchSite === 'same-site') {
     return false
