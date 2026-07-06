@@ -1,0 +1,35 @@
+name: E2E
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    name: Docker E2E
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check e2e secret
+        id: secret
+        run: |
+          if [[ -z "${{ secrets.ACURAST_E2E_MNEMONIC }}" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::warning title=E2E skipped::ACURAST_E2E_MNEMONIC secret not set — e2e tests did NOT run (expected for fork PRs; set the secret on the main repo to run them)."
+            {
+              echo "## ⚠️ E2E tests skipped"
+              echo ""
+              echo "\`ACURAST_E2E_MNEMONIC\` secret is not set, so the Docker e2e suite **did not run**."
+              echo "This is expected for fork PRs. On the main repo, set the secret to run the tests."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run e2e in Docker
+        if: steps.secret.outputs.skip != 'true'
+        env:
+          ACURAST_E2E_MNEMONIC: ${{ secrets.ACURAST_E2E_MNEMONIC }}
+        run: npm run test:e2e

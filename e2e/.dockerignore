@@ -1,0 +1,5 @@
+# Mirror of repo-root .dockerignore entries for e2e (build context is `..`, so root file applies).
+.env
+fixtures/**/node_modules
+fixtures/**/dist
+fixtures/**/package-lock.json

@@ -1,0 +1,8 @@
+services:
+  e2e:
+    build:
+      context: ..
+      dockerfile: e2e/Dockerfile
+    environment:
+      ACURAST_E2E_MNEMONIC: ${ACURAST_E2E_MNEMONIC:-}
+    network_mode: bridge
