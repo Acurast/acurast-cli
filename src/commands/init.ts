@@ -149,29 +149,13 @@ export const addCommandInit = (program: Command) => {
     .action(async () => {
       console.log('Initializing Acurast CLI')
 
-      const signingMode: SigningChoice = await select({
-        message: 'How do you want to sign deployments?',
-        choices: [
-          {
-            name: 'Browser wallet — no private key stored (recommended)',
-            value: 'browser',
-            description:
-              'Sign with a browser wallet via `acurast login`. Works across all your projects.',
-          },
-          {
-            name: 'Local mnemonic — generate & store in .env',
-            value: 'mnemonic',
-            description:
-              'Generate a mnemonic and store it in this project’s .env. The private key lives on disk.',
-          },
-        ],
-        default: 'browser',
-      })
-
       if (existsSync('./acurast.json')) {
         console.log('An acurast.json file already exists')
 
-        setupEnvFile(signingMode)
+        // Topping up an existing project: keep the legacy behaviour of ensuring
+        // a local mnemonic in .env, and don't prompt (this path is also used
+        // non-interactively).
+        setupEnvFile('mnemonic')
         return
       }
 
@@ -186,6 +170,30 @@ export const addCommandInit = (program: Command) => {
           return undefined
         }
       })()
+
+      // Only ask how to sign when we can actually prompt. Without a TTY (piped
+      // or scripted), fall back to the local mnemonic — browser login needs an
+      // interactive session anyway.
+      const signingMode: SigningChoice = process.stdin.isTTY
+        ? await select({
+            message: 'How do you want to sign deployments?',
+            choices: [
+              {
+                name: 'Browser wallet — no private key stored (recommended)',
+                value: 'browser',
+                description:
+                  'Sign with a browser wallet via `acurast login`. Works across all your projects.',
+              },
+              {
+                name: 'Local mnemonic — generate & store in .env',
+                value: 'mnemonic',
+                description:
+                  'Generate a mnemonic and store it in this project’s .env. The private key lives on disk.',
+              },
+            ],
+            default: 'browser',
+          })
+        : 'mnemonic'
 
       setupEnvFile(signingMode)
 
