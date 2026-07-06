@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "start": "npm run build && node dist/index.js",
-    "build": "npx tsc && node -e \"const fs=require('fs');fs.copyFileSync('./src/util/live-code-processor.js','./dist/util/live-code-processor.js');fs.chmodSync('./dist/index.js',0o755)\"",
+    "build": "npx tsc && node -e \"const fs=require('fs');fs.copyFileSync('./src/util/live-code-processor.js','./dist/util/live-code-processor.js');fs.cpSync('./src/templates','./dist/templates',{recursive:true});fs.chmodSync('./dist/index.js',0o755)\"",
     "setup": "npm run build && npm i -g .",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:e2e": "sh -c 'if command -v docker-compose >/dev/null 2>&1; then docker-compose -f e2e/docker-compose.yml run --rm e2e; else docker compose -f e2e/docker-compose.yml run --rm e2e; fi'",

@@ -41,6 +41,13 @@ run_new_interactive() {
   expect "$E2E_LIB_DIR/new.exp" "$@"
 }
 
+# Drive the real interactive `acurast deploy vps` wizard with --dry-run.
+# Usage: run_vps_interactive_dry_run
+run_vps_interactive_dry_run() {
+  _require_expect
+  expect "$E2E_LIB_DIR/vps.exp" "$@"
+}
+
 # Build a throwaway local git template repo so `acurast new` runs fully offline
 # and its interactive template picker is deterministic (a single choice, so
 # Enter always selects it). Exports ACURAST_TEMPLATES_REPO pointing at it.

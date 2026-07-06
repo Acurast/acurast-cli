@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acurast Tunnel Demo</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: #0b0b0f; color: #f2f2f7;
+    }
+    main { max-width: 40rem; padding: 2rem; text-align: center; }
+    h1 { font-size: 2rem; margin: 0 0 .5rem; }
+    code { background: rgba(255,255,255,.08); padding: .15em .4em; border-radius: .3em; }
+    p { line-height: 1.6; opacity: .85; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>🛰️ Served from an Acurast deployment</h1>
+    <p>
+      This page is served by a Cargo deployment running inside a PRoot sandbox on an
+      Acurast processor, exposed over the <strong>primary</strong> (Let's Encrypt) reverse
+      tunnel.
+    </p>
+    <p>
+      The same deployment also runs an SSH server reachable over the
+      <strong>secondary</strong> (self-signed) tunnel — see the deployment's
+      <code>started</code> event for the connect command.
+    </p>
+  </main>
+</body>
+</html>

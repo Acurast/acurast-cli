@@ -46,6 +46,7 @@ To use the Acurast CLI, type `acurast` followed by any of the available options 
 
 - `new <project-name>` - Create a new Acurast project from a template.
 - `deploy [options] [project]` - Deploy the current project to the Acurast platform.
+- `deploy vps [options]` - Deploy an SSH-able VPS on an Acurast processor (see [Deploy a VPS](#deploy-a-vps)).
 - `cancel <deployment-id> [options]` - Cancel (deregister) a deployment on-chain and return any unused locked funds.
 - `estimate-fee [options] [project]` - Estimate the fee for the current project.
 - `deployments [arg] [options]` - List, view, and manage deployments.
@@ -274,6 +275,59 @@ ACURAST_DEVNET_INDEXER_API_KEY=<your-key>
 ```
 
 Then in `acurast.json` set `"network": "devnet"` on the project entry.
+
+## Deploy a VPS
+
+`acurast deploy vps` turns a processor into an SSH-able "VPS": it deploys a Shell-runtime app (based on the [app-tunnel example](https://github.com/Acurast/acurast-example-apps/tree/main/apps/app-tunnel/cargo)) that runs an Ubuntu rootfs, starts a [Dropbear](https://github.com/mkj/dropbear) SSH server and exposes it through the Acurast reverse tunnel. No `acurast.json` is needed — the app ships with the CLI.
+
+```bash
+acurast deploy vps \
+  --image ubuntu24 \
+  --min-memory 2GB \
+  --min-storage 10GB \
+  --min-compute-score 100 \
+  --authorized-ssh-key "ssh-ed25519 AAAA... user@host" \
+  --duration 24h \
+  --callback-url https://webhook.watch/your-endpoint
+```
+
+Running `acurast deploy vps` without flags starts an interactive wizard that asks for anything missing. `ACURAST_MNEMONIC` must be set (or use `acurast login` for remote signing).
+
+### Options
+
+| Flag                       | Env var                      | Description                                                                                             |
+| -------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `--image <alias>`          | `VPS_IMAGE`                  | `ubuntu24` (24.04 LTS, default) or `ubuntu25` (25.10). proot-distro rootfs tarballs, aarch64.           |
+| `--min-memory <size>`      | `VPS_MIN_MEMORY`             | Minimum total RAM of the processor (e.g. `2GB`).                                                        |
+| `--min-storage <size>`     | `VPS_MIN_STORAGE`            | Minimum available storage (e.g. `10GB`).                                                                |
+| `--min-compute-score <n>`  | `VPS_MIN_COMPUTE_SCORE`      | Minimum CPU single-core benchmark score.                                                                |
+| `--authorized-ssh-key <k>` | `VPS_AUTHORIZED_SSH_KEY`     | SSH public key appended to `/root/.ssh/authorized_keys`.                                                |
+| `--ssh-password <pw>`      | `VPS_SSH_PASSWORD`           | Root password. Defaults to `password` — set your own for anything sensitive.                            |
+| `--duration <dur>`         | `VPS_DURATION`               | How long the VPS runs (e.g. `1h`, `24h`, `2d`). Default `24h`.                                          |
+| `--callback-url <url>`     | `VPS_CALLBACK_URL`           | Webhook receiving `log`/`started`/`error` events; the `started` event contains the SSH connect command. |
+| `--network <net>`          | `VPS_NETWORK`                | `mainnet`, `canary` (default) or `devnet`.                                                              |
+| `--replicas <n>`           | `VPS_REPLICAS`               | Number of VPS instances. Default 1.                                                                     |
+| `--max-cost-per-execution` | `VPS_MAX_COST_PER_EXECUTION` | Reward per execution in the smallest token unit.                                                        |
+
+Flags win over `VPS_*` environment variables (which can live in your `.env`); the wizard only asks for values that neither provides. `--dry-run`, `--non-interactive`, `--only-upload`, `--exit-early` and `--output json` work like they do for `acurast deploy`.
+
+### Connecting
+
+The tunnel identity is generated on the processor, so the public hostname is only known once the deployment starts. Set `--callback-url` (e.g. a [webhook.watch](https://webhook.watch) endpoint) and wait for the `started` event:
+
+```json
+{
+  "event": "started",
+  "webUrl": "https://<clientId>.<domain>",
+  "sshUrl": "https://<secondaryClientId>.<domain>",
+  "sshPort": 2222,
+  "connect": "ssh -o ProxyCommand='openssl s_client -quiet -servername ... -connect ...:443' root@<secondaryClientId>"
+}
+```
+
+Run the `connect` command to open the SSH session (SSH is wrapped in TLS via the tunnel's secondary connection). Without a callback URL, the same information is printed in the deployment logs — `acurast devtools <deployment-id>` gives you a log viewer URL. The deployment also serves a small status page over the primary tunnel connection (`webUrl`).
+
+Requires processors running Acurast v1.26.0 or later (`minProcessorVersions.android` is set automatically).
 
 ## Live Code Feature
 

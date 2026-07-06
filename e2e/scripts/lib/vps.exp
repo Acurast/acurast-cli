@@ -1,0 +1,63 @@
+#!/usr/bin/env expect
+# Drive the interactive `acurast deploy vps` wizard with --dry-run.
+# Usage: expect vps.exp
+# Requires ACURAST_MNEMONIC in the environment.
+
+# A real terminal size and TERM are required, otherwise the CLI's ora spinner
+# re-renders in a tight loop and floods the pty.
+set stty_init "rows 40 cols 120"
+set env(TERM) "xterm-256color"
+
+set timeout 120
+
+spawn acurast deploy vps --dry-run
+
+expect {
+  timeout { puts "\nTIMEOUT: image prompt"; exit 2 }
+  "Which image should the VPS run?"
+}
+send "\r"
+
+expect {
+  timeout { puts "\nTIMEOUT: duration prompt"; exit 2 }
+  "How long should the VPS run?"
+}
+send "1h\r"
+
+expect {
+  timeout { puts "\nTIMEOUT: hardware requirements prompt"; exit 2 }
+  "Set minimum hardware requirements"
+}
+send "\r"
+
+expect {
+  timeout { puts "\nTIMEOUT: ssh key prompt"; exit 2 }
+  "Authorized SSH public key"
+}
+send "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF7e2edummykey e2e@acurast\r"
+
+expect {
+  timeout { puts "\nTIMEOUT: password prompt"; exit 2 }
+  "Root password"
+}
+send "\r"
+
+expect {
+  timeout { puts "\nTIMEOUT: callback url prompt"; exit 2 }
+  "Callback URL"
+}
+send "\r"
+
+expect {
+  timeout { puts "\nTIMEOUT: VPS summary"; exit 2 }
+  "Deploying VPS"
+}
+
+expect {
+  timeout { puts "\nTIMEOUT: dry-run line"; exit 2 }
+  "Dry run, not deploying"
+}
+
+expect eof
+catch wait result
+exit [lindex $result 3]
