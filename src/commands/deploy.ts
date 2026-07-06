@@ -720,7 +720,9 @@ export async function executeDeployFlow(
       log('')
     }
 
-    if (options.nonInteractive) {
+    // A dry run submits nothing, so an insufficient match must not abort it —
+    // otherwise it never reaches the "Dry run, not deploying" exit.
+    if (options.nonInteractive && !options.dryRun) {
       if (
         !matchRes.ok ||
         matchRes.data.matched_processors < config.numberOfReplicas
