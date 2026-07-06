@@ -17,7 +17,13 @@ jobs:
         run: |
           if [[ -z "${{ secrets.ACURAST_E2E_MNEMONIC }}" ]]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "ACURAST_E2E_MNEMONIC secret not set — skipping e2e (expected for fork PRs)."
+            echo "::warning title=E2E skipped::ACURAST_E2E_MNEMONIC secret not set — e2e tests did NOT run (expected for fork PRs; set the secret on the main repo to run them)."
+            {
+              echo "## ⚠️ E2E tests skipped"
+              echo ""
+              echo "\`ACURAST_E2E_MNEMONIC\` secret is not set, so the Docker e2e suite **did not run**."
+              echo "This is expected for fork PRs. On the main repo, set the secret to run the tests."
+            } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
