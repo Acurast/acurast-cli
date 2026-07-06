@@ -325,7 +325,7 @@ The tunnel identity is generated on the processor, so the public hostname is onl
 }
 ```
 
-Run the `connect` command to open the SSH session (SSH is wrapped in TLS via the tunnel's secondary connection). Without a callback URL, the same information is printed in the deployment logs — `acurast devtools <deployment-id>` gives you a log viewer URL. The deployment also serves a small status page over the primary tunnel connection (`webUrl`).
+Run the `connect` command to open the SSH session (SSH is wrapped in TLS via the tunnel's secondary connection). A callback URL is the only way to receive the connect command remotely: the tunnel hostname is generated on the processor at startup, and the Shell runtime has no remote log access ([DevTools](#devtools) only supports NodeJS deployments). Without one, the connect command is only visible in the logs on the device itself. The deployment also serves a small status page over the primary tunnel connection (`webUrl`).
 
 Requires processors running Acurast v1.26.0 or later (`minProcessorVersions.android` is set automatically).
 

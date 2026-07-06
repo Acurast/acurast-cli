@@ -327,23 +327,40 @@ export const addCommandDeployVps = (deployCmd: Command) => {
           )
         }
 
+        // Without a callback the tunnel hostname is unrecoverable: it is
+        // generated on the processor and the Shell runtime has no remote log
+        // access (DevTools only supports NodeJS deployments).
+        if (!vpsOptions.callbackUrl && !options.dryRun) {
+          log('')
+          log(
+            '⚠️ No callback URL set — you will NOT be able to retrieve the SSH connect command after deploying (the tunnel hostname is only known on the device).'
+          )
+          if (isInteractive) {
+            const proceed = await confirm({
+              message: 'Deploy anyway, without a callback URL?',
+              default: false,
+            })
+            if (!proceed) {
+              log(
+                `Aborted. Get a webhook endpoint (e.g. from ${toAcurastColor('https://webhook.watch')}) and pass it via --callback-url or the wizard.`
+              )
+              return
+            }
+          }
+        }
+
         await executeDeployFlow(
           config,
           () => envVars,
           options,
           configResult.notes,
-          ({ jobId, jobIdString }) => {
+          ({ jobId }) => {
             log('')
             if (jobId && Array.isArray(jobId) && jobId[0]?.acurast) {
               log(
                 `Hub: ${toAcurastColor(
                   `https://hub.acurast.com/job-detail/acurast-${jobId[0].acurast}-${jobToNumber(jobId as any)}`
                 )}`
-              )
-            }
-            if (jobIdString) {
-              log(
-                `Logs: run ${toAcurastColor(`acurast devtools ${jobIdString}`)} to get a DevTools URL for this deployment.`
               )
             }
             log('')
@@ -354,7 +371,10 @@ export const addCommandDeployVps = (deployCmd: Command) => {
               log(`  ${toAcurastColor(vpsOptions.callbackUrl)}`)
             } else {
               log(
-                'No callback URL was set — find the SSH connect command in the deployment logs (see DevTools above). It looks like:'
+                '⚠️ No callback URL was set. The tunnel hostname is only known once the deployment starts on the processor, and there is no way to retrieve it remotely — the connect command is only visible in the logs on the device itself.'
+              )
+              log(
+                `Next time, pass ${toAcurastColor('--callback-url')} (e.g. an endpoint from https://webhook.watch) to receive the "started" event with the connect command:`
               )
               log(
                 `  ssh -o ProxyCommand='openssl s_client -quiet -servername <clientId>.<domain> -connect <clientId>.<domain>:443' root@<clientId>`
