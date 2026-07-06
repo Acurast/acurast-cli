@@ -35,11 +35,21 @@ assert_exit "$CODE" 0 "acurast deploy vps --dry-run (VPS_* env)"
 assert_stdout_contains "$OUT" "Dry run, not deploying"
 assert_no_deploy_artifacts "$SCENARIO_DIR"
 
-# Interactive wizard driven through a pseudo-tty.
+# Interactive wizard driven through a pseudo-tty; answers "yes" to persisting
+# the wizard answers as VPS_* variables in .env.
 OUT="$(run_vps_interactive_dry_run 2>&1)"
 CODE=$?
 assert_exit "$CODE" 0 "acurast deploy vps --dry-run (interactive wizard)"
 assert_stdout_contains "$OUT" "Dry run, not deploying"
 assert_no_deploy_artifacts "$SCENARIO_DIR"
+assert_file ".env"
+grep -q "^VPS_DURATION=1h$" .env || {
+  echo "ASSERT FAIL: .env missing persisted VPS_DURATION" >&2
+  exit 1
+}
+grep -q "^VPS_IMAGE=ubuntu24$" .env || {
+  echo "ASSERT FAIL: .env missing persisted VPS_IMAGE" >&2
+  exit 1
+}
 
 echo "OK: deploy vps dry-run (non-interactive, env vars, wizard)"

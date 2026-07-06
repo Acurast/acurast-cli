@@ -14,6 +14,7 @@ import {
   DEFAULT_VPS_NETWORK,
   type VpsOptions,
 } from '../util/buildVpsConfig.js'
+import { persistVpsOptionsToEnv } from '../util/persistVpsEnv.js'
 import { validateCliConfig } from '../util/validateCliConfig.js'
 import { executeDeployFlow } from './deploy.js'
 import { CLI_NETWORKS } from '../config.js'
@@ -263,7 +264,26 @@ export const addCommandDeployVps = (deployCmd: Command) => {
         // flags > VPS_* env vars > wizard/defaults
         let vpsOptions = resolveVpsOptions(options)
         if (isInteractive) {
+          const beforeWizard = { ...vpsOptions }
           vpsOptions = await runVpsWizard(vpsOptions)
+
+          const wizardAnswered = (
+            Object.keys(vpsOptions) as (keyof VpsOptions)[]
+          ).some(
+            (key) =>
+              vpsOptions[key] !== undefined && beforeWizard[key] === undefined
+          )
+          if (wizardAnswered) {
+            const save = await confirm({
+              message:
+                'Save these settings to .env (as VPS_* variables) so future runs skip the questions?',
+              default: true,
+            })
+            if (save) {
+              const written = persistVpsOptionsToEnv(vpsOptions)
+              log(`Saved to .env: ${written.join(', ')}`)
+            }
+          }
         }
 
         const templateDir = join(

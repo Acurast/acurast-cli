@@ -309,7 +309,7 @@ Running `acurast deploy vps` without flags starts an interactive wizard that ask
 | `--replicas <n>`           | `VPS_REPLICAS`               | Number of VPS instances. Default 1.                                                                     |
 | `--max-cost-per-execution` | `VPS_MAX_COST_PER_EXECUTION` | Reward per execution in the smallest token unit.                                                        |
 
-Flags win over `VPS_*` environment variables (which can live in your `.env`); the wizard only asks for values that neither provides. `--dry-run`, `--non-interactive`, `--only-upload`, `--exit-early` and `--output json` work like they do for `acurast deploy`.
+Flags win over `VPS_*` environment variables (which can live in your `.env`); the wizard only asks for values that neither provides. At the end of the wizard the CLI offers to save your answers to `.env` as `VPS_*` variables, so subsequent runs skip the questions. `--dry-run`, `--non-interactive`, `--only-upload`, `--exit-early` and `--output json` work like they do for `acurast deploy`.
 
 ### Connecting
 

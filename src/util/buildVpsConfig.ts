@@ -53,7 +53,7 @@ export interface VpsOptions {
   maxCostPerExecution?: string | number
 }
 
-const VPS_ENV_MAPPING: Record<keyof VpsOptions, string> = {
+export const VPS_ENV_MAPPING: Record<keyof VpsOptions, string> = {
   image: 'VPS_IMAGE',
   minMemory: 'VPS_MIN_MEMORY',
   minStorage: 'VPS_MIN_STORAGE',

@@ -55,6 +55,12 @@ expect {
 send "\r"
 
 expect {
+  timeout { puts "\nTIMEOUT: save to .env prompt"; exit 2 }
+  "Save these settings to .env"
+}
+send "y\r"
+
+expect {
   timeout { puts "\nTIMEOUT: VPS summary"; exit 2 }
   "Deploying VPS"
 }
