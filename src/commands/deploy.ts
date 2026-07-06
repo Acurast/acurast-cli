@@ -646,8 +646,11 @@ export async function executeDeployFlow(
   )
   log('')
 
-  const hasEnvironmentVariables: boolean =
-    (config.includeEnvironmentVariables?.length ?? 0) > 0
+  // Gate on the actual env vars, not config.includeEnvironmentVariables:
+  // `deploy vps` passes vars directly without listing them in the config. If
+  // this is false the CLI exits right after acknowledgements — while the SDK
+  // is still submitting the env vars — and they never reach the processor.
+  const hasEnvironmentVariables: boolean = envVars.length > 0
 
   // --- Pricing check via matcher API ---
   const matcherUrl = getMatcherUrlForNetwork(config.network)
