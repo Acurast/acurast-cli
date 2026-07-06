@@ -13,6 +13,12 @@ set timeout 120
 spawn acurast deploy vps --dry-run
 
 expect {
+  timeout { puts "\nTIMEOUT: network prompt"; exit 2 }
+  "Which network should the VPS deploy to?"
+}
+send "\r"
+
+expect {
   timeout { puts "\nTIMEOUT: image prompt"; exit 2 }
   "Which image should the VPS run?"
 }

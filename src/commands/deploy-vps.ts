@@ -11,6 +11,7 @@ import {
   VPS_IMAGES,
   DEFAULT_VPS_IMAGE,
   DEFAULT_VPS_DURATION,
+  DEFAULT_VPS_NETWORK,
   type VpsOptions,
 } from '../util/buildVpsConfig.js'
 import { validateCliConfig } from '../util/validateCliConfig.js'
@@ -66,6 +67,14 @@ const validatePositiveIntInput = (value: string): true | string => {
  */
 const runVpsWizard = async (opts: VpsOptions): Promise<VpsOptions> => {
   const result = { ...opts }
+
+  if (result.network === undefined) {
+    result.network = await select({
+      message: 'Which network should the VPS deploy to?',
+      choices: CLI_NETWORKS.map((network) => ({ value: network as string })),
+      default: DEFAULT_VPS_NETWORK,
+    })
+  }
 
   if (result.image === undefined) {
     result.image = await select({
