@@ -1,0 +1,14 @@
+{
+  // Test-only compiler settings. The build (tsconfig.json) targets Node16
+  // modules, but ts-jest can't emit that hybrid kind cleanly and falls back to
+  // commonjs — which forbids the top-level `await import()` the ESM-mock tests
+  // rely on. `esnext` + `bundler` resolution gives ts-jest real ESM output and
+  // resolves package `exports` subpaths (e.g. `@acurast/sdk/types`).
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "rootDir": "."
+  },
+  "include": ["src", "test"]
+}

@@ -14,7 +14,7 @@
     "start": "npm run build && node dist/index.js",
     "build": "npx tsc && node -e \"require('fs').copyFileSync('./src/util/live-code-processor.js', './dist/util/live-code-processor.js')\"",
     "setup": "npm run build && npm i -g .",
-    "test": "jest",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test-live": "npm run build && node ./dist/index.js live",
     "prettier": "npx prettier . --write"
   },
