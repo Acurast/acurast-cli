@@ -15,6 +15,15 @@ if {$duration eq ""} { set duration "5s" }
 
 spawn acurast init
 
+# Signing method (select): default is "Browser wallet"; move down once to pick
+# "Local mnemonic" so the wizard writes ACURAST_MNEMONIC to .env (down arrow =
+# ESC [ B, then Enter).
+expect {
+  timeout { puts "\nTIMEOUT: signing method prompt"; exit 2 }
+  "How do you want to sign"
+}
+send "\033\[B\r"
+
 expect {
   timeout { puts "\nTIMEOUT: project name prompt"; exit 2 }
   "name of the project"

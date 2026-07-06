@@ -21,6 +21,8 @@ const IPFS_PROXY = 'https://ipfs-proxy.acurast.prod.gke.papers.tech'
 const DEVTOOLS_URL = 'https://devtools.acurast.com'
 const DEVTOOLS_API_URL = 'https://api.devtools.acurast.com'
 
+const HUB_URL = 'https://hub.acurast.com'
+
 export type CliNetwork = 'mainnet' | 'canary' | 'devnet'
 
 export const CLI_NETWORKS: readonly CliNetwork[] = [
@@ -48,6 +50,8 @@ export type EnvKeys =
   | 'ACURAST_DEVNET_INDEXER_API_KEY'
   | 'ACURAST_DEVTOOLS_URL'
   | 'ACURAST_DEVTOOLS_API_URL'
+  | 'ACURAST_HUB_URL'
+  | 'ACURAST_SIGNING_MODE'
   | 'DEBUG'
 
 const defaultValues: Record<EnvKeys, string | undefined> = {
@@ -69,6 +73,9 @@ const defaultValues: Record<EnvKeys, string | undefined> = {
   ACURAST_DEVNET_INDEXER_API_KEY: INDEXER_DEVNET_API_KEY,
   ACURAST_DEVTOOLS_URL: DEVTOOLS_URL,
   ACURAST_DEVTOOLS_API_URL: DEVTOOLS_API_URL,
+  ACURAST_HUB_URL: HUB_URL,
+  // 'local' (mnemonic) | 'remote' (browser wallet). Empty → auto-detect.
+  ACURAST_SIGNING_MODE: '',
   DEBUG: 'false',
 }
 
@@ -84,8 +91,13 @@ export const getEnv = (key: EnvKeys): string => {
   return value
 }
 
-export const validateDeployEnvVars = (): void => {
-  getEnv('ACURAST_MNEMONIC')
+export const validateDeployEnvVars = (
+  options: { requireMnemonic?: boolean } = {}
+): void => {
+  // In remote-signing mode the mnemonic is not needed — the browser wallet signs.
+  if (options.requireMnemonic ?? true) {
+    getEnv('ACURAST_MNEMONIC')
+  }
   getEnv('ACURAST_IPFS_URL')
   getEnv('ACURAST_IPFS_API_KEY')
 }
@@ -189,6 +201,9 @@ export const getIpfsConfig = (): { endpoint: string; apiKey: string } => ({
   endpoint: getEnv('ACURAST_IPFS_URL'),
   apiKey: getEnv('ACURAST_IPFS_API_KEY'),
 })
+
+/** Base URL of the Acurast Hub (used by `login` and remote signing). */
+export const getHubUrl = (): string => getEnv('ACURAST_HUB_URL').replace(/\/$/, '')
 
 // Default RPC for backwards compatibility (mainnet)
 export const RPC = getEnv('ACURAST_RPC')

@@ -18,13 +18,24 @@ import { parse } from '../util/parse-duration.js'
 import { generateMnemonic } from 'bip39'
 import { getEnv } from '../config.js'
 import { acurastColor } from '../util.js'
+import { getGlobalAuth } from '../util/authStore.js'
+import { runLogin } from './login.js'
 
-const setupEnvFile = () => {
-  const requiredEnvVariables = [
-    'ACURAST_MNEMONIC',
-    'ACURAST_IPFS_URL',
-    'ACURAST_IPFS_API_KEY',
-  ]
+export type SigningChoice = 'browser' | 'mnemonic'
+
+/**
+ * Environment variables `init` sets up, depending on the chosen signing method.
+ * Browser-wallet signing stores no private key, so `ACURAST_MNEMONIC` is
+ * omitted; local signing keeps it first (it is the one generated with a value).
+ */
+export const requiredEnvVariablesForSigning = (mode: SigningChoice): string[] => {
+  const ipfsVars = ['ACURAST_IPFS_URL', 'ACURAST_IPFS_API_KEY']
+  return mode === 'mnemonic' ? ['ACURAST_MNEMONIC', ...ipfsVars] : ipfsVars
+}
+
+const setupEnvFile = (mode: SigningChoice) => {
+  const requiredEnvVariables = requiredEnvVariablesForSigning(mode)
+  const wantsMnemonic = mode === 'mnemonic'
 
   const mnemonic = generateMnemonic()
 
@@ -66,13 +77,17 @@ const setupEnvFile = () => {
   if (!hasEnvFile) {
     console.log('There is no .env file, creating one now...')
 
-    const envVarsText = requiredEnvVariables
-      .slice(1)
-      .map((el) => `\n# ${el}=`)
-      .join('')
-
-    process.env['ACURAST_MNEMONIC'] = mnemonic
-    writeFileSync('./.env', `ACURAST_MNEMONIC=${mnemonic}${envVarsText}`)
+    if (wantsMnemonic) {
+      const envVarsText = requiredEnvVariables
+        .slice(1)
+        .map((el) => `\n# ${el}=`)
+        .join('')
+      process.env['ACURAST_MNEMONIC'] = mnemonic
+      writeFileSync('./.env', `ACURAST_MNEMONIC=${mnemonic}${envVarsText}`)
+    } else {
+      const envVarsText = requiredEnvVariables.map((el) => `# ${el}=`).join('\n')
+      writeFileSync('./.env', envVarsText)
+    }
 
     console.log(`.env file created. Visit ${ENV_HELP_LINK} to learn more.`)
   }
@@ -137,7 +152,10 @@ export const addCommandInit = (program: Command) => {
       if (existsSync('./acurast.json')) {
         console.log('An acurast.json file already exists')
 
-        setupEnvFile()
+        // Topping up an existing project: keep the legacy behaviour of ensuring
+        // a local mnemonic in .env, and don't prompt (this path is also used
+        // non-interactively).
+        setupEnvFile('mnemonic')
         return
       }
 
@@ -153,7 +171,31 @@ export const addCommandInit = (program: Command) => {
         }
       })()
 
-      setupEnvFile()
+      // Only ask how to sign when we can actually prompt. Without a TTY (piped
+      // or scripted), fall back to the local mnemonic — browser login needs an
+      // interactive session anyway.
+      const signingMode: SigningChoice = process.stdin.isTTY
+        ? await select({
+            message: 'How do you want to sign deployments?',
+            choices: [
+              {
+                name: 'Browser wallet — no private key stored (recommended)',
+                value: 'browser',
+                description:
+                  'Sign with a browser wallet via `acurast login`. Works across all your projects.',
+              },
+              {
+                name: 'Local mnemonic — generate & store in .env',
+                value: 'mnemonic',
+                description:
+                  'Generate a mnemonic and store it in this project’s .env. The private key lives on disk.',
+              },
+            ],
+            default: 'browser',
+          })
+        : 'mnemonic'
+
+      setupEnvFile(signingMode)
 
       const packagePath = path.resolve('package.json')
       let projectNameFromPackageJson: string | undefined
@@ -167,27 +209,52 @@ export const addCommandInit = (program: Command) => {
         } catch {}
       }
 
-      const wallet = await walletFromMnemonic(getEnv('ACURAST_MNEMONIC'), {
-        name: 'AcurastCli',
-      })
+      let address: string | undefined
+      if (signingMode === 'mnemonic') {
+        const wallet = await walletFromMnemonic(getEnv('ACURAST_MNEMONIC'), {
+          name: 'AcurastCli',
+        })
+        address = wallet.address
+        console.log('')
+        console.log('The CLI will use the following address: ' + address)
+      } else {
+        const existing = getGlobalAuth()
+        if (existing) {
+          address = existing.address
+          console.log('')
+          console.log(`You are logged in as ${address} (browser wallet).`)
+        } else {
+          console.log('')
+          const loginNow = await confirm({
+            message: 'Log in with your browser wallet now?',
+            default: true,
+          })
+          if (loginNow) {
+            address = (await runLogin({ network: 'mainnet', scope: 'global' })) ?? undefined
+          } else {
+            console.log('Run `acurast login` when you are ready to deploy.')
+          }
+        }
+      }
       console.log('')
-      console.log('The CLI will use the following address: ' + wallet.address)
-      console.log('')
+
       const usesCanary = acurastConfig
         ? Object.values(acurastConfig.projects ?? {}).some(
             (p) => p?.network === 'canary'
           )
         : false
 
-      console.log(
-        `To deploy on mainnet, acquire ACU tokens (see ${acurastColor('https://docs.acurast.com/token-holders/how-to-get-acu/')}) and send them to the address above.`
-      )
-      if (usesCanary) {
+      if (address) {
         console.log(
-          `For canary network testing, use the faucet: ${getFaucetLinkForAddress(wallet.address)}`
+          `To deploy on mainnet, acquire ACU tokens (see ${acurastColor('https://docs.acurast.com/token-holders/how-to-get-acu/')}) and send them to the address above.`
         )
+        if (usesCanary) {
+          console.log(
+            `For canary network testing, use the faucet: ${getFaucetLinkForAddress(address)}`
+          )
+        }
+        console.log('')
       }
-      console.log('')
 
       if (!existsSync(packagePath)) {
         console.log(

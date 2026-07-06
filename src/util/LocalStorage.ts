@@ -1,19 +1,29 @@
 import * as fs from 'fs'
-import { ensureDirectoryExistence } from '../acurast/storeDeployment.js'
+import { ensureDirectoryExistence } from './ensureDirectoryExistence.js'
 import { ACURAST_BASE_PATH } from '../constants.js'
 
 export class LocalStorage {
   private filePath: string
+  private mode?: number
 
-  constructor(fileName = 'keys.json') {
-    this.filePath = `${ACURAST_BASE_PATH}/${fileName}`
+  constructor(fileName = 'keys.json', mode?: number, basePath: string = ACURAST_BASE_PATH) {
+    this.filePath = `${basePath}/${fileName}`
+    this.mode = mode
     this.ensureFile()
   }
 
   private ensureFile() {
     ensureDirectoryExistence(this.filePath)
     if (!fs.existsSync(this.filePath)) {
-      fs.writeFileSync(this.filePath, '{}', 'utf8')
+      fs.writeFileSync(this.filePath, '{}', { encoding: 'utf8', ...(this.mode ? { mode: this.mode } : {}) })
+    } else if (this.mode !== undefined) {
+      // Best-effort tighten permissions on an existing file (no-op on
+      // filesystems that ignore Unix modes, e.g. WSL DrvFs / Windows).
+      try {
+        fs.chmodSync(this.filePath, this.mode)
+      } catch {
+        // ignore
+      }
     }
   }
 
