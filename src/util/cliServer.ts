@@ -124,7 +124,11 @@ export const startLoginServer = async (options?: {
   })
 
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
-  server.unref() // don't let the open socket keep the CLI process alive
+  // NOTE: do not `unref()` here. `login` awaits `waitForCallback` with no other
+  // active handle, so an unref'd socket would let the process exit immediately —
+  // before the browser can reach `http://localhost:<port>/callback`. The
+  // listening socket is what keeps the CLI alive during the wait; `close()`
+  // (always called in `login`'s `finally`) releases it so the process can exit.
   port = (server.address() as AddressInfo).port
 
   const waitForCallback = (timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS): Promise<LoginCallback> =>
