@@ -1,14 +1,13 @@
 import { Command, Option } from 'commander'
-import { confirm, input, password, select } from '@inquirer/prompts'
-import { fileURLToPath } from 'url'
-import { dirname, join } from 'path'
+import { confirm, input, select } from '@inquirer/prompts'
 
 import { parseByteSize, jobToNumber } from '@acurast/sdk/chain'
+import { probeVpsReady } from '@acurast/vps'
 
 import {
   buildVpsConfig,
   resolveVpsOptions,
-  VPS_IMAGES,
+  VPS_IMAGE_NAMES,
   DEFAULT_VPS_IMAGE,
   DEFAULT_VPS_DURATION,
   DEFAULT_VPS_NETWORK,
@@ -23,17 +22,17 @@ import { consoleOutput } from '../util/console-output.js'
 import { acurastColor } from '../util.js'
 import { humanTime } from '../util/humanTime.js'
 import { filelogger } from '../util/fileLogger.js'
+import * as ora from '../util/ora.js'
 
 const IMAGE_LABELS: Record<string, string> = {
-  ubuntu24: 'Ubuntu 24.04 LTS (noble)',
-  ubuntu25: 'Ubuntu 25.10 (questing)',
+  ubuntu: 'Ubuntu 25.10 (questing)',
 }
 
 const SSH_KEY_PREFIX =
   /^(ssh-(rsa|ed25519|dss)|ecdsa-sha2-\S+|sk-(ssh-ed25519|ecdsa-sha2-\S+))\s+\S+/
 
 const validateSshKey = (value: string): true | string =>
-  value === '' || SSH_KEY_PREFIX.test(value.trim())
+  SSH_KEY_PREFIX.test(value.trim())
     ? true
     : 'Expected an SSH public key (e.g. "ssh-ed25519 AAAA... user@host")'
 
@@ -62,6 +61,8 @@ const validatePositiveIntInput = (value: string): true | string => {
     : 'Please enter a positive integer or leave empty'
 }
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
 /**
  * Interactively fill in every option that was not provided via flags or
  * `VPS_*` environment variables.
@@ -77,10 +78,10 @@ const runVpsWizard = async (opts: VpsOptions): Promise<VpsOptions> => {
     })
   }
 
-  if (result.image === undefined) {
+  if (result.image === undefined && VPS_IMAGE_NAMES.length > 1) {
     result.image = await select({
       message: 'Which image should the VPS run?',
-      choices: Object.keys(VPS_IMAGES).map((alias) => ({
+      choices: VPS_IMAGE_NAMES.map((alias) => ({
         value: alias,
         name: IMAGE_LABELS[alias] ?? alias,
       })),
@@ -99,7 +100,8 @@ const runVpsWizard = async (opts: VpsOptions): Promise<VpsOptions> => {
   if (
     result.minMemory === undefined &&
     result.minStorage === undefined &&
-    result.minComputeScore === undefined
+    result.minComputeScore === undefined &&
+    result.minCpuMultiScore === undefined
   ) {
     const setRequirements = await confirm({
       message: 'Set minimum hardware requirements for the processor?',
@@ -125,26 +127,18 @@ const runVpsWizard = async (opts: VpsOptions): Promise<VpsOptions> => {
   }
 
   if (result.authorizedSshKey === undefined) {
-    result.authorizedSshKey =
-      (await input({
-        message: 'Authorized SSH public key (empty to use password only):',
-        validate: validateSshKey,
-      })) || undefined
-  }
-
-  if (result.sshPassword === undefined) {
-    result.sshPassword =
-      (await password({
-        message: `Root password (empty = default "password", not recommended):`,
-        mask: '*',
-      })) || undefined
+    result.authorizedSshKey = await input({
+      message:
+        'Authorized SSH public key (required, e.g. contents of ~/.ssh/id_ed25519.pub):',
+      validate: validateSshKey,
+    })
   }
 
   if (result.callbackUrl === undefined) {
     result.callbackUrl =
       (await input({
         message:
-          'Callback URL to receive the SSH connect command (e.g. from https://webhook.watch, empty to skip):',
+          'Callback URL for tunnel lifecycle events (e.g. from https://webhook.watch, empty to skip):',
         validate: (value) =>
           value === '' || /^https?:\/\/\S+$/.test(value)
             ? true
@@ -153,6 +147,46 @@ const runVpsWizard = async (opts: VpsOptions): Promise<VpsOptions> => {
   }
 
   return result
+}
+
+/**
+ * Poll the precomputed tunnel domain until dropbear answers, then print the
+ * SSH connect command. The processor boots the rootfs (image download +
+ * apt-get) after the start time, so this can take a while.
+ */
+const waitForVpsReady = async (
+  domain: string,
+  sshCommand: string,
+  log: (msg: string) => void,
+  deadlineMs: number
+): Promise<void> => {
+  const spinner = ora.default(
+    'Waiting for the VPS to boot (image download + setup can take a few minutes)...'
+  )
+  spinner.start()
+  const deadline = Date.now() + deadlineMs
+
+  while (Date.now() < deadline) {
+    const result = await probeVpsReady(domain, { timeoutMs: 10_000 })
+    if (result.ready) {
+      spinner.stop()
+      log(`✅ VPS is up (${result.banner ?? 'SSH banner received'})`)
+      log('')
+      log('Connect with:')
+      log(`  ${sshCommand}`)
+      log('')
+      return
+    }
+    filelogger.debug(`VPS probe not ready yet: ${result.error}`)
+    await sleep(15_000)
+  }
+
+  spinner.stop()
+  log(
+    '⚠️ The VPS did not become reachable in time. It may still be booting — retry the SSH command in a few minutes:'
+  )
+  log(`  ${sshCommand}`)
+  log('')
 }
 
 export const addCommandDeployVps = (deployCmd: Command) => {
@@ -164,8 +198,8 @@ export const addCommandDeployVps = (deployCmd: Command) => {
     .addOption(
       new Option(
         '--image <alias>',
-        `VPS image. One of: ${Object.keys(VPS_IMAGES).join(', ')}`
-      ).choices(Object.keys(VPS_IMAGES))
+        `VPS image. One of: ${VPS_IMAGE_NAMES.join(', ')}`
+      ).choices(VPS_IMAGE_NAMES)
     )
     .addOption(
       new Option('--min-memory <size>', 'Minimum total RAM (e.g. 2GB, 512MiB)')
@@ -184,14 +218,14 @@ export const addCommandDeployVps = (deployCmd: Command) => {
     )
     .addOption(
       new Option(
-        '--authorized-ssh-key <key>',
-        'SSH public key added to /root/.ssh/authorized_keys on the VPS'
+        '--min-cpu-multi-score <n>',
+        'Minimum CPU multi-core benchmark score'
       )
     )
     .addOption(
       new Option(
-        '--ssh-password <password>',
-        'Root password for the SSH session (default: "password")'
+        '--authorized-ssh-key <key>',
+        'SSH public key added to /root/.ssh/authorized_keys on the VPS (required; the VPS is key-auth only)'
       )
     )
     .addOption(
@@ -203,7 +237,13 @@ export const addCommandDeployVps = (deployCmd: Command) => {
     .addOption(
       new Option(
         '--callback-url <url>',
-        'Webhook that receives the SSH connect command once the tunnel is up (e.g. from https://webhook.watch)'
+        'Webhook that receives tunnel lifecycle events (log/started/error) as JSON'
+      )
+    )
+    .addOption(
+      new Option(
+        '--http-port <port>',
+        'Also serve plain HTTP from this VPS port on the tunnel subdomain (>= 1024)'
       )
     )
     .addOption(
@@ -211,7 +251,6 @@ export const addCommandDeployVps = (deployCmd: Command) => {
         ...CLI_NETWORKS,
       ])
     )
-    .addOption(new Option('--replicas <n>', 'Number of VPS instances'))
     .addOption(
       new Option(
         '--max-cost-per-execution <amount>',
@@ -244,7 +283,6 @@ export const addCommandDeployVps = (deployCmd: Command) => {
         'Do not ask for any input; missing options fall back to VPS_* env vars and defaults.'
       )
     )
-    .addOption(new Option('-u, --only-upload', 'Only upload to IPFS and quit.'))
     .action(
       async (
         options: VpsOptions & {
@@ -252,7 +290,6 @@ export const addCommandDeployVps = (deployCmd: Command) => {
           output: 'text' | 'json'
           exitEarly?: boolean
           nonInteractive?: boolean
-          onlyUpload?: boolean
         }
       ) => {
         const log = consoleOutput(options.output)
@@ -286,23 +323,16 @@ export const addCommandDeployVps = (deployCmd: Command) => {
           }
         }
 
-        const templateDir = join(
-          dirname(fileURLToPath(import.meta.url)),
-          '..',
-          'templates',
-          'vps',
-          'app'
-        )
-
-        let config, envVars
+        let plan
         try {
-          ;({ config, envVars } = buildVpsConfig(vpsOptions, templateDir))
+          plan = buildVpsConfig(vpsOptions)
         } catch (e: any) {
           log(e.message)
           return
         }
+        const { envVars, domain, sshCommand } = plan
 
-        const configResult = validateCliConfig(config)
+        const configResult = validateCliConfig(plan.config)
         if (!configResult.success) {
           log('')
           log('⚠️ Generated VPS config is invalid:')
@@ -313,19 +343,13 @@ export const addCommandDeployVps = (deployCmd: Command) => {
           )
           return
         }
-        config = configResult.data
-
-        const usesDefaultPassword = !vpsOptions.sshPassword
-        const authMethods = [
-          vpsOptions.authorizedSshKey ? 'SSH key' : undefined,
-          usesDefaultPassword ? 'password (default: "password")' : 'password',
-        ].filter(Boolean)
+        const config = configResult.data
 
         log('')
         log(`Deploying VPS "${config.projectName}"`)
         log('')
         log(
-          `  Image:    ${IMAGE_LABELS[vpsOptions.image ?? DEFAULT_VPS_IMAGE]}`
+          `  Image:    ${IMAGE_LABELS[vpsOptions.image ?? DEFAULT_VPS_IMAGE] ?? vpsOptions.image}`
         )
         log(
           `  Duration: ${humanTime(
@@ -336,36 +360,15 @@ export const addCommandDeployVps = (deployCmd: Command) => {
           )}`
         )
         log(`  Network:  ${config.network}`)
-        log(`  SSH auth: ${authMethods.join(' + ')}`)
+        log(`  Tunnel:   ${toAcurastColor(`https://${domain}`)}`)
         if (config.benchmarkFilters) {
-          log(`  Requirements: ${JSON.stringify(config.benchmarkFilters)}`)
-        }
-        if (usesDefaultPassword && !vpsOptions.authorizedSshKey) {
-          log('')
-          log(
-            '⚠️ Using the default root password "password". Anyone with the tunnel URL can log in — set --ssh-password or --authorized-ssh-key for anything sensitive.'
+          const activeFilters = Object.fromEntries(
+            Object.entries(config.benchmarkFilters).filter(
+              ([, value]) => value !== undefined
+            )
           )
-        }
-
-        // Without a callback the tunnel hostname is unrecoverable: it is
-        // generated on the processor and the Shell runtime has no remote log
-        // access (DevTools only supports NodeJS deployments).
-        if (!vpsOptions.callbackUrl && !options.dryRun) {
-          log('')
-          log(
-            '⚠️ No callback URL set — you will NOT be able to retrieve the SSH connect command after deploying (the tunnel hostname is only known on the device).'
-          )
-          if (isInteractive) {
-            const proceed = await confirm({
-              message: 'Deploy anyway, without a callback URL?',
-              default: false,
-            })
-            if (!proceed) {
-              log(
-                `Aborted. Get a webhook endpoint (e.g. from ${toAcurastColor('https://webhook.watch')}) and pass it via --callback-url or the wizard.`
-              )
-              return
-            }
+          if (Object.keys(activeFilters).length > 0) {
+            log(`  Requirements: ${JSON.stringify(activeFilters)}`)
           }
         }
 
@@ -374,7 +377,7 @@ export const addCommandDeployVps = (deployCmd: Command) => {
           () => envVars,
           options,
           configResult.notes,
-          ({ jobId }) => {
+          async ({ jobId }) => {
             log('')
             if (jobId && Array.isArray(jobId) && jobId[0]?.acurast) {
               log(
@@ -384,23 +387,16 @@ export const addCommandDeployVps = (deployCmd: Command) => {
               )
             }
             log('')
-            if (vpsOptions.callbackUrl) {
-              log(
-                `Once the tunnel is up, your callback URL will receive a "started" event containing the web URL and the exact SSH connect command:`
-              )
-              log(`  ${toAcurastColor(vpsOptions.callbackUrl)}`)
-            } else {
-              log(
-                '⚠️ No callback URL was set. The tunnel hostname is only known once the deployment starts on the processor, and there is no way to retrieve it remotely — the connect command is only visible in the logs on the device itself.'
-              )
-              log(
-                `Next time, pass ${toAcurastColor('--callback-url')} (e.g. an endpoint from https://webhook.watch) to receive the "started" event with the connect command:`
-              )
-              log(
-                `  ssh -o ProxyCommand='openssl s_client -quiet -servername <clientId>.<domain> -connect <clientId>.<domain>:443' root@<clientId>`
-              )
+
+            if (options.exitEarly) {
+              log('Once the VPS is up, connect with:')
+              log(`  ${sshCommand}`)
+              log('')
+              return
             }
-            log('')
+
+            // Start delay (~3 min) + rootfs download and setup on the device.
+            await waitForVpsReady(domain, sshCommand, log, 15 * 60_000)
           }
         )
       }

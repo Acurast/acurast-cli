@@ -1,24 +1,24 @@
 import {
   buildVpsConfig,
   resolveVpsOptions,
-  VPS_IMAGES,
-  DEFAULT_VPS_IMAGE,
+  DEFAULT_VPS_MAX_COST_PER_EXECUTION,
 } from '../src/util/buildVpsConfig.js'
 import { DeploymentRuntime } from '@acurast/sdk/types'
+import { TUNNEL_SCRIPT_IPFS, VPS_IMAGE_PRESETS } from '@acurast/vps'
 
-const TEMPLATE_DIR = '/tmp/templates/vps/app'
+const SSH_KEY = 'ssh-ed25519 AAAA key'
 
 describe('resolveVpsOptions', () => {
   test('flags win over VPS_* env vars', () => {
     const resolved = resolveVpsOptions(
-      { image: 'ubuntu24', minMemory: '4GB' },
+      { image: 'ubuntu', minMemory: '4GB' },
       {
-        VPS_IMAGE: 'ubuntu25',
+        VPS_IMAGE: 'other',
         VPS_MIN_MEMORY: '1GB',
         VPS_MIN_STORAGE: '20GB',
       }
     )
-    expect(resolved.image).toBe('ubuntu24')
+    expect(resolved.image).toBe('ubuntu')
     expect(resolved.minMemory).toBe('4GB')
     expect(resolved.minStorage).toBe('20GB')
   })
@@ -27,30 +27,30 @@ describe('resolveVpsOptions', () => {
     const resolved = resolveVpsOptions(
       {},
       {
-        VPS_IMAGE: 'ubuntu25',
+        VPS_IMAGE: 'ubuntu',
         VPS_MIN_MEMORY: '2GB',
         VPS_MIN_STORAGE: '10GB',
         VPS_MIN_COMPUTE_SCORE: '100',
-        VPS_AUTHORIZED_SSH_KEY: 'ssh-ed25519 AAAA key',
-        VPS_SSH_PASSWORD: 'hunter2',
+        VPS_MIN_CPU_MULTI_SCORE: '200',
+        VPS_AUTHORIZED_SSH_KEY: SSH_KEY,
         VPS_DURATION: '2h',
         VPS_CALLBACK_URL: 'https://webhook.watch/abc',
+        VPS_HTTP_PORT: '8080',
         VPS_NETWORK: 'mainnet',
-        VPS_REPLICAS: '2',
         VPS_MAX_COST_PER_EXECUTION: '123',
       }
     )
     expect(resolved).toMatchObject({
-      image: 'ubuntu25',
+      image: 'ubuntu',
       minMemory: '2GB',
       minStorage: '10GB',
       minComputeScore: '100',
-      authorizedSshKey: 'ssh-ed25519 AAAA key',
-      sshPassword: 'hunter2',
+      minCpuMultiScore: '200',
+      authorizedSshKey: SSH_KEY,
       duration: '2h',
       callbackUrl: 'https://webhook.watch/abc',
+      httpPort: '8080',
       network: 'mainnet',
-      replicas: '2',
       maxCostPerExecution: '123',
     })
   })
@@ -65,14 +65,16 @@ describe('resolveVpsOptions', () => {
 })
 
 describe('buildVpsConfig', () => {
-  test('defaults: ubuntu24 image, 24h onetime execution, canary, 1 replica', () => {
-    const { config, envVars } = buildVpsConfig({}, TEMPLATE_DIR)
+  test('defaults: pinned tunnel bundle, 24h onetime execution, canary', () => {
+    const { config, envVars, clientId, domain, sshCommand } = buildVpsConfig({
+      authorizedSshKey: SSH_KEY,
+    })
 
-    expect(config.projectName).toMatch(/^vps-/)
-    expect(config.fileUrl).toBe(TEMPLATE_DIR)
+    expect(config.projectName).toBe(`vps-${clientId}`)
+    expect(config.fileUrl).toBe(TUNNEL_SCRIPT_IPFS)
     expect(config.entrypoint).toBe('start.sh')
     expect(config.runtime).toBe(DeploymentRuntime.Shell)
-    expect(config.image).toEqual(VPS_IMAGES[DEFAULT_VPS_IMAGE])
+    expect(config.image).toEqual(VPS_IMAGE_PRESETS.ubuntu)
     expect(config.network).toBe('canary')
     expect(config.execution).toEqual({
       type: 'onetime',
@@ -81,97 +83,114 @@ describe('buildVpsConfig', () => {
     expect(config.numberOfReplicas).toBe(1)
     expect(config.onlyAttestedDevices).toBe(true)
     expect(config.requiredModules).toEqual(['Shell'])
-    expect(config.minProcessorVersions).toEqual({ android: '1.26.0' })
-    expect(config.benchmarkFilters).toBeUndefined()
-    // NETWORK always forwarded so tunnel.py picks the right relays
-    expect(envVars).toEqual([{ key: 'NETWORK', value: 'canary' }])
-  })
+    expect(config.maxCostPerExecution).toBe(DEFAULT_VPS_MAX_COST_PER_EXECUTION)
 
-  test('maps min-* options to benchmarkFilters', () => {
-    const { config } = buildVpsConfig(
-      { minMemory: '2GB', minStorage: '10GB', minComputeScore: '100' },
-      TEMPLATE_DIR
-    )
-    expect(config.benchmarkFilters).toEqual({
-      minRamTotalBytes: 2_000_000_000,
-      minStorageAvailBytes: 10_000_000_000,
-      minCpuSingleCoreScore: 100,
+    expect(clientId).toMatch(/^[0-9a-f]{16}$/)
+    expect(domain).toBe(`${clientId}.canary.acu.run`)
+    expect(sshCommand).toContain(`root@${domain}`)
+
+    // The tunnel key is generated locally; NETWORK steers tunnel.py's relays.
+    const keys = envVars.map((v) => v.key)
+    expect(keys).toEqual(['TUNNEL_KEY', 'SSH_AUTHORIZED_KEY', 'NETWORK'])
+    expect(envVars).toContainEqual({ key: 'NETWORK', value: 'canary' })
+    expect(envVars).toContainEqual({
+      key: 'SSH_AUTHORIZED_KEY',
+      value: SSH_KEY,
     })
   })
 
-  test('collects ssh/callback env vars, skipping unset ones', () => {
-    const { envVars } = buildVpsConfig(
-      {
-        authorizedSshKey: 'ssh-ed25519 AAAA key',
-        sshPassword: 'hunter2',
-        callbackUrl: 'https://webhook.watch/abc',
-        network: 'mainnet',
-      },
-      TEMPLATE_DIR
-    )
-    expect(envVars).toEqual([
-      { key: 'NETWORK', value: 'mainnet' },
-      { key: 'SSH_PASSWORD', value: 'hunter2' },
-      { key: 'SSH_AUTHORIZED_KEY', value: 'ssh-ed25519 AAAA key' },
-      { key: 'CALLBACK_URL', value: 'https://webhook.watch/abc' },
-    ])
+  test('each call generates a fresh tunnel identity', () => {
+    const a = buildVpsConfig({ authorizedSshKey: SSH_KEY })
+    const b = buildVpsConfig({ authorizedSshKey: SSH_KEY })
+    expect(a.clientId).not.toBe(b.clientId)
   })
 
-  test('devnet uses canary tunnel relays but keeps devnet in the config', () => {
-    const { config, envVars } = buildVpsConfig(
-      { network: 'devnet' },
-      TEMPLATE_DIR
-    )
+  test('maps min-* options to benchmarkFilters', () => {
+    const { config } = buildVpsConfig({
+      authorizedSshKey: SSH_KEY,
+      minMemory: '2GB',
+      minStorage: '10GB',
+      minComputeScore: '100',
+      minCpuMultiScore: '200',
+    })
+    expect(config.benchmarkFilters).toMatchObject({
+      minRamTotalBytes: 2_000_000_000,
+      minStorageAvailBytes: 10_000_000_000,
+      minCpuSingleCoreScore: 100,
+      minCpuMultiCoreScore: 200,
+    })
+  })
+
+  test('forwards callback URL and http port env vars', () => {
+    const { envVars, domain } = buildVpsConfig({
+      authorizedSshKey: SSH_KEY,
+      callbackUrl: 'https://webhook.watch/abc',
+      httpPort: '8080',
+      network: 'mainnet',
+    })
+    expect(domain).toMatch(/\.acu\.run$/)
+    expect(envVars).toContainEqual({ key: 'NETWORK', value: 'mainnet' })
+    expect(envVars).toContainEqual({
+      key: 'CALLBACK_URL',
+      value: 'https://webhook.watch/abc',
+    })
+    expect(envVars).toContainEqual({ key: 'HTTP_PORT', value: '8080' })
+  })
+
+  test('devnet uses canary tunnel relays and domain but keeps devnet in the config', () => {
+    const { config, envVars, domain, clientId } = buildVpsConfig({
+      authorizedSshKey: SSH_KEY,
+      network: 'devnet',
+    })
     expect(config.network).toBe('devnet')
     expect(envVars).toContainEqual({ key: 'NETWORK', value: 'canary' })
+    expect(domain).toBe(`${clientId}.canary.acu.run`)
   })
 
-  test('parses duration strings and replica counts', () => {
-    const { config } = buildVpsConfig(
-      { duration: '90m', replicas: '3', maxCostPerExecution: '42' },
-      TEMPLATE_DIR
-    )
+  test('parses duration strings and reward', () => {
+    const { config } = buildVpsConfig({
+      authorizedSshKey: SSH_KEY,
+      duration: '90m',
+      maxCostPerExecution: '42',
+    })
     expect(config.execution).toEqual({
       type: 'onetime',
       maxExecutionTimeInMs: 90 * 60 * 1000,
     })
-    expect(config.numberOfReplicas).toBe(3)
     expect(config.maxCostPerExecution).toBe(42)
   })
 
-  test('rejects unknown image alias, bad duration, bad network, bad numbers', () => {
-    expect(() => buildVpsConfig({ image: 'arch' }, TEMPLATE_DIR)).toThrow(
-      /Unknown image/
-    )
-    expect(() => buildVpsConfig({ duration: 'soon' }, TEMPLATE_DIR)).toThrow(
-      /duration/i
-    )
-    expect(() => buildVpsConfig({ network: 'testnet' }, TEMPLATE_DIR)).toThrow(
-      /network/i
-    )
-    expect(() =>
-      buildVpsConfig({ minComputeScore: 'fast' }, TEMPLATE_DIR)
-    ).toThrow(/min-compute-score/i)
-    expect(() => buildVpsConfig({ replicas: '0' }, TEMPLATE_DIR)).toThrow(
-      /replicas/i
-    )
+  test('requires an SSH public key', () => {
+    expect(() => buildVpsConfig({})).toThrow(/SSH public key/i)
   })
 
-  test('image aliases all define url and sha256', () => {
-    for (const [alias, image] of Object.entries(VPS_IMAGES)) {
-      expect(image.url).toMatch(/^https:\/\//)
-      expect(image.sha256).toMatch(/^[0-9a-f]{64}$/)
-      expect(alias).toMatch(/^[a-z0-9-]+$/)
-    }
+  test('rejects unknown image alias, bad duration, bad network, bad numbers', () => {
+    const base = { authorizedSshKey: SSH_KEY }
+    expect(() => buildVpsConfig({ ...base, image: 'arch' })).toThrow(
+      /Unknown image/
+    )
+    expect(() => buildVpsConfig({ ...base, duration: 'soon' })).toThrow(
+      /duration/i
+    )
+    expect(() => buildVpsConfig({ ...base, network: 'testnet' })).toThrow(
+      /network/i
+    )
+    expect(() => buildVpsConfig({ ...base, minComputeScore: 'fast' })).toThrow(
+      /min-compute-score/i
+    )
+    expect(() => buildVpsConfig({ ...base, httpPort: '80' })).toThrow(
+      /http-port/i
+    )
   })
 
   test('produces a config accepted by validateCliConfig', async () => {
     const { validateCliConfig } =
       await import('../src/util/validateCliConfig.js')
-    const { config } = buildVpsConfig(
-      { minMemory: '2GB', network: 'canary' },
-      TEMPLATE_DIR
-    )
+    const { config } = buildVpsConfig({
+      authorizedSshKey: SSH_KEY,
+      minMemory: '2GB',
+      network: 'canary',
+    })
     const result = validateCliConfig(config)
     expect(result.success).toBe(true)
   })
