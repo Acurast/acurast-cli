@@ -48,9 +48,5 @@ grep -q "^VPS_DURATION=1h$" .env || {
   echo "ASSERT FAIL: .env missing persisted VPS_DURATION" >&2
   exit 1
 }
-grep -q "^VPS_IMAGE=ubuntu$" .env || {
-  echo "ASSERT FAIL: .env missing persisted VPS_IMAGE" >&2
-  exit 1
-}
 
 echo "OK: deploy vps dry-run (non-interactive, env vars, wizard)"

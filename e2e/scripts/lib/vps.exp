@@ -19,12 +19,6 @@ expect {
 send "\r"
 
 expect {
-  timeout { puts "\nTIMEOUT: image prompt"; exit 2 }
-  "Which image should the VPS run?"
-}
-send "\r"
-
-expect {
   timeout { puts "\nTIMEOUT: duration prompt"; exit 2 }
   "How long should the VPS run?"
 }
