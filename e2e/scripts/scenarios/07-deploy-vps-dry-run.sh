@@ -28,7 +28,8 @@ assert_stdout_contains "$OUT" "Dry run, not deploying"
 assert_no_deploy_artifacts "$SCENARIO_DIR"
 
 # VPS_* env vars: flags win, env fills the rest.
-OUT="$(VPS_MIN_MEMORY=2GB VPS_DURATION=1h VPS_SSH_PASSWORD=e2e-password \
+OUT="$(VPS_MIN_MEMORY=2GB VPS_DURATION=1h \
+  VPS_AUTHORIZED_SSH_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF7e2edummykey e2e@acurast" \
   run_acurast deploy vps --non-interactive --dry-run --output json 2>&1)"
 CODE=$?
 assert_exit "$CODE" 0 "acurast deploy vps --dry-run (VPS_* env)"

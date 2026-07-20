@@ -43,12 +43,6 @@ expect {
 send "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF7e2edummykey e2e@acurast\r"
 
 expect {
-  timeout { puts "\nTIMEOUT: password prompt"; exit 2 }
-  "Root password"
-}
-send "\r"
-
-expect {
   timeout { puts "\nTIMEOUT: callback url prompt"; exit 2 }
   "Callback URL"
 }
