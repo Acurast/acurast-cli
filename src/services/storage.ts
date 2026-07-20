@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs'
-import { ensureDirectoryExistence } from '../acurast/storeDeployment.js'
+import { ensureDirectoryExistence } from '../util/ensureDirectoryExistence.js'
 import { ACURAST_BASE_PATH } from '../constants.js'
 
 interface LiveCodeProcessor {

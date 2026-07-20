@@ -1,0 +1,58 @@
+#!/usr/bin/env expect
+# Drive the interactive `acurast init` wizard.
+# Usage: expect init.exp <project-name> [duration]
+# Requires ACURAST_MNEMONIC in the environment.
+
+# A real terminal size and TERM are required, otherwise the CLI's ora spinner
+# re-renders in a tight loop and floods the pty.
+set stty_init "rows 40 cols 120"
+set env(TERM) "xterm-256color"
+
+set timeout 90
+set project [lindex $argv 0]
+set duration [lindex $argv 1]
+if {$duration eq ""} { set duration "5s" }
+
+spawn acurast init
+
+# Signing method (select): default is "Browser wallet"; move down once to pick
+# "Local mnemonic" so the wizard writes ACURAST_MNEMONIC to .env (down arrow =
+# ESC [ B, then Enter).
+expect {
+  timeout { puts "\nTIMEOUT: signing method prompt"; exit 2 }
+  "How do you want to sign"
+}
+send "\033\[B\r"
+
+expect {
+  timeout { puts "\nTIMEOUT: project name prompt"; exit 2 }
+  "name of the project"
+}
+send "$project\r"
+
+expect {
+  timeout { puts "\nTIMEOUT: deployment type prompt"; exit 2 }
+  "one time or in an interval"
+}
+send "\r"
+
+expect {
+  timeout { puts "\nTIMEOUT: duration prompt"; exit 2 }
+  "Enter the duration"
+}
+send "$duration\r"
+
+expect {
+  timeout { puts "\nTIMEOUT: bundled file prompt"; exit 2 }
+  "bundled javascript file"
+}
+send "\r"
+
+expect {
+  timeout { puts "\nTIMEOUT: success message"; exit 2 }
+  "Successfully created"
+}
+
+expect eof
+catch wait result
+exit [lindex $result 3]

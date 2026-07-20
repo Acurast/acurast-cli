@@ -3,15 +3,12 @@ export default {
   testEnvironment: 'node',
   roots: ['./src', './test'],
   setupFiles: ['<rootDir>/test/setup.ts'],
-  globals: {
-    'ts-jest': {
-      tsconfig: 'tsconfig.json',
-      useESM: true,
-    },
-  },
   testPathIgnorePatterns: ['./src/commands/test.ts'],
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', { useESM: true }],
+    // Use the ESM/esnext test tsconfig so top-level `await import()` (ESM
+    // module mocking) compiles. Requires `NODE_OPTIONS=--experimental-vm-modules`,
+    // set in the `test` script.
+    '^.+\\.tsx?$': ['ts-jest', { useESM: true, tsconfig: 'tsconfig.jest.json' }],
   },
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {

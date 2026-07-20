@@ -5,3 +5,8 @@ node_modules
 .env
 .acurast
 settings.json
+e2e/.env
+e2e/.work
+e2e/fixtures/**/node_modules
+e2e/fixtures/**/dist
+e2e/fixtures/**/package-lock.json

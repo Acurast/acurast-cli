@@ -1,0 +1,9 @@
+# Used when building the e2e image (docker-compose build context is repo root).
+node_modules
+dist
+.git
+
+e2e/.env
+e2e/fixtures/**/node_modules
+e2e/fixtures/**/dist
+e2e/fixtures/**/package-lock.json
