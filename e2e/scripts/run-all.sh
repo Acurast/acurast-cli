@@ -42,6 +42,7 @@ SCENARIOS=(
   "$SCRIPT_DIR/scenarios/04-estimate-fee.sh"
   "$SCRIPT_DIR/scenarios/05-new-nodejs.sh"
   "$SCRIPT_DIR/scenarios/06-new-init-deploy.sh"
+  "$SCRIPT_DIR/scenarios/07-deploy-vps-dry-run.sh"
 )
 
 for scenario in "${SCENARIOS[@]}"; do

@@ -8,6 +8,7 @@ import figlet from 'figlet'
 const { textSync } = figlet
 import { addCommandInit } from './commands/init.js'
 import { addCommandDeploy } from './commands/deploy.js'
+import { addCommandDeployVps } from './commands/deploy-vps.js'
 import { addCommandLogin } from './commands/login.js'
 import { addCommandLogout } from './commands/logout.js'
 import { addCommandWhoami } from './commands/whoami.js'
@@ -45,8 +46,11 @@ program
   .name('acurast')
   .version(packageJson.version, '-v, --version')
   .description(packageJson.description)
+  // Required so `deploy vps` can define flags that also exist on `deploy`
+  // (e.g. --dry-run) without the parent consuming them.
+  .enablePositionalOptions()
 
-addCommandDeploy(program)
+addCommandDeployVps(addCommandDeploy(program))
 addCommandInit(program)
 addCommandDeployments(program)
 addCommandCancel(program)

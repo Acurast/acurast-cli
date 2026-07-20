@@ -46,6 +46,7 @@ To use the Acurast CLI, type `acurast` followed by any of the available options 
 
 - `new <project-name>` - Create a new Acurast project from a template.
 - `deploy [options] [project]` - Deploy the current project to the Acurast platform.
+- `deploy vps [options]` - Deploy an SSH-able VPS on an Acurast processor (see [Deploy a VPS](#deploy-a-vps)).
 - `cancel <deployment-id> [options]` - Cancel (deregister) a deployment on-chain and return any unused locked funds.
 - `estimate-fee [options] [project]` - Estimate the fee for the current project.
 - `deployments [arg] [options]` - List, view, and manage deployments.
@@ -274,6 +275,53 @@ ACURAST_DEVNET_INDEXER_API_KEY=<your-key>
 ```
 
 Then in `acurast.json` set `"network": "devnet"` on the project entry.
+
+## Deploy a VPS
+
+`acurast deploy vps` turns a processor into an SSH-able "VPS": it deploys the pinned tunnel bundle from [`@acurast/vps`](https://github.com/Acurast/acurast-typescript-sdk/tree/main/packages/acurast-vps), which runs an Ubuntu rootfs, starts a [Dropbear](https://github.com/mkj/dropbear) SSH server and exposes it through the Acurast reverse tunnel. No `acurast.json` is needed, and nothing is uploaded to IPFS — the bundle is already pinned.
+
+The tunnel keypair is generated locally, so the SSH hostname is known before the deployment even starts: the CLI prints it upfront, waits for the VPS to boot and then prints the ready-to-paste SSH connect command.
+
+```bash
+acurast deploy vps \
+  --min-memory 2GB \
+  --min-storage 10GB \
+  --min-compute-score 100 \
+  --authorized-ssh-key "ssh-ed25519 AAAA... user@host" \
+  --duration 24h
+```
+
+Running `acurast deploy vps` without flags starts an interactive wizard that asks for anything missing. `ACURAST_MNEMONIC` must be set (or use `acurast login` for remote signing).
+
+### Options
+
+| Flag                       | Env var                      | Description                                                                                             |
+| -------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `--image <alias>`           | `VPS_IMAGE`                  | Image preset. Currently `ubuntu` (25.10, proot-distro rootfs, aarch64).                                  |
+| `--min-memory <size>`       | `VPS_MIN_MEMORY`             | Minimum total RAM of the processor (e.g. `2GB`).                                                        |
+| `--min-storage <size>`      | `VPS_MIN_STORAGE`            | Minimum available storage (e.g. `10GB`).                                                                |
+| `--min-compute-score <n>`   | `VPS_MIN_COMPUTE_SCORE`      | Minimum CPU single-core benchmark score.                                                                |
+| `--min-cpu-multi-score <n>` | `VPS_MIN_CPU_MULTI_SCORE`    | Minimum CPU multi-core benchmark score.                                                                 |
+| `--authorized-ssh-key <k>`  | `VPS_AUTHORIZED_SSH_KEY`     | SSH public key appended to `/root/.ssh/authorized_keys`. Required — the VPS is key-auth only.           |
+| `--duration <dur>`          | `VPS_DURATION`               | How long the VPS runs (e.g. `1h`, `24h`, `2d`). Default `24h`.                                          |
+| `--callback-url <url>`      | `VPS_CALLBACK_URL`           | Optional webhook receiving `log`/`started`/`error` events as JSON.                                      |
+| `--http-port <port>`        | `VPS_HTTP_PORT`              | Also serve plain HTTP from this VPS port on the same tunnel subdomain (>= 1024).                        |
+| `--network <net>`           | `VPS_NETWORK`                | `mainnet`, `canary` (default) or `devnet`.                                                              |
+| `--max-cost-per-execution`  | `VPS_MAX_COST_PER_EXECUTION` | Reward per execution in the smallest token unit.                                                        |
+
+Flags win over `VPS_*` environment variables (which can live in your `.env`); the wizard only asks for values that neither provides. At the end of the wizard the CLI offers to save your answers to `.env` as `VPS_*` variables, so subsequent runs skip the questions. `--dry-run`, `--non-interactive`, `--exit-early` and `--output json` work like they do for `acurast deploy`.
+
+### Connecting
+
+The tunnel keypair is generated locally and the clientId (the subdomain) is derived from it, so the CLI knows the hostname upfront — it is shown in the deploy summary as `https://<clientId>.<domain>`. After the deployment is submitted, the CLI polls the tunnel until Dropbear answers and then prints the connect command:
+
+```
+ssh -o ProxyCommand='openssl s_client -quiet -servername <clientId>.<domain> -connect <clientId>.<domain>:443' root@<clientId>.<domain>
+```
+
+SSH is wrapped in TLS behind the tunnel's Let's Encrypt certificate. With `--exit-early` the CLI prints the connect command without waiting. `--callback-url` is optional and additionally delivers `log`/`started`/`error` events to your webhook. With `--http-port`, the same subdomain also serves plain HTTP from that VPS port (protocol multiplexing via sslh).
+
+Requires processors running Acurast v1.26.0 or later (`minProcessorVersions.android` is set automatically).
 
 ## Live Code Feature
 
