@@ -158,7 +158,8 @@ const waitForVpsReady = async (
   domain: string,
   sshCommand: string,
   log: (msg: string) => void,
-  deadlineMs: number
+  deadlineMs: number,
+  webUrl?: string
 ): Promise<void> => {
   const spinner = ora.default(
     'Waiting for the VPS to boot (image download + setup can take a few minutes)...'
@@ -174,6 +175,11 @@ const waitForVpsReady = async (
       log('')
       log('Connect with:')
       log(`  ${sshCommand}`)
+      if (webUrl) {
+        log('')
+        log('Browser (HTTP from your --http-port):')
+        log(`  ${webUrl}`)
+      }
       log('')
       return
     }
@@ -388,15 +394,23 @@ export const addCommandDeployVps = (deployCmd: Command) => {
             }
             log('')
 
+            const webUrl =
+              vpsOptions.httpPort !== undefined
+                ? `https://${domain}`
+                : undefined
+
             if (options.exitEarly) {
               log('Once the VPS is up, connect with:')
               log(`  ${sshCommand}`)
+              if (webUrl) {
+                log(`It will also serve HTTP in the browser: ${webUrl}`)
+              }
               log('')
               return
             }
 
             // Start delay (~3 min) + rootfs download and setup on the device.
-            await waitForVpsReady(domain, sshCommand, log, 15 * 60_000)
+            await waitForVpsReady(domain, sshCommand, log, 15 * 60_000, webUrl)
           }
         )
       }
