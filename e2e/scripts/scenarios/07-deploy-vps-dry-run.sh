@@ -19,7 +19,7 @@ cd "$SCENARIO_DIR"
 
 # Non-interactive: everything from flags.
 OUT="$(run_acurast deploy vps --non-interactive --dry-run \
-  --image ubuntu24 --min-memory 2GB --min-storage 10GB --min-compute-score 100 \
+  --image ubuntu --min-memory 2GB --min-storage 10GB --min-compute-score 100 \
   --authorized-ssh-key "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF7e2edummykey e2e@acurast" \
   --duration 1h --output json 2>&1)"
 CODE=$?
@@ -47,7 +47,7 @@ grep -q "^VPS_DURATION=1h$" .env || {
   echo "ASSERT FAIL: .env missing persisted VPS_DURATION" >&2
   exit 1
 }
-grep -q "^VPS_IMAGE=ubuntu24$" .env || {
+grep -q "^VPS_IMAGE=ubuntu$" .env || {
   echo "ASSERT FAIL: .env missing persisted VPS_IMAGE" >&2
   exit 1
 }
