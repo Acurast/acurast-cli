@@ -49,20 +49,42 @@ const isExpired = (record: AuthRecord): boolean => {
   return Date.now() - at > SESSION_MAX_AGE_MS
 }
 
-const read = (scope: AuthScope): AuthRecord | null => {
+/** The stored record as-is, without the expiry check. */
+const parse = (scope: AuthScope): AuthRecord | null => {
   const raw = store(scope).getItem(AUTH_KEY)
   if (!raw) return null
   try {
-    const record = JSON.parse(raw) as AuthRecord
-    if (isExpired(record)) return null
-    return record
+    return JSON.parse(raw) as AuthRecord
   } catch {
     return null
   }
 }
 
+const read = (scope: AuthScope): AuthRecord | null => {
+  const record = parse(scope)
+  if (!record || isExpired(record)) return null
+  return record
+}
+
 export const getGlobalAuth = (): AuthRecord | null => read('global')
 export const getProjectAuth = (): AuthRecord | null => read('project')
+
+/**
+ * A stored login that exists but has aged out, if any (project pin first, to
+ * match `getActiveAuth`). Lets callers say "your session expired" instead of
+ * the misleading "ACURAST_MNEMONIC is not defined" they would otherwise hit
+ * once an expired session drops the signing mode back to `local`.
+ */
+export const getExpiredAuth = (): {
+  scope: AuthScope
+  record: AuthRecord
+} | null => {
+  for (const scope of ['project', 'global'] as const) {
+    const record = parse(scope)
+    if (record && isExpired(record)) return { scope, record }
+  }
+  return null
+}
 
 /** The account that will actually be used: a project pin wins over the global login. */
 export const getActiveAuth = (): AuthRecord | null => getProjectAuth() ?? getGlobalAuth()

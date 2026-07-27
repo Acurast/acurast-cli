@@ -51,9 +51,13 @@ import type { AcurastSigner } from '@acurast/sdk/chain'
 import {
   getSigningMode,
   getLoggedInAddress,
+  getExpiredAuth,
   touchAuth,
 } from '../util/authStore.js'
-import { signingNoticeLine } from '../util/signingNotice.js'
+import {
+  signingNoticeLine,
+  expiredSessionMessage,
+} from '../util/signingNotice.js'
 import { startSignServer } from '../util/cliServer.js'
 import { RemoteSigner } from '../acurast/remoteSigner.js'
 import { buildDeploySummary } from '../acurast/deploySummary.js'
@@ -500,6 +504,20 @@ export async function executeDeployFlow(
   }
   const signingMode = getSigningMode()
   filelogger.info(`Signing mode: ${signingMode}`)
+
+  // An aged-out login silently resolves back to `local`, so without a mnemonic
+  // the env-var check below would blame a missing ACURAST_MNEMONIC. Say what
+  // actually happened instead.
+  if (signingMode === 'local' && !process.env.ACURAST_MNEMONIC) {
+    const expired = getExpiredAuth()
+    if (expired) {
+      filelogger.warn(
+        `Login expired (${expired.scope}), last logged in at ${expired.record.loggedInAt}`
+      )
+      log(expiredSessionMessage(expired))
+      return
+    }
+  }
 
   try {
     validateDeployEnvVars({ requireMnemonic: signingMode === 'local' })
