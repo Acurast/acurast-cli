@@ -51,9 +51,13 @@ import type { AcurastSigner } from '@acurast/sdk/chain'
 import {
   getSigningMode,
   getLoggedInAddress,
+  getExpiredAuth,
   touchAuth,
 } from '../util/authStore.js'
-import { signingNoticeLine } from '../util/signingNotice.js'
+import {
+  signingNoticeLine,
+  expiredSessionMessage,
+} from '../util/signingNotice.js'
 import { startSignServer } from '../util/cliServer.js'
 import { RemoteSigner } from '../acurast/remoteSigner.js'
 import { buildDeploySummary } from '../acurast/deploySummary.js'
@@ -78,6 +82,30 @@ const ACURAST_DECIMALS = 12
  * we start a local bridge server and return an injected {@link RemoteSigner}
  * bound to the address persisted by `acurast login`.
  */
+/**
+ * Render an on-chain job id as the composite "Acurast:<owner>:<number>" form.
+ *
+ * `jobIds[0]` from the match event is the `[MultiOrigin, number]` tuple, and
+ * the origin carries the owning account. Returns undefined for shapes we
+ * cannot read, or for non-Acurast origins, whose consumer is raw bytes rather
+ * than an account — callers fall back to the bare number.
+ */
+export function compositeDeploymentId(raw: unknown): string | undefined {
+  if (!Array.isArray(raw) || raw.length < 2) return undefined
+
+  const [origin, number] = raw as [unknown, unknown]
+  if (origin === null || typeof origin !== 'object') return undefined
+
+  const entries = Object.entries(origin as Record<string, unknown>)
+  const acurast = entries.find(([key]) => key.toLowerCase() === 'acurast')
+  if (acurast === undefined || typeof acurast[1] !== 'string') return undefined
+
+  const seq = String(number)
+  if (!/^\d+$/.test(seq)) return undefined
+
+  return `Acurast:${acurast[1]}:${seq}`
+}
+
 export async function resolveSigner(
   mode: 'local' | 'remote',
   config: AcurastProjectConfig,
@@ -500,6 +528,20 @@ export async function executeDeployFlow(
   }
   const signingMode = getSigningMode()
   filelogger.info(`Signing mode: ${signingMode}`)
+
+  // An aged-out login silently resolves back to `local`, so without a mnemonic
+  // the env-var check below would blame a missing ACURAST_MNEMONIC. Say what
+  // actually happened instead.
+  if (signingMode === 'local' && !process.env.ACURAST_MNEMONIC) {
+    const expired = getExpiredAuth()
+    if (expired) {
+      filelogger.warn(
+        `Login expired (${expired.scope}), last logged in at ${expired.record.loggedInAt}`
+      )
+      log(expiredSessionMessage(expired))
+      return
+    }
+  }
 
   try {
     validateDeployEnvVars({ requireMnemonic: signingMode === 'local' })
@@ -1121,9 +1163,19 @@ export async function executeDeployFlow(
 
       if (config.enableDevtools && deployedJobId) {
         try {
-          const viewKeyResponse = await getDevtoolsViewKey(deployedJobId, {
+          // Send the full "Acurast:<owner>:<number>" id: the devtools API
+          // resolves the owner from it to confirm we own this deployment. A
+          // bare number leaves it dependent on an indexer lookup instead.
+          const deploymentId = compositeDeploymentId(deployedJobIdRaw) ?? deployedJobId
+
+          const viewKeyResponse = await getDevtoolsViewKey(deploymentId, {
             apiUrl: getEnv('ACURAST_DEVTOOLS_API_URL'),
-            mnemonic: getEnv('ACURAST_MNEMONIC'),
+            // The deployment's own signer: the API checks the signature
+            // against the owner recorded on chain, so it must be the account
+            // that registered the job. Also covers remote signing, where
+            // there is no mnemonic to fall back on.
+            signer: wallet,
+            network: config.network,
             logger: filelogger,
           })
           log('')

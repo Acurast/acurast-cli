@@ -40,6 +40,7 @@ const {
   isLoggedIn,
   getSigningMode,
   getAuthSource,
+  getExpiredAuth,
 } = await import('../src/util/authStore.js')
 
 const record = (address: string) => ({
@@ -111,6 +112,45 @@ describe('authStore', () => {
     test('returns null on malformed JSON', () => {
       storeFor(ACURAST_GLOBAL_BASE_PATH).set('auth', '{ not json')
       expect(getGlobalAuth()).toBeNull()
+    })
+  })
+
+  describe('getExpiredAuth', () => {
+    const stale = (address: string) => ({
+      ...record(address),
+      loggedInAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+    })
+
+    test('surfaces an expired global session that getGlobalAuth hides', () => {
+      setAuth(stale('5Old'), 'global')
+      expect(getGlobalAuth()).toBeNull()
+      expect(getExpiredAuth()).toMatchObject({
+        scope: 'global',
+        record: { address: '5Old' },
+      })
+    })
+
+    test('prefers the project pin, matching getActiveAuth', () => {
+      setAuth(stale('5OldGlobal'), 'global')
+      setAuth(stale('5OldProject'), 'project')
+      expect(getExpiredAuth()).toMatchObject({
+        scope: 'project',
+        record: { address: '5OldProject' },
+      })
+    })
+
+    test('null when the session is still valid', () => {
+      setAuth(record('5Fresh'), 'global')
+      expect(getExpiredAuth()).toBeNull()
+    })
+
+    test('null when nothing is stored', () => {
+      expect(getExpiredAuth()).toBeNull()
+    })
+
+    test('null on malformed JSON', () => {
+      storeFor(ACURAST_GLOBAL_BASE_PATH).set('auth', '{ not json')
+      expect(getExpiredAuth()).toBeNull()
     })
   })
 
