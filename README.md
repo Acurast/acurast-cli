@@ -646,6 +646,37 @@ When `assignmentStrategy.type` is `Single`, you can set `assignmentStrategy.inst
 
 If `instantMatch` is non-empty, `acurast deploy` skips the market pricing check for that project, since matching is explicit.
 
+```json
+{
+  "projects": {
+    "my-instant-match-project": {
+      "projectName": "my-instant-match-project",
+      "fileUrl": "examples/canary-test.js",
+      "network": "canary",
+      "onlyAttestedDevices": true,
+      "assignmentStrategy": {
+        "type": "Single",
+        "instantMatch": [
+          {
+            "processor": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
+            "maxAllowedStartDelayInMs": 10000
+          }
+        ]
+      },
+      "execution": { "type": "onetime", "maxExecutionTimeInMs": 60000 },
+      "maxAllowedStartDelayInMs": 10000,
+      "usageLimit": {
+        "maxMemory": 0,
+        "maxNetworkRequests": 0,
+        "maxStorage": 0
+      },
+      "numberOfReplicas": 1,
+      "maxCostPerExecution": 1000000000
+    }
+  }
+}
+```
+
 ### Shell Runtime
 
 The Shell runtime runs your deployment as a native binary inside a Linux distro image on the processor (PRoot-isolated). This unlocks shell scripts, native tooling, and any language you can ship as a Linux binary.
