@@ -23,6 +23,19 @@ export type CliValidateResult =
  *
  * TODO: Add `devnet` support to the SDK and remove this workaround.
  */
+/**
+ * The SDK's `validateConfig` returns only the fields it knows about, dropping
+ * CLI-only ones. `enableDevtools` is such a field — losing it silently
+ * disabled devtools snippet injection on every deploy — so it is carried back
+ * onto the validated data here.
+ */
+const preserveCliFields = (result: CliValidateResult, original: unknown): CliValidateResult => {
+  if (!result.success || typeof original !== 'object' || original === null) return result
+  const enableDevtools = (original as { enableDevtools?: unknown }).enableDevtools
+  if (enableDevtools === undefined) return result
+  return { ...result, data: { ...result.data, enableDevtools } as typeof result.data }
+}
+
 export const validateCliConfig = (config: unknown): CliValidateResult => {
   if (typeof config !== 'object' || config === null) {
     return validateConfig(config) as CliValidateResult
@@ -38,7 +51,7 @@ export const validateCliConfig = (config: unknown): CliValidateResult => {
   }
 
   if (network !== 'devnet') {
-    return validateConfig(config) as CliValidateResult
+    return preserveCliFields(validateConfig(config) as CliValidateResult, config)
   }
 
   const normalized = {
@@ -48,15 +61,18 @@ export const validateCliConfig = (config: unknown): CliValidateResult => {
   const result = validateConfig(normalized) as CliValidateResult
 
   if (result.success) {
-    return {
-      ...result,
-      data: {
-        ...result.data,
-        network: 'devnet',
-      } as unknown as AcurastProjectConfig & {
-        network: CliNetwork
+    return preserveCliFields(
+      {
+        ...result,
+        data: {
+          ...result.data,
+          network: 'devnet',
+        } as unknown as AcurastProjectConfig & {
+          network: CliNetwork
+        },
       },
-    }
+      config,
+    )
   }
 
   return result
