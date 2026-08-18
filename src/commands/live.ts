@@ -10,6 +10,7 @@ import {
   walletFromMnemonic,
   convertConfigToJob,
   jobToNumber,
+  MIN_EXECUTION_DURATION_MS,
 } from '@acurast/sdk/chain'
 import {
   AssignmentStrategyVariant,
@@ -51,6 +52,9 @@ export const addCommandLive = (program: Command) => {
             const value = Number(parsed)
             if (isNaN(value) || value <= 0) {
               return 'Please enter a valid number greater than 0'
+            }
+            if (value < MIN_EXECUTION_DURATION_MS) {
+              return 'Deployments must run for at least 1 minute'
             }
             return true
           },

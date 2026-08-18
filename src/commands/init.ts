@@ -7,6 +7,8 @@ import { ENV_HELP_LINK, getFaucetLinkForAddress } from '../constants.js'
 import {
   DEFAULT_MAX_ALLOWED_START_DELAY_MS,
   DEFAULT_REWARD,
+  DEFAULT_TIME_BETWEEN_EXECUTIONS_MS,
+  MIN_EXECUTION_DURATION_MS,
   walletFromMnemonic,
 } from '@acurast/sdk/chain'
 import {
@@ -308,12 +310,15 @@ export const addCommandInit = (program: Command) => {
 
       if (deploymentType === 'onetime') {
         const unparsedDuration = await input({
-          message: 'Enter the duration (eg. 1s, 5min or 2h):',
+          message: 'Enter the duration (eg. 1m, 5min or 2h):',
           validate: (input) => {
             const parsed = (parse(input) ?? 0).toString()
             const value = Number(parsed)
             if (isNaN(value) || value <= 0) {
               return 'Please enter a valid number greater than 0'
+            }
+            if (value < MIN_EXECUTION_DURATION_MS) {
+              return 'Deployments must run for at least 1 minute'
             }
             return true
           },
@@ -338,12 +343,20 @@ export const addCommandInit = (program: Command) => {
           },
         })
         const unparsedInterval = await input({
-          message: 'What is the interval duration (eg. 1s, 5min or 2h)?',
+          message: 'What is the interval duration (eg. 2m, 5min or 2h)?',
           validate: (input) => {
             const parsed = (parse(input) ?? 0).toString()
             const value = Number(parsed)
             if (isNaN(value) || value <= 0) {
               return 'Please enter a valid number greater than 0'
+            }
+            // The execution duration is derived from the interval minus the
+            // gap between executions and must stay above the 1 minute minimum.
+            if (
+              value <
+              MIN_EXECUTION_DURATION_MS + DEFAULT_TIME_BETWEEN_EXECUTIONS_MS + 1
+            ) {
+              return 'The interval must be at least 1 minute and 11 seconds so each execution can run for at least 1 minute'
             }
             return true
           },
