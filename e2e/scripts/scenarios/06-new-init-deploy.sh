@@ -26,8 +26,8 @@ assert_dir "e2e-full-flow"
 
 cd e2e-full-flow
 
-# init (interactive wizard): name, One Time, 5s, bundle path default
-OUT="$(run_init_interactive e2e-full-flow 5s 2>&1)"
+# init (interactive wizard): name, One Time, 2m (chain minimum is 1m), bundle path default
+OUT="$(run_init_interactive e2e-full-flow 2m 2>&1)"
 CODE=$?
 assert_exit "$CODE" 0 "acurast init (interactive)"
 assert_stdout_contains "$OUT" "Successfully created"

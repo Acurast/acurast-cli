@@ -11,7 +11,7 @@ set env(TERM) "xterm-256color"
 set timeout 90
 set project [lindex $argv 0]
 set duration [lindex $argv 1]
-if {$duration eq ""} { set duration "5s" }
+if {$duration eq ""} { set duration "2m" }
 
 spawn acurast init
 

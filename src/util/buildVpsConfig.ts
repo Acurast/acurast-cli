@@ -1,4 +1,4 @@
-import { parseByteSize } from '@acurast/sdk/chain'
+import { parseByteSize, MIN_EXECUTION_DURATION_MS } from '@acurast/sdk/chain'
 import type { AcurastProjectConfig, EnvVar } from '@acurast/sdk/types'
 import {
   buildVpsJob,
@@ -124,6 +124,11 @@ export const buildVpsConfig = (options: VpsOptions): VpsPlan => {
   if (!Number.isFinite(durationMs) || durationMs <= 0) {
     throw new Error(
       `Invalid duration "${duration}" (expected e.g. 1h, 24h, 2d)`
+    )
+  }
+  if (durationMs < MIN_EXECUTION_DURATION_MS) {
+    throw new Error(
+      `Duration "${duration}" is too short: deployments must run for at least 1 minute`
     )
   }
 
