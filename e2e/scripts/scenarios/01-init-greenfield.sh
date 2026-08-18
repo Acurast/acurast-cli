@@ -19,9 +19,9 @@ cd "$SCENARIO_DIR"
 # Drive the real interactive wizard:
 #   1. project name        -> e2e-blank-template
 #   2. one time / interval -> One Time (first choice)
-#   3. duration            -> 5s
+#   3. duration            -> 2m
 #   4. bundled js file     -> default (package.json main: dist/bundle.js)
-OUT="$(run_init_interactive e2e-blank-template 5s 2>&1)"
+OUT="$(run_init_interactive e2e-blank-template 2m 2>&1)"
 CODE=$?
 assert_exit "$CODE" 0 "acurast init (interactive)"
 assert_stdout_contains "$OUT" "Successfully created"
