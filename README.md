@@ -226,7 +226,7 @@ Each network resolves an RPC endpoint, a matcher URL, and an indexer (with API k
 
 | Network | Purpose                          | RPC default                                           | Faucet                       |
 | ------- | -------------------------------- | ----------------------------------------------------- | ---------------------------- |
-| mainnet | Production, real ACU             | `wss://archive.mainnet.acurast.com`                   | n/a (see docs to get ACU)    |
+| mainnet | Production, real ACU             | `wss://cli.mainnet.acurast.com`                   | n/a (see docs to get ACU)    |
 | canary  | Public test network              | `wss://canarynet-ws-1.acurast-h-server-2.papers.tech` | `https://faucet.acurast.com` |
 | devnet  | Internal/staging dev environment | `wss://acurast-devnet-ws.prod.gke.papers.tech`        | n/a (request from Acurast)   |
 
@@ -234,7 +234,7 @@ Each network resolves an RPC endpoint, a matcher URL, and an indexer (with API k
 
 | Env var               | Network applied to | Default                                                  |
 | --------------------- | ------------------ | -------------------------------------------------------- |
-| `ACURAST_MAINNET_RPC` | mainnet            | `wss://archive.mainnet.acurast.com`                      |
+| `ACURAST_MAINNET_RPC` | mainnet            | `wss://cli.mainnet.acurast.com`                      |
 | `ACURAST_RPC`         | mainnet (legacy)   | same as above; honoured when `ACURAST_MAINNET_RPC` unset |
 | `ACURAST_CANARY_RPC`  | canary             | `wss://canarynet-ws-1.acurast-h-server-2.papers.tech`    |
 | `ACURAST_DEVNET_RPC`  | devnet             | `wss://acurast-devnet-ws.prod.gke.papers.tech`           |

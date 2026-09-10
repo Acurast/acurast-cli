@@ -2,7 +2,7 @@ import 'dotenv/config'
 import type { AcurastProjectConfig, EnvVar } from '@acurast/sdk/types'
 
 const RPC_CANARY = 'wss://canarynet-ws-1.acurast-h-server-2.papers.tech'
-const RPC_MAINNET = 'wss://archive.mainnet.acurast.com'
+const RPC_MAINNET = 'wss://cli.mainnet.acurast.com'
 const RPC_DEVNET = 'wss://acurast-devnet-ws.prod.gke.papers.tech'
 
 const MATCHER_CANARY = 'https://matcher.canary.acurast.com'
