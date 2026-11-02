@@ -1,5 +1,7 @@
-import 'dotenv/config'
+import { config as loadDotenv } from 'dotenv'
 import type { AcurastProjectConfig, EnvVar } from '@acurast/sdk/types'
+
+loadDotenv({ quiet: true })
 
 const RPC_CANARY = 'wss://canarynet-ws-1.acurast-h-server-2.papers.tech'
 const RPC_MAINNET = 'wss://cli.mainnet.acurast.com'
