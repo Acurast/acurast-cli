@@ -56,7 +56,7 @@ export const VPS_ENV_MAPPING: Record<keyof VpsOptions, string> = {
 
 /**
  * Merge CLI flags with `VPS_*` environment variables (flags win). `.env` is
- * already loaded via `dotenv/config` in `src/config.ts`.
+ * already loaded by the dotenv `config()` call in `src/config.ts`.
  */
 export const resolveVpsOptions = (
   flags: VpsOptions,
