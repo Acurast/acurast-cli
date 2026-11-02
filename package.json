@@ -70,11 +70,11 @@
     "@types/figlet": "^1.5.8",
     "@types/inquirer": "^9.0.7",
     "@types/jest": "^30.0.0",
-    "@types/node": "^20.14.0",
+    "@types/node": "^24.19.2",
     "jest": "^30.5.2",
-    "prettier": "^3.3.3",
+    "prettier": "^3.9.10",
     "ts-jest": "^29.4.15",
-    "typescript": "^5.4.5"
+    "typescript": "^5.9.3"
   },
   "prettier": {
     "trailingComma": "es5",
