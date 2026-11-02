@@ -143,3 +143,53 @@ describe('validateCliConfig upcoming runtime limits', () => {
     }
   })
 })
+
+describe('validateCliConfig resetExitCode', () => {
+  const shellConfig = {
+    ...baseConfig,
+    runtime: 'Shell',
+    entrypoint: 'acurast.sh',
+    image: { url: 'https://example.com/distro.tar.xz', sha256: 'abc' },
+  }
+
+  test('is unset by default', () => {
+    const result = validateCliConfig(shellConfig)
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.resetExitCode).toBeUndefined()
+  })
+
+  test('accepts an integer between 1 and 125 for the Shell runtime', () => {
+    const result = validateCliConfig({ ...shellConfig, resetExitCode: 82 })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.resetExitCode).toBe(82)
+    expect(result.notes).toBeUndefined()
+  })
+
+  test.each([0, 126, 1.5, '82'])('rejects %p with a clear error', (value) => {
+    const result = validateCliConfig({ ...shellConfig, resetExitCode: value })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(JSON.stringify(result.error)).toContain(
+        'resetExitCode must be an integer between 1 and 125'
+      )
+    }
+  })
+
+  test('warns but does not fail for a non-Shell runtime', () => {
+    const result = validateCliConfig({ ...baseConfig, resetExitCode: 82 })
+    expect(result.success).toBe(true)
+    expect(JSON.stringify(result.notes)).toContain(
+      'only applies to the Shell runtime'
+    )
+  })
+
+  test('also works for devnet configs', () => {
+    const result = validateCliConfig({
+      ...shellConfig,
+      network: 'devnet',
+      resetExitCode: 82,
+    })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.resetExitCode).toBe(82)
+  })
+})

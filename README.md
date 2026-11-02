@@ -154,6 +154,9 @@ ACURAST_MNEMONIC=abandon abandon about ...
 - `image`: Linux distro image used by the Shell runtime. Required when `runtime` is `"Shell"`. Ignored otherwise.
   - `url`: HTTPS URL of a `.tar.xz` distro image (see [Termux proot-distro](https://github.com/termux/proot-distro) for supported images).
   - `sha256`: SHA256 hash of the image, used by the processor to verify the download.
+- `entrypoint`: Script or binary the processor runs after extracting the Shell image (e.g. `acurast.sh`). For Node.js runtimes, the file that is started; defaults to `index.js`.
+- `restartPolicy`: `"no"` (run once, no retry), `"onFailure"` (default — retry up to 3 times on failure; only the last failure is reported), or `"always"` (restart after the execution ends unexpectedly, including on success).
+- `resetExitCode`: Exit code (1-125) with which the Shell entrypoint asks for its container to be reset. Not set by default. See [Container Reset](#container-reset). Ignored for other runtimes.
 - `minProcessorReputation`: The minimum required reputation of the processor.
 - `maxCostPerExecution`: The maximum cost per execution in the smallest denomination of ACU.
 - `includeEnvironmentVariables`: An array of environment variables in the .env file that will be passed to the deployment.
@@ -226,7 +229,7 @@ Each network resolves an RPC endpoint, a matcher URL, and an indexer (with API k
 
 | Network | Purpose                          | RPC default                                           | Faucet                       |
 | ------- | -------------------------------- | ----------------------------------------------------- | ---------------------------- |
-| mainnet | Production, real ACU             | `wss://cli.mainnet.acurast.com`                   | n/a (see docs to get ACU)    |
+| mainnet | Production, real ACU             | `wss://cli.mainnet.acurast.com`                       | n/a (see docs to get ACU)    |
 | canary  | Public test network              | `wss://canarynet-ws-1.acurast-h-server-2.papers.tech` | `https://faucet.acurast.com` |
 | devnet  | Internal/staging dev environment | `wss://acurast-devnet-ws.prod.gke.papers.tech`        | n/a (request from Acurast)   |
 
@@ -234,7 +237,7 @@ Each network resolves an RPC endpoint, a matcher URL, and an indexer (with API k
 
 | Env var               | Network applied to | Default                                                  |
 | --------------------- | ------------------ | -------------------------------------------------------- |
-| `ACURAST_MAINNET_RPC` | mainnet            | `wss://cli.mainnet.acurast.com`                      |
+| `ACURAST_MAINNET_RPC` | mainnet            | `wss://cli.mainnet.acurast.com`                          |
 | `ACURAST_RPC`         | mainnet (legacy)   | same as above; honoured when `ACURAST_MAINNET_RPC` unset |
 | `ACURAST_CANARY_RPC`  | canary             | `wss://canarynet-ws-1.acurast-h-server-2.papers.tech`    |
 | `ACURAST_DEVNET_RPC`  | devnet             | `wss://acurast-devnet-ws.prod.gke.papers.tech`           |
@@ -295,19 +298,19 @@ Running `acurast deploy vps` without flags starts an interactive wizard that ask
 
 ### Options
 
-| Flag                       | Env var                      | Description                                                                                             |
-| -------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `--image <alias>`           | `VPS_IMAGE`                  | Image preset. Currently `ubuntu` (25.10, proot-distro rootfs, aarch64).                                  |
-| `--min-memory <size>`       | `VPS_MIN_MEMORY`             | Minimum total RAM of the processor (e.g. `2GB`).                                                        |
-| `--min-storage <size>`      | `VPS_MIN_STORAGE`            | Minimum available storage (e.g. `10GB`).                                                                |
-| `--min-compute-score <n>`   | `VPS_MIN_COMPUTE_SCORE`      | Minimum CPU single-core benchmark score.                                                                |
-| `--min-cpu-multi-score <n>` | `VPS_MIN_CPU_MULTI_SCORE`    | Minimum CPU multi-core benchmark score.                                                                 |
-| `--authorized-ssh-key <k>`  | `VPS_AUTHORIZED_SSH_KEY`     | SSH public key appended to `/root/.ssh/authorized_keys`. Required — the VPS is key-auth only.           |
-| `--duration <dur>`          | `VPS_DURATION`               | How long the VPS runs (e.g. `1h`, `24h`, `2d`). Default `24h`.                                          |
-| `--callback-url <url>`      | `VPS_CALLBACK_URL`           | Optional webhook receiving `log`/`started`/`error` events as JSON.                                      |
-| `--http-port <port>`        | `VPS_HTTP_PORT`              | Also serve plain HTTP from this VPS port on the same tunnel subdomain (>= 1024).                        |
-| `--network <net>`           | `VPS_NETWORK`                | `mainnet`, `canary` (default) or `devnet`.                                                              |
-| `--max-cost-per-execution`  | `VPS_MAX_COST_PER_EXECUTION` | Reward per execution in the smallest token unit.                                                        |
+| Flag                        | Env var                      | Description                                                                                   |
+| --------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------- |
+| `--image <alias>`           | `VPS_IMAGE`                  | Image preset. Currently `ubuntu` (25.10, proot-distro rootfs, aarch64).                       |
+| `--min-memory <size>`       | `VPS_MIN_MEMORY`             | Minimum total RAM of the processor (e.g. `2GB`).                                              |
+| `--min-storage <size>`      | `VPS_MIN_STORAGE`            | Minimum available storage (e.g. `10GB`).                                                      |
+| `--min-compute-score <n>`   | `VPS_MIN_COMPUTE_SCORE`      | Minimum CPU single-core benchmark score.                                                      |
+| `--min-cpu-multi-score <n>` | `VPS_MIN_CPU_MULTI_SCORE`    | Minimum CPU multi-core benchmark score.                                                       |
+| `--authorized-ssh-key <k>`  | `VPS_AUTHORIZED_SSH_KEY`     | SSH public key appended to `/root/.ssh/authorized_keys`. Required — the VPS is key-auth only. |
+| `--duration <dur>`          | `VPS_DURATION`               | How long the VPS runs (e.g. `1h`, `24h`, `2d`). Default `24h`.                                |
+| `--callback-url <url>`      | `VPS_CALLBACK_URL`           | Optional webhook receiving `log`/`started`/`error` events as JSON.                            |
+| `--http-port <port>`        | `VPS_HTTP_PORT`              | Also serve plain HTTP from this VPS port on the same tunnel subdomain (>= 1024).              |
+| `--network <net>`           | `VPS_NETWORK`                | `mainnet`, `canary` (default) or `devnet`.                                                    |
+| `--max-cost-per-execution`  | `VPS_MAX_COST_PER_EXECUTION` | Reward per execution in the smallest token unit.                                              |
 
 Flags win over `VPS_*` environment variables (which can live in your `.env`); the wizard only asks for values that neither provides. At the end of the wizard the CLI offers to save your answers to `.env` as `VPS_*` variables, so subsequent runs skip the questions. `--dry-run`, `--non-interactive`, `--exit-early` and `--output json` work like they do for `acurast deploy`.
 
@@ -696,6 +699,7 @@ To use it, set `runtime` to `"Shell"` and provide an `image` (URL + SHA256). The
         "sha256": "5ab35b90cd9a9f180656261ba400a135c4c01c2da4b74522118342f985c2d328"
       },
       "restartPolicy": "no",
+      "resetExitCode": 82,
       "network": "canary",
       "onlyAttestedDevices": true,
       "assignmentStrategy": { "type": "Single" },
@@ -718,6 +722,19 @@ To use it, set `runtime` to `"Shell"` and provide an `image` (URL + SHA256). The
 ```
 
 The `entrypoint` is the script or binary the processor runs after extracting the image. Environment variables declared in `includeEnvironmentVariables` are injected as standard system env vars (no `_STD_` API). Host services (deployment metadata, signing, browser control) are exposed via a JSON-RPC API on an abstract Unix socket whose name is in the `BRIDGE_SOCKET` env var.
+
+#### Container Reset
+
+A running Shell deployment can reset its own container (Android Processor 1.29.0+): the processor stops every process of the run, restores the rootfs from the image and runs the entrypoint again with the same environment variables. The execution keeps going; a reset is not a restart.
+
+Set `resetExitCode` (integer 1-125) in `acurast.json` and exit the entrypoint with that code. The CLI writes the value to the bundle's `manifest.json` as `"resetExitCode"`; it is not written when unset and ignored (with a warning) for non-Shell runtimes. A reset can also be triggered from inside the container via the `container_reset` JSON-RPC call. See the [Cargo runtime docs](https://docs.acurast.com/developers/build/cargo-runtime-environment#container-reset) for details.
+
+```sh
+#!/bin/sh
+# acurast.sh
+# ...
+exit 82  # reset the container and run this script again
+```
 
 ## Development
 
