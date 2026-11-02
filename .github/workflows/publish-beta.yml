@@ -1,5 +1,8 @@
 name: Publish Beta
 
+env:
+  node_version: 24.x
+
 on:
   push:
     branches:
