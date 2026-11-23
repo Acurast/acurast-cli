@@ -11,10 +11,7 @@ import { addCommandLogin } from './commands/login.js'
 import { addCommandLogout } from './commands/logout.js'
 import { addCommandWhoami } from './commands/whoami.js'
 import { addCommandOpen } from './commands/open.js'
-import { addCommandRun } from './commands/run.js'
-import { addCommandTest } from './commands/test.js'
 import { addCommandLive } from './commands/live.js'
-import { addCommandWatch } from './commands/watch.js'
 import { acurastColor } from './util.js'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -67,9 +64,6 @@ addCommandLogin(program)
 addCommandLogout(program)
 addCommandWhoami(program)
 addCommandOpen(program)
-// addCommandRun(program)
-// addCommandTest(program)
-// addCommandWatch(program)
 addCommandNew(program)
 addCommandEstimateFee(program)
 addCommandDevtools(program)
