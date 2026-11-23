@@ -1,7 +1,7 @@
 import process from 'node:process'
+import { stripVTControlCharacters as stripAnsi } from 'node:util'
 import cliCursor from 'cli-cursor'
 import logSymbols from 'log-symbols'
-import stripAnsi from 'strip-ansi'
 import stringWidth from 'string-width'
 import isInteractive from 'is-interactive'
 import isUnicodeSupported from 'is-unicode-supported'

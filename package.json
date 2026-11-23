@@ -6,6 +6,9 @@
   "bin": {
     "acurast": "./dist/index.js"
   },
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "type": "module",
   "files": [
     "dist"
@@ -37,7 +40,7 @@
     "@acurast/devtools": "^1.1.0",
     "@acurast/sdk": "^1.6.0",
     "@acurast/vps": "^0.2.1-beta.0",
-    "@inquirer/prompts": "^8.7.5",
+    "@inquirer/prompts": "^8.8.0",
     "@polkadot/api": "^16.1.2",
     "@polkadot/api-augment": "^16.1.2",
     "@polkadot/keyring": "^14.0.0",
@@ -49,25 +52,20 @@
     "adm-zip": "^0.6.1",
     "ansis": "^4.5.0",
     "bignumber.js": "^9.3.0",
-    "bip39": "^3.1.2",
+    "cli-cursor": "^5.0.0",
     "cli-progress": "^3.12.0",
-    "commander": "^12.1.0",
+    "commander": "^15.1.0",
     "dotenv": "^17.4.2",
-    "figlet": "^1.12.0",
-    "inquirer": "^9.2.23",
     "is-interactive": "^2.0.0",
-    "listr2": "^8.3.3",
+    "is-unicode-supported": "^2.1.0",
+    "listr2": "^11.4.1",
     "log-symbols": "^7.0.1",
-    "needle": "^3.3.1",
     "open": "^11.0.4",
-    "parse-duration": "^1.1.0",
-    "stdin-discarder": "^0.3.2"
+    "stdin-discarder": "^0.3.2",
+    "string-width": "^8.3.0"
   },
   "devDependencies": {
     "@types/cli-progress": "^3.11.6",
-    "@types/elliptic": "^6.4.18",
-    "@types/figlet": "^1.5.8",
-    "@types/inquirer": "^9.0.7",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.19.2",
     "jest": "^30.5.2",

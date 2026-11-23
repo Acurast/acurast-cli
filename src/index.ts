@@ -4,8 +4,6 @@ import fs from 'fs'
 import path from 'path'
 
 import { Command } from 'commander'
-import figlet from 'figlet'
-const { textSync } = figlet
 import { addCommandInit } from './commands/init.js'
 import { addCommandDeploy } from './commands/deploy.js'
 import { addCommandDeployVps } from './commands/deploy-vps.js'
@@ -40,6 +38,16 @@ filelogger.debug(`--------------------------------`)
 filelogger.debug(`CLI is running version ${packageJson.version}`)
 filelogger.debug(`COMMAND: acurast ${process.argv.slice(2).join(' ')}`)
 
+// Pre-rendered `figlet.textSync('Acurast CLI')` (Standard font), so figlet is not a runtime dependency.
+const BANNER = [
+  '     _                            _      ____ _     ___ ',
+  '    / \\   ___ _   _ _ __ __ _ ___| |_   / ___| |   |_ _|',
+  "   / _ \\ / __| | | | '__/ _` / __| __| | |   | |    | | ",
+  '  / ___ \\ (__| |_| | | | (_| \\__ \\ |_  | |___| |___ | | ',
+  ' /_/   \\_\\___|\\__,_|_|  \\__,_|___/\\__|  \\____|_____|___|',
+  '                                                        ',
+].join('\n')
+
 const program = new Command()
 
 program
@@ -67,7 +75,7 @@ addCommandEstimateFee(program)
 addCommandDevtools(program)
 
 if (!process.argv.slice(2).length) {
-  console.log(acurastColor(textSync('Acurast CLI')))
+  console.log(acurastColor(BANNER))
 
   program.outputHelp()
 

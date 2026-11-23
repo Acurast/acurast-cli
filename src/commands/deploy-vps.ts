@@ -278,10 +278,7 @@ export const addCommandDeployVps = (deployCmd: Command) => {
         .default('text')
     )
     .addOption(
-      new Option(
-        '-ee, --exit-early',
-        'Do not wait for the deployment to finish.'
-      )
+      new Option('--exit-early', 'Do not wait for the deployment to finish.')
     )
     .addOption(
       new Option(

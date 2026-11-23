@@ -342,7 +342,7 @@ export const addCommandDeploy = (program: Command): Command => {
     )
     .addOption(
       new Option(
-        '-ee, --exit-early',
+        '--exit-early',
         'Do not wait for the deployment to finish. The CLI will exit as soon as it has submitted the deployment to the Acurast platform. Note: If environment variables are set, the CLI will have to wait longer.'
       )
     )
@@ -1166,7 +1166,8 @@ export async function executeDeployFlow(
           // Send the full "Acurast:<owner>:<number>" id: the devtools API
           // resolves the owner from it to confirm we own this deployment. A
           // bare number leaves it dependent on an indexer lookup instead.
-          const deploymentId = compositeDeploymentId(deployedJobIdRaw) ?? deployedJobId
+          const deploymentId =
+            compositeDeploymentId(deployedJobIdRaw) ?? deployedJobId
 
           const viewKeyResponse = await getDevtoolsViewKey(deploymentId, {
             apiUrl: getEnv('ACURAST_DEVTOOLS_API_URL'),

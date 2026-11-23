@@ -17,7 +17,7 @@ import {
   AssignmentStrategyVariant,
 } from '@acurast/sdk/types'
 import { parse } from '../util/parse-duration.js'
-import { generateMnemonic } from 'bip39'
+import { mnemonicGenerate } from '@polkadot/util-crypto'
 import { getEnv } from '../config.js'
 import { acurastColor } from '../util.js'
 import { getGlobalAuth } from '../util/authStore.js'
@@ -39,7 +39,7 @@ const setupEnvFile = (mode: SigningChoice) => {
   const requiredEnvVariables = requiredEnvVariablesForSigning(mode)
   const wantsMnemonic = mode === 'mnemonic'
 
-  const mnemonic = generateMnemonic()
+  const mnemonic = mnemonicGenerate(12)
 
   const hasEnvFile = existsSync('./.env')
   if (hasEnvFile) {
