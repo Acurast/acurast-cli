@@ -3,7 +3,6 @@ export default {
   testEnvironment: 'node',
   roots: ['./src', './test'],
   setupFiles: ['<rootDir>/test/setup.ts'],
-  testPathIgnorePatterns: ['./src/commands/test.ts'],
   transform: {
     // Use the ESM/esnext test tsconfig so top-level `await import()` (ESM
     // module mocking) compiles. Requires `NODE_OPTIONS=--experimental-vm-modules`,
